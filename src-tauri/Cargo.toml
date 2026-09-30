@@ -1,9 +1,9 @@
 [package]
 name = "app"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
-license = ""
+description = "Subtitle editor for YouTube"
+authors = ["Michael Webb"]
+license = "GPL-3.0-or-later"
 repository = ""
 edition = "2024"
 rust-version = "1.90"

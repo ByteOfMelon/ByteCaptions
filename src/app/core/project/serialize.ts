@@ -1,0 +1,61 @@
+/** Project file (.bcproj) save/load with schema versioning. */
+import { defaultSettings } from '../model/defaults';
+import { Project, SCHEMA_VERSION } from '../model/types';
+
+export const PROJECT_EXTENSION = 'bcproj';
+
+export class ProjectFileError extends Error {}
+
+type Migration = (raw: Record<string, unknown>) => Record<string, unknown>;
+
+/**
+ * migrations[n] upgrades a file from schema n to n + 1.
+ * Add an entry whenever SCHEMA_VERSION is bumped; never edit old ones.
+ */
+const migrations: Record<number, Migration> = {};
+
+export function serializeProject(project: Project): string {
+	return JSON.stringify({ ...project, schemaVersion: SCHEMA_VERSION }, null, '\t');
+}
+
+export function parseProject(json: string): Project {
+	let raw: Record<string, unknown>;
+	try {
+		raw = JSON.parse(json);
+	} catch {
+		throw new ProjectFileError('Project file is not valid JSON');
+	}
+	if (typeof raw !== 'object' || raw === null)
+		throw new ProjectFileError('Project file is empty');
+
+	let version = typeof raw['schemaVersion'] === 'number' ? raw['schemaVersion'] : 0;
+	if (version > SCHEMA_VERSION) {
+		throw new ProjectFileError(
+			`This project was saved by a newer version of ByteCaptions (schema ${version}). Please update the app.`,
+		);
+	}
+	while (version < SCHEMA_VERSION) {
+		const m = migrations[version];
+		if (!m) throw new ProjectFileError(`Cannot upgrade project from schema ${version}`);
+		raw = m(raw);
+		version++;
+	}
+
+	const p = raw as unknown as Project;
+	if (
+		!Array.isArray(p.tracks) ||
+		typeof p.styles !== 'object' ||
+		typeof p.positions !== 'object'
+	) {
+		throw new ProjectFileError('Project file is missing tracks, styles or positions');
+	}
+	// Fill settings added later without needing a migration.
+	p.settings = { ...defaultSettings(), ...(p.settings ?? {}) };
+	for (const t of p.tracks) {
+		if (!Array.isArray(t.cues))
+			throw new ProjectFileError(`Track "${t.name}" has no cues array`);
+		t.cues.sort((a, b) => a.start - b.start || a.end - b.end);
+	}
+	p.schemaVersion = SCHEMA_VERSION;
+	return p;
+}

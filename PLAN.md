@@ -1,6 +1,6 @@
 # ByteCaptions — Product & Build Plan
 
-Free and open source (license: MIT unless decided otherwise). Cloud services are optional, bring-your-own-key integrations only.
+Free and open source under **GPL-3.0-or-later**. Cloud services are optional, bring-your-own-key integrations only.
 
 A desktop subtitle editor for YouTube creators. Auto-transcribe locally, adjust on an NLE-style timeline (Premiere/Resolve feel), style captions visually, export YouTube-native styled captions (SRV3/YTT) with plain SRT/VTT fallback.
 
@@ -38,7 +38,7 @@ A desktop subtitle editor for YouTube creators. Auto-transcribe locally, adjust 
 | Caption preview | Custom renderer overlaying the video (DOM/CSS absolutely positioned) | Mimics YouTube player rendering. |
 | Audio / waveform | **ffmpeg** sidecar → PCM → peak generation in Rust | Cache peaks to disk per media file hash. |
 | Transcription | **whisper.cpp** sidecar (Metal on macOS, CUDA/Vulkan on Windows) | Word-level timestamps. Models downloaded on demand. |
-| Persistence | Project file `.subproj` (JSON, versioned schema) | Autosave + crash recovery. |
+| Persistence | Project file `.bcproj` (JSON, versioned schema) | Autosave + crash recovery. |
 | Styling (app UI) | CSS Modules or Tailwind — **decide after Figma** | Design tokens as CSS variables either way. |
 | Tests | Angular CLI's default unit runner (Vitest), Playwright (e2e via Tauri driver), Rust `cargo test` | Golden-file tests for every exporter. |
 
@@ -333,7 +333,7 @@ Principles:
 
 ## 8. Build phases
 
-**Phase 0 — Foundations (no design needed)**
+**Phase 0 — Foundations (no design needed)** — core done: model, undo/redo, SRV3/SRT/VTT/SBV import+export, .bcproj save/load. Remaining: Tauri file I/O adapter.
 Tauri + Angular scaffold (done), `core/model`, command/undo system, SRT/VTT/SRV3 import+export with golden tests, project save/load.
 
 **Phase 1 — MVP (P0)**
@@ -374,4 +374,4 @@ When sending designs, include (if possible): design tokens (colors, type scale, 
 - [ ] whisper.cpp model default (speed vs accuracy) per platform; bundle vs download ffmpeg (licensing: use LGPL build).
 - [x] App name: ByteCaptions.
 - [x] Free & open source. Cloud features = optional plugins/providers with user's own keys (Settings → Integrations). **[DESIGN: integrations settings page]**
-- [ ] License choice (MIT vs GPL). Note ffmpeg must be an LGPL build either way.
+- [x] License: GPL-3.0-or-later (forks must stay open source). ffmpeg: LGPL or GPL build both compatible.
