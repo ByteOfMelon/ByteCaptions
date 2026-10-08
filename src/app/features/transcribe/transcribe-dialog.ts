@@ -41,7 +41,7 @@ export class TranscribeDialog {
 
 	protected readonly languageOptions = LANGUAGES.map((l) => ({ value: l, label: l }));
 	protected readonly targetOptions = computed(() => [
-		{ value: 'new', label: 'New track: Transcript' },
+		{ value: 'new', label: `New track: ${this.job.nextTrackName()}` },
 		...this.store.project().tracks.map((t) => ({ value: t.id, label: `Add to ${t.name}` })),
 	]);
 

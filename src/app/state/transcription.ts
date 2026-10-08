@@ -209,12 +209,23 @@ export class Transcription {
 	});
 	readonly running = computed(() => this.phase() === 'running');
 
+	/** Name for a new track: "Transcript", then "Transcript 2", "Transcript 3"… */
+	readonly nextTrackName = computed(() => {
+		const names = new Set(this.store.project().tracks.map((t) => t.name));
+		if (!names.has('Transcript')) return 'Transcript';
+		let n = 2;
+		while (names.has(`Transcript ${n}`)) n++;
+		return `Transcript ${n}`;
+	});
+	/** The new track's name for the job that's running or just finished. */
+	private readonly trackName = signal('Transcript');
+
 	readonly summary = computed(() => {
 		const o = this.options();
 		const model = MODELS.find((m) => m.id === o.model)!;
 		const target =
 			o.target === 'new'
-				? 'New track: Transcript'
+				? `New track: ${this.trackName()}`
 				: `Add to ${this.store.track(o.target)?.name ?? 'track'}`;
 		const language = LANGUAGE_CODES[o.language] ? o.language : 'Any language';
 		return `${model.name} model • ${language} • ${target}`;
@@ -300,6 +311,7 @@ export class Transcription {
 		if (!this.engine) return;
 		const opts = this.options();
 		const model = MODELS.find((m) => m.id === opts.model)!;
+		this.trackName.set(this.nextTrackName());
 		this.steps.set([
 			{
 				id: 'download',
@@ -378,7 +390,7 @@ export class Transcription {
 		let trackName: string;
 		let trackColor: string;
 		if (opts.target === 'new') {
-			const track = createTrack('Transcript', this.files.nextTrackColor());
+			const track = createTrack(this.trackName(), this.files.nextTrackColor());
 			track.cues = cues;
 			trackId = track.id;
 			trackName = track.name;

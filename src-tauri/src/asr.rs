@@ -204,6 +204,51 @@ fn gate_speech(app: &AppHandle, audio: &mut [f32]) {
 	audio[keep_from..].fill(0.0);
 }
 
+/// Whisper can get stuck repeating one line over speech it no longer follows. A line this many
+/// times in a row is taken as that and kept once; twice is left alone, as people repeat
+/// themselves.
+const LOOP_REPEATS: usize = 3;
+
+/// A segment's words compared loosely: lowercase, letters and digits only.
+fn loop_key(segment: &[Word]) -> String {
+	segment
+		.iter()
+		.map(|w| {
+			w.text
+				.chars()
+				.filter(|c| c.is_alphanumeric())
+				.flat_map(char::to_lowercase)
+				.collect::<String>()
+		})
+		.filter(|w| !w.is_empty())
+		.collect::<Vec<_>>()
+		.join(" ")
+}
+
+/// Flatten segments into words, keeping only the first line of each repetition loop.
+fn drop_loops(mut segments: Vec<Vec<Word>>) -> Vec<Word> {
+	let keys: Vec<String> = segments.iter().map(|s| loop_key(s)).collect();
+	let mut out = Vec::new();
+	let mut i = 0;
+	while i < segments.len() {
+		let mut end = i + 1;
+		while end < segments.len() && keys[end] == keys[i] {
+			end += 1;
+		}
+		let keep = if end - i >= LOOP_REPEATS && !keys[i].is_empty() {
+			log::info!("Dropped {} repeats of \"{}\"", end - i - 1, keys[i]);
+			i + 1
+		} else {
+			end
+		};
+		for s in &mut segments[i..keep] {
+			out.append(s);
+		}
+		i = end;
+	}
+	out
+}
+
 /// Join the recognized tokens into words: a token starting with a space starts a new word,
 /// and so does every segment. Timestamps are in centiseconds; words get milliseconds.
 fn words(ctx: &WhisperContext, state: &whisper_rs::WhisperState) -> Vec<Word> {
@@ -213,7 +258,7 @@ fn words(ctx: &WhisperContext, state: &whisper_rs::WhisperState) -> Vec<Word> {
 		end: i64,
 		probs: Vec<f32>,
 	}
-	let mut out = Vec::new();
+	let mut segments = Vec::new();
 	let flush = |w: Option<Pending>, out: &mut Vec<Word>| {
 		let Some(w) = w else { return };
 		let text = String::from_utf8_lossy(&w.bytes).trim().to_string();
@@ -231,6 +276,7 @@ fn words(ctx: &WhisperContext, state: &whisper_rs::WhisperState) -> Vec<Word> {
 	let eot = ctx.token_eot();
 	for segment in state.as_iter() {
 		let (seg_start, seg_end) = (segment.start_timestamp(), segment.end_timestamp());
+		let mut out = Vec::new();
 		let mut current: Option<Pending> = None;
 		for i in 0..segment.n_tokens() {
 			let Some(token) = segment.get_token(i) else {
@@ -263,8 +309,9 @@ fn words(ctx: &WhisperContext, state: &whisper_rs::WhisperState) -> Vec<Word> {
 			w.probs.push(data.p);
 		}
 		flush(current, &mut out);
+		segments.push(out);
 	}
-	out
+	drop_loops(segments)
 }
 
 /// Transcribe a media file's speech with a downloaded model. `language` is a Whisper code
@@ -291,4 +338,58 @@ pub async fn transcribe(
 	})
 	.await
 	.map_err(|e| e.to_string())?
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	fn line(text: &str, at: i64) -> Vec<Word> {
+		text.split(' ')
+			.map(|t| Word {
+				text: t.into(),
+				start: at,
+				end: at + 100,
+				confidence: 1.0,
+			})
+			.collect()
+	}
+
+	fn texts(words: &[Word]) -> Vec<(&str, i64)> {
+		words.iter().map(|w| (w.text.as_str(), w.start)).collect()
+	}
+
+	#[test]
+	fn keeps_a_line_said_twice() {
+		let words = drop_loops(vec![
+			line("Help.", 0),
+			line("help", 1000),
+			line("Run!", 2000),
+		]);
+		assert_eq!(
+			texts(&words),
+			[("Help.", 0), ("help", 1000), ("Run!", 2000)]
+		);
+	}
+
+	#[test]
+	fn keeps_the_first_line_of_a_loop() {
+		let words = drop_loops(vec![
+			line("Hi.", 0),
+			line("I'm going in.", 1000),
+			line("I'm going in.", 2000),
+			line("i'm going in", 3000),
+			line("Bye.", 4000),
+		]);
+		assert_eq!(
+			texts(&words),
+			[
+				("Hi.", 0),
+				("I'm", 1000),
+				("going", 1000),
+				("in.", 1000),
+				("Bye.", 4000)
+			]
+		);
+	}
 }
