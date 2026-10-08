@@ -35,10 +35,10 @@ export class CueList {
 	protected readonly query = signal('');
 	protected readonly editing = signal<string | null>(null);
 
+	/** Rows don't depend on the playhead or selection, so playback doesn't rebuild them. */
 	protected readonly rows = computed(() => {
 		const q = this.query().trim().toLowerCase();
 		const fps = this.store.project().fps;
-		const t = this.store.playhead();
 		const problems = this.store.problemsByCue();
 		const maxCps = this.store.project().settings.maxCps;
 		return this.store
@@ -51,12 +51,16 @@ export class CueList {
 					id: r.cue.id,
 					text: cueText(r.cue),
 					timing: `${formatTimecode(r.cue.start, fps)} → ${formatTimecode(r.cue.end, fps)}`,
-					selected: this.store.selection().has(r.cue.id),
-					playing: r.cue.start <= t && t < r.cue.end,
 					cps: cps > maxCps ? Math.round(cps) : null,
 					problem: problems.get(r.cue.id)?.[0]?.severity ?? null,
 				};
 			});
+	});
+
+	/** First listed cue under the playhead; only changes when playback reaches another cue. */
+	protected readonly playingId = computed(() => {
+		const t = this.store.playhead();
+		return this.rows().find((r) => r.ref.cue.start <= t && t < r.ref.cue.end)?.id ?? null;
 	});
 
 	protected readonly warnings = computed(() => this.store.problems().length);
@@ -66,7 +70,7 @@ export class CueList {
 		// Keep the playing cue in view during playback.
 		effect(() => {
 			if (!this.store.playing()) return;
-			const playing = this.rows().find((r) => r.playing)?.id;
+			const playing = this.playingId();
 			if (!playing) return;
 			untracked(() => this.scrollTo(playing));
 		});

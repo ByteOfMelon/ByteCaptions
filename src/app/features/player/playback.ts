@@ -37,13 +37,18 @@ export class Playback {
 		});
 	}
 
+	/**
+	 * Untracked: called from an effect, and reading the playhead there would re-attach
+	 * (and seek) the video on every tick, stalling playback.
+	 */
 	attach(video: HTMLVideoElement | null): void {
 		this.video = video;
-		if (video) {
-			video.playbackRate = this.store.rate();
-			video.currentTime = this.store.playhead() / 1000;
-			video.onended = () => this.pause();
-		}
+		if (video)
+			untracked(() => {
+				video.playbackRate = this.store.rate();
+				video.currentTime = this.store.playhead() / 1000;
+				video.onended = () => this.pause();
+			});
 	}
 
 	toggle(): void {

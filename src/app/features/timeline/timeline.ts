@@ -218,8 +218,13 @@ export class Timeline {
 			const el = this.canvas().nativeElement;
 			const dpr = window.devicePixelRatio || 1;
 			if (!v.width) return;
-			el.width = Math.round(v.width * dpr);
-			el.height = Math.round(v.height * dpr);
+			// Resizing reallocates the canvas, so only do it when the size changes.
+			const w = Math.round(v.width * dpr);
+			const h = Math.round(v.height * dpr);
+			if (el.width !== w || el.height !== h) {
+				el.width = w;
+				el.height = h;
+			}
 			const ctx = el.getContext('2d')!;
 			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 			paintTimeline(ctx, {

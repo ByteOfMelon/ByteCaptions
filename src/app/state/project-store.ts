@@ -148,16 +148,26 @@ export class ProjectStore {
 	}
 
 	/** Cues on screen at the playhead from tracks visible in preview. */
-	readonly activeCues = computed(() => {
-		const t = this.playhead();
-		const p = this.project();
-		const soloed = p.tracks.some((tr) => tr.solo);
-		return p.tracks
-			.filter((tr) => !tr.muted && (!soloed || tr.solo))
-			.flatMap((track) =>
-				track.cues.filter((c) => c.start <= t && t < c.end).map((cue) => ({ track, cue })),
-			);
-	});
+	readonly activeCues = computed(
+		() => {
+			const t = this.playhead();
+			const p = this.project();
+			const soloed = p.tracks.some((tr) => tr.solo);
+			return p.tracks
+				.filter((tr) => !tr.muted && (!soloed || tr.solo))
+				.flatMap((track) =>
+					track.cues
+						.filter((c) => c.start <= t && t < c.end)
+						.map((cue) => ({ track, cue })),
+				);
+		},
+		// Same cues as last frame: don't wake the preview during playback.
+		{
+			equal: (a, b) =>
+				a.length === b.length &&
+				a.every((r, i) => r.cue === b[i].cue && r.track === b[i].track),
+		},
+	);
 
 	/** Cue text helper for templates. */
 	text(cue: Cue): string {

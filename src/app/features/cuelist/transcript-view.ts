@@ -14,7 +14,6 @@ const LOW_CONFIDENCE = 0.6;
 
 interface Word {
 	text: string;
-	current: boolean;
 	unsure: boolean;
 	/** Space after the word (none in Chinese and Japanese). */
 	gap: string;
@@ -22,8 +21,6 @@ interface Word {
 
 interface Segment {
 	cue: Cue;
-	current: boolean;
-	selected: boolean;
 	/** Word spans when timings exist; otherwise null and the plain text is shown. */
 	words: Word[] | null;
 	text: string;
@@ -31,7 +28,6 @@ interface Segment {
 
 interface Paragraph {
 	start: string;
-	current: boolean;
 	segments: Segment[];
 }
 
@@ -73,43 +69,52 @@ export class TranscriptView {
 		return `${m}:${String(s).padStart(2, '0')}`;
 	});
 
+	/** Built without the playhead or selection, so playback doesn't rebuild the document. */
 	protected readonly paragraphs = computed<Paragraph[]>(() => {
 		const track = this.track();
 		if (!track) return [];
-		const t = this.store.playhead();
-		const sel = this.store.selection();
 		const out: Paragraph[] = [];
 		let prevEnd = -Infinity;
 		for (const cue of track.cues) {
-			const current = cue.start <= t && t < cue.end;
 			const seg: Segment = {
 				cue,
-				current,
-				selected: sel.has(cue.id),
 				text: cueText(cue),
 				words:
 					cue.words?.map((w, i, all) => ({
 						text: w.text,
-						current: current && w.start <= t && t < w.end,
 						unsure: (w.confidence ?? 1) < LOW_CONFIDENCE,
 						gap: wordGap(w.text, all[i + 1]?.text ?? ''),
 					})) ?? null,
 			};
 			if (!out.length || cue.start - prevEnd > PARAGRAPH_GAP_MS) {
 				// Paragraph timestamps are shown to the second, like the design.
-				out.push({
-					start: formatTimecode(cue.start, 1).slice(0, 8),
-					current: false,
-					segments: [],
-				});
+				out.push({ start: formatTimecode(cue.start, 1).slice(0, 8), segments: [] });
 			}
-			const para = out[out.length - 1];
-			para.segments.push(seg);
-			para.current ||= current;
+			out[out.length - 1].segments.push(seg);
 			prevEnd = cue.end;
 		}
 		return out;
 	});
+
+	/** Paragraph, cue and word under the playhead; changes a few times a second at most. */
+	protected readonly now = computed(
+		() => {
+			const t = this.store.playhead();
+			const paras = this.paragraphs();
+			for (let p = 0; p < paras.length; p++)
+				for (const seg of paras[p].segments) {
+					const c = seg.cue;
+					if (c.start <= t && t < c.end)
+						return {
+							para: p,
+							cue: c.id,
+							word: c.words?.findIndex((w) => w.start <= t && t < w.end) ?? -1,
+						};
+				}
+			return { para: -1, cue: null, word: -1 };
+		},
+		{ equal: (a, b) => a.para === b.para && a.cue === b.cue && a.word === b.word },
+	);
 
 	protected setTrack(id: string): void {
 		this.chosenTrack.set(id);

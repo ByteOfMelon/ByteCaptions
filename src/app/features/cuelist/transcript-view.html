@@ -18,8 +18,8 @@
 </div>
 
 <div class="document">
-	@for (para of paragraphs(); track $index) {
-		<div class="paragraph" [class.current]="para.current">
+	@for (para of paragraphs(); track $index; let p = $index) {
+		<div class="paragraph" [class.current]="p === now().para">
 			<span class="start text-mono-small">{{ para.start }}</span>
 			<p class="text">
 				@for (seg of para.segments; track seg.cue.id) {
@@ -38,14 +38,16 @@
 					} @else {
 						<span
 							class="segment"
-							[class.selected]="seg.selected"
+							[class.selected]="store.selection().has(seg.cue.id)"
 							(dblclick)="!track()?.locked && editing.set(seg.cue.id)"
 						>
 							@if (seg.words) {
 								@for (w of seg.words; track $index) {
 									<span
 										class="word"
-										[class.current]="w.current"
+										[class.current]="
+											seg.cue.id === now().cue && $index === now().word
+										"
 										[class.unsure]="w.unsure"
 										(click)="clickSegment($event, seg.cue, $index)"
 										>{{ w.text }}</span
