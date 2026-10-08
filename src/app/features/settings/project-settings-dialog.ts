@@ -62,6 +62,9 @@ export class ProjectSettingsDialog implements OnInit {
 		return `${this.project.name} • ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 	});
 
+	protected readonly nameError = computed(() =>
+		this.name().trim() ? null : 'Project name can’t be empty.',
+	);
 	/** The duration changed last shows the error when min isn't below max. */
 	protected readonly lastDuration = signal<'min' | 'max'>('min');
 	protected readonly durationError = computed(() => {
@@ -103,8 +106,8 @@ export class ProjectSettingsDialog implements OnInit {
 
 	/** Applies every change as one undo step. */
 	protected save(): void {
-		if (this.durationError()) return;
-		const name = this.name().trim() || this.project.name;
+		if (this.durationError() || this.nameError()) return;
+		const name = this.name().trim();
 		const settings: ProjectSettings = {
 			maxCharsPerLine: this.maxChars(),
 			maxLines: this.maxLines(),

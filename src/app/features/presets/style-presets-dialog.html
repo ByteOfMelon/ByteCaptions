@@ -77,10 +77,11 @@
 		</section>
 
 		<section class="properties" aria-label="Preset properties">
-			<bc-field label="Preset name" #n>
+			<bc-field label="Preset name" [error]="nameError()" #n>
 				<input
 					[id]="n.fieldId"
-					[value]="current().name"
+					[value]="nameDraft() ?? current().name"
+					(input)="nameDraft.set($any($event.target).value)"
 					(change)="rename($any($event.target).value)"
 				/>
 			</bc-field>
@@ -106,6 +107,8 @@
 			</button>
 		</div>
 		<button bcButton (click)="ref.close()">Cancel</button>
-		<button bcButton variant="primary" (click)="save()">Save changes</button>
+		<button bcButton variant="primary" [disabled]="!!nameError()" (click)="save()">
+			Save changes
+		</button>
 	</div>
 </bc-dialog>

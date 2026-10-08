@@ -65,6 +65,11 @@ export class StylePresetsDialog implements OnInit {
 	protected readonly backdrop = signal<Backdrop>('frame');
 	protected readonly previewMode = signal<PreviewMode>('desktop');
 	protected readonly dirty = signal(false);
+	/** Preset name as typed; an empty one shows an error instead of being applied. */
+	protected readonly nameDraft = signal<string | null>(null);
+	protected readonly nameError = computed(() =>
+		this.nameDraft()?.trim() === '' ? 'Preset name can’t be empty.' : null,
+	);
 
 	protected readonly backdrops = [
 		{ value: 'frame' as Backdrop, label: 'Video frame' },
@@ -152,6 +157,7 @@ export class StylePresetsDialog implements OnInit {
 
 	protected select(id: StyleId): void {
 		this.selectedId.set(id);
+		this.nameDraft.set(null);
 		// Sample text: a real cue that uses this preset, so the preview is representative.
 		const primary = this.store.primary();
 		if (primary && (primary.cue.styleId ?? primary.track.defaultStyleId) === id)
@@ -173,7 +179,9 @@ export class StylePresetsDialog implements OnInit {
 	}
 
 	protected rename(name: string): void {
-		this.updateStyle({ key: 'name', value: name.trim() || this.current().name });
+		if (!name.trim()) return;
+		this.nameDraft.set(null);
+		this.updateStyle({ key: 'name', value: name.trim() });
 	}
 
 	protected updatePosition(changes: Partial<Position>): void {

@@ -9,7 +9,7 @@
 	>
 		@switch (tab()) {
 			@case ('general') {
-				<bc-field label="Name" #nameField>
+				<bc-field label="Name" [error]="nameError()" #nameField>
 					<input
 						[id]="nameField.fieldId"
 						[value]="name()"
@@ -97,7 +97,12 @@
 			</div>
 		}
 		<button bcButton (click)="ref.close()">Cancel</button>
-		<button bcButton variant="primary" [disabled]="!!durationError()" (click)="save()">
+		<button
+			bcButton
+			variant="primary"
+			[disabled]="!!durationError() || !!nameError()"
+			(click)="save()"
+		>
 			Save
 		</button>
 	</div>
