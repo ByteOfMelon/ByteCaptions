@@ -37,21 +37,22 @@ export class Field {
 }
 
 /**
- * Numeric field with a stepper and optional unit suffix ("%").
+ * Numeric field with a stepper and optional unit suffix ("%"). Typed values apply on Enter or blur.
  * Out-of-range or non-numeric text shows `rangeError` / "Enter a number."
  */
 @Component({
 	selector: 'bc-number-field',
 	imports: [Field, LucideChevronsUpDown],
 	template: `
-		<bc-field [label]="label()" [error]="error()" [disabled]="disabled()">
+		<bc-field #f [label]="label()" [error]="error()" [disabled]="disabled()">
 			<input
-				[id]="fieldId"
+				[id]="f.fieldId"
 				inputmode="decimal"
 				[value]="text()"
 				[disabled]="disabled()"
 				(input)="onInput($any($event.target).value)"
 				(blur)="commit()"
+				(keydown.enter)="commit()"
 				(keydown.arrowup)="step(1, $event)"
 				(keydown.arrowdown)="step(-1, $event)"
 			/>
@@ -85,7 +86,6 @@ export class NumberField {
 	readonly step$ = input(1, { alias: 'step' });
 	readonly suffix = input<string>();
 	readonly disabled = input(false, { transform: booleanAttribute });
-	readonly fieldId = `bc-number-${nextId++}`;
 
 	private readonly draft = signal<string | null>(null);
 	protected readonly text = computed(() => this.draft() ?? String(this.value()));
@@ -100,11 +100,14 @@ export class NumberField {
 
 	protected onInput(text: string): void {
 		this.draft.set(text);
-		if (!this.error()) this.value.set(Number(text));
 	}
 
+	/** Typed values apply on Enter or blur, so typing "82" is one edit, not "8" then "82". */
 	protected commit(): void {
-		if (!this.error()) this.draft.set(null);
+		const d = this.draft();
+		if (d === null || this.error()) return;
+		this.draft.set(null);
+		if (Number(d) !== this.value()) this.value.set(Number(d));
 	}
 
 	protected step(dir: 1 | -1, event?: Event): void {

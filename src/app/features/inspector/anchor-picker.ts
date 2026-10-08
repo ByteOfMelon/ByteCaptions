@@ -1,5 +1,6 @@
 import { Component, input, output } from '@angular/core';
 import { Anchor, Position } from '../../core/model/types';
+import { NumberField } from '../../ui/field/field';
 import { ANCHOR_LABEL } from '../player/caption-render';
 
 /** Default x/y (%) for each anchor of the 3×3 grid, inset from the frame edges. */
@@ -27,11 +28,12 @@ export function positionForAnchor(anchor: Anchor): Partial<Position> {
 	};
 }
 
-/** "Position" block: 3×3 anchor grid plus the position's name and x/y. */
+/** "Position" block: 3×3 anchor grid plus typed x/y, which make the position "Custom". */
 @Component({
 	selector: 'bc-anchor-picker',
+	imports: [NumberField],
 	template: `
-		<span class="text-small" [id]="labelId">Position</span>
+		<span class="text-small" [id]="labelId">Position • {{ position().name }}</span>
 		<div class="row">
 			<div class="anchors" role="radiogroup" [attr.aria-labelledby]="labelId">
 				@for (a of anchors; track a.id) {
@@ -45,11 +47,23 @@ export function positionForAnchor(anchor: Anchor): Partial<Position> {
 					></button>
 				}
 			</div>
-			<div class="info">
-				<span>{{ position().name }}</span>
-				<span class="text-mono-small text-faded"
-					>x {{ position().x }}% &nbsp; y {{ position().y }}%</span
-				>
+			<div class="xy">
+				<bc-number-field
+					label="X"
+					suffix="%"
+					[min]="0"
+					[max]="100"
+					[value]="position().x"
+					(valueChange)="setXY('x', $event)"
+				/>
+				<bc-number-field
+					label="Y"
+					suffix="%"
+					[min]="0"
+					[max]="100"
+					[value]="position().y"
+					(valueChange)="setXY('y', $event)"
+				/>
 			</div>
 		</div>
 	`,
@@ -92,10 +106,16 @@ export function positionForAnchor(anchor: Anchor): Partial<Position> {
 			outline: none;
 			box-shadow: var(--focus-ring);
 		}
-		.info {
-			display: flex;
-			flex-direction: column;
-			gap: var(--spacing-xs);
+		.xy {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: var(--spacing-sm);
+			flex: 1;
+			min-width: 0;
+		}
+		/* Narrow fields: tighter padding so "100 %" fits beside the grid. */
+		.xy ::ng-deep .box {
+			padding-inline: var(--spacing-sm);
 		}
 	`,
 })
@@ -106,4 +126,9 @@ export class AnchorPicker {
 	protected readonly positionFor = positionForAnchor;
 	readonly position = input.required<Position>();
 	readonly positionChange = output<Partial<Position>>();
+
+	protected setXY(axis: 'x' | 'y', value: number): void {
+		if (value !== this.position()[axis])
+			this.positionChange.emit({ [axis]: value, name: 'Custom' });
+	}
 }

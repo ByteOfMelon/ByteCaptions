@@ -9,12 +9,46 @@
 	<svg lucideSearch aria-hidden="true"></svg>
 </bc-field>
 
+@if (ui.replaceOpen()) {
+	<div class="replace">
+		<bc-field #rep>
+			<input
+				[id]="rep.fieldId"
+				aria-label="Replace with"
+				placeholder="Replace with…"
+				bcAutofocus
+				[value]="replacement()"
+				(input)="replacement.set($any($event.target).value)"
+				(keydown.enter)="replaceOne()"
+				(keydown.escape)="closeReplace()"
+			/>
+		</bc-field>
+		<button bcIconButton aria-label="Close replace" (click)="closeReplace()">
+			<svg lucideX></svg>
+		</button>
+	</div>
+	<div class="replace-actions">
+		<button bcButton [disabled]="!rows().length || !query().trim()" (click)="replaceOne()">
+			Replace
+		</button>
+		<button bcButton [disabled]="!rows().length || !query().trim()" (click)="replaceAll()">
+			Replace all
+		</button>
+	</div>
+}
+
 <div class="meta text-small">
-	<span class="text-faded"
-		>{{ store.cueCount() | count: 'cue' }} • {{ trackCount() | count: 'track' }}</span
-	>
-	@if (warnings()) {
-		<span class="warn">{{ warnings() }} {{ warnings() === 1 ? 'warning' : 'warnings' }}</span>
+	@if (matchSummary(); as summary) {
+		<span class="text-faded">{{ summary }}</span>
+	} @else {
+		<span class="text-faded"
+			>{{ store.cueCount() | count: 'cue' }} • {{ trackCount() | count: 'track' }}</span
+		>
+		@if (warnings()) {
+			<span class="warn"
+				>{{ warnings() }} {{ warnings() === 1 ? 'warning' : 'warnings' }}</span
+			>
+		}
 	}
 </div>
 
@@ -36,11 +70,39 @@
 			<div class="content">
 				<div class="times text-mono-small">
 					<span>{{ row.ref.index }}</span>
-					<span>{{ row.timing }}</span>
+					@for (edge of edges; track edge) {
+						@if (edge === 'end') {
+							<span>→</span>
+						}
+						@if (editingTime()?.id === row.id && editingTime()?.edge === edge) {
+							<input
+								#time
+								class="time-editor"
+								bcAutofocus="select"
+								[attr.aria-label]="edge === 'start' ? 'Start time' : 'End time'"
+								[value]="edge === 'start' ? row.start : row.end"
+								spellcheck="false"
+								(blur)="commitTime(time.value)"
+								(keydown)="onTimeKey($event)"
+								(click)="$event.stopPropagation()"
+							/>
+						} @else {
+							<span
+								class="time"
+								[class.editable]="!row.ref.track.locked"
+								(click)="editTime($event, row.ref, edge)"
+								>{{ edge === 'start' ? row.start : row.end }}</span
+							>
+						}
+					}
+					<span class="spacer"></span>
+					@if (row.problem && !row.cps) {
+						<span [class]="row.problem === 'error' ? 'error' : 'cps'">•</span>
+					}
 					@if (row.cps) {
 						<span class="cps">{{ row.cps }} cps</span>
-					} @else if (row.problem) {
-						<span [class]="row.problem === 'error' ? 'error' : 'cps'">•</span>
+					} @else {
+						<span>{{ row.duration }}</span>
 					}
 				</div>
 				@if (editing() === row.id) {
@@ -55,7 +117,11 @@
 						(click)="$event.stopPropagation()"
 					></textarea>
 				} @else {
-					<p class="text">{{ row.text }}</p>
+					<p class="text">
+						@for (part of row.parts; track $index) {
+							<span [class.hit]="part.hit">{{ part.text }}</span>
+						}
+					</p>
 				}
 			</div>
 		</div>

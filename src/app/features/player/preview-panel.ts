@@ -9,7 +9,9 @@ import {
 	LucideSkipForward,
 } from '@lucide/angular';
 import { cueText, resolvePosition, resolveStyle } from '../../core/model/cue';
+import * as edits from '../../core/commands/edits';
 import { formatTimecode } from '../../core/time/timecode';
+import { Autofocus } from '../../ui/autofocus/autofocus';
 import { FileDrop } from '../../state/file-drop';
 import { ProjectStore } from '../../state/project-store';
 import { Button, IconButton } from '../../ui/button/button';
@@ -23,6 +25,7 @@ type PreviewMode = 'desktop' | 'mobile' | 'tv' | 'plain';
 @Component({
 	selector: 'bc-preview-panel',
 	imports: [
+		Autofocus,
 		Button,
 		IconButton,
 		Select,
@@ -52,6 +55,8 @@ export class PreviewPanel {
 	];
 	protected readonly mode = signal<PreviewMode>('desktop');
 	protected readonly showCaptions = signal(true);
+	/** Cue whose caption is being edited in place (double-click). */
+	protected readonly editing = signal<string | null>(null);
 	private readonly drop = inject(FileDrop);
 	/** A file is being dragged over the window (the editor handles the drop). */
 	protected readonly dragging = computed(() => !!this.drop.hover());
@@ -93,7 +98,9 @@ export class PreviewPanel {
 			}
 			return {
 				id: cue.id,
+				locked: track.locked,
 				selected: this.store.selection().has(cue.id),
+				source: cueText(cue),
 				lines: cueText(cue).split('\n'),
 				window: plain
 					? captionWindowStyle({ ...pos, anchor: 7, x: 50, y: 90, align: 'center' })
@@ -111,6 +118,39 @@ export class PreviewPanel {
 			onCleanup(() => ro.disconnect());
 		});
 		effect(() => this.playback.attach(this.video()?.nativeElement ?? null));
+	}
+
+	/** Clicking a caption selects its cue instead of toggling playback. */
+	protected select(e: MouseEvent, id: string): void {
+		e.stopPropagation();
+		this.store.select(id);
+	}
+
+	protected edit(id: string, locked: boolean): void {
+		if (locked) return;
+		this.playback.pause();
+		this.store.select(id);
+		this.editing.set(id);
+	}
+
+	protected commit(id: string, text: string): void {
+		if (this.editing() !== id) return;
+		this.editing.set(null);
+		const cue = this.store.find(id)?.cue;
+		const clean = text.replace(/\n+$/, '');
+		if (cue && clean !== cueText(cue)) this.store.apply('Edit text', edits.setText(id, clean));
+	}
+
+	protected onEditKey(e: KeyboardEvent, id: string): void {
+		const el = e.target as HTMLElement;
+		if (e.key === 'Escape') {
+			e.stopPropagation();
+			this.editing.set(null);
+		} else if (e.key === 'Enter' && !e.shiftKey) {
+			// Enter saves; Shift+Enter adds a line break.
+			e.preventDefault();
+			this.commit(id, el.innerText);
+		}
 	}
 
 	protected cycleRate(): void {

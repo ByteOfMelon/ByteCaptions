@@ -22,6 +22,7 @@ import {
 	LucidePlay,
 	LucidePlus,
 	LucideRedo2,
+	LucideReplace,
 	LucideSave,
 	LucideScissors,
 	LucideTimer,
@@ -165,6 +166,13 @@ export class CommandRegistry {
 				keys: 'Ctrl+G',
 				prompt: 'timecode',
 				run: () => {},
+			},
+			{
+				id: 'replace',
+				label: 'Find and replace…',
+				icon: LucideReplace.icon,
+				keys: 'Ctrl+H',
+				run: () => this.ui.openReplace(),
 			},
 			{
 				id: 'next-problem',

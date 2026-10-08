@@ -38,6 +38,7 @@ const FIELD_SAFE = new Set([
 	'ctrl+e',
 	'ctrl+o',
 	'ctrl+g',
+	'ctrl+h',
 ]);
 
 /** The main editor: toolbar, cue list / preview / inspector, and the timeline (PLAN §5). */
@@ -153,6 +154,8 @@ export class Editor implements OnDestroy {
 				return run(() => void this.files.save());
 			case 'ctrl+o':
 				return run(() => void this.files.open());
+			case 'ctrl+h':
+				return run(() => this.ui.openReplace());
 			case 'ctrl+i':
 				return run(() => void this.files.importCaptions());
 			case 'f8':

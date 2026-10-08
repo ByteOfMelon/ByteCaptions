@@ -8,11 +8,14 @@ import {
 	untracked,
 	viewChild,
 } from '@angular/core';
-import { LucideSearch } from '@lucide/angular';
+import { LucideSearch, LucideX } from '@lucide/angular';
 import * as edits from '../../core/commands/edits';
 import { cueText } from '../../core/model/cue';
 import { readingSpeed } from '../../core/lint/rules';
-import { formatTimecode } from '../../core/time/timecode';
+import { formatTimecode, parseTime } from '../../core/time/timecode';
+import { CueId } from '../../core/model/types';
+import { EditorUi } from '../../state/editor-ui';
+import { Button, IconButton } from '../../ui/button/button';
 import { CueRef, ProjectStore } from '../../state/project-store';
 import { Field } from '../../ui/field/field';
 import { Autofocus } from '../../ui/autofocus/autofocus';
@@ -22,7 +25,7 @@ import { CountPipe } from '../../ui/count/count';
 
 @Component({
 	selector: 'bc-cue-list',
-	imports: [CountPipe, Field, Autofocus, LucideSearch],
+	imports: [CountPipe, Field, Autofocus, Button, IconButton, LucideSearch, LucideX],
 	templateUrl: './cue-list.html',
 	styleUrl: './cue-list.css',
 })
@@ -32,8 +35,13 @@ export class CueList {
 	private readonly playback = inject(Playback);
 	private readonly list = viewChild.required<ElementRef<HTMLElement>>('list');
 
+	protected readonly ui = inject(EditorUi);
+	protected readonly edges = ['start', 'end'] as const;
 	protected readonly query = signal('');
+	protected readonly replacement = signal('');
 	protected readonly editing = signal<string | null>(null);
+	/** The start or end time being typed into. */
+	protected readonly editingTime = signal<{ id: CueId; edge: 'start' | 'end' } | null>(null);
 
 	/** Rows don't depend on the playhead or selection, so playback doesn't rebuild them. */
 	protected readonly rows = computed(() => {
@@ -46,15 +54,27 @@ export class CueList {
 			.filter((r) => !q || cueText(r.cue).toLowerCase().includes(q))
 			.map((r) => {
 				const cps = readingSpeed(r.cue);
+				const text = cueText(r.cue);
 				return {
 					ref: r,
 					id: r.cue.id,
-					text: cueText(r.cue),
-					timing: `${formatTimecode(r.cue.start, fps)} → ${formatTimecode(r.cue.end, fps)}`,
+					text,
+					parts: q ? splitMatches(text, q) : [{ text, hit: false }],
+					start: formatTimecode(r.cue.start, fps),
+					end: formatTimecode(r.cue.end, fps),
+					duration: `${((r.cue.end - r.cue.start) / 1000).toFixed(1)}s`,
 					cps: cps > maxCps ? Math.round(cps) : null,
 					problem: problems.get(r.cue.id)?.[0]?.severity ?? null,
 				};
 			});
+	});
+
+	/** "3 matches in 2 cues" while searching. */
+	protected readonly matchSummary = computed(() => {
+		const rows = this.rows();
+		if (!this.query().trim()) return null;
+		const n = rows.reduce((sum, r) => sum + r.parts.filter((p) => p.hit).length, 0);
+		return `${n} ${n === 1 ? 'match' : 'matches'} in ${rows.length} ${rows.length === 1 ? 'cue' : 'cues'}`;
 	});
 
 	/** First listed cue under the playhead; only changes when playback reaches another cue. */
@@ -110,4 +130,84 @@ export class CueList {
 			this.commit(id, el.value);
 		}
 	}
+
+	protected editTime(e: MouseEvent, r: CueRef, edge: 'start' | 'end'): void {
+		// The first click selects the cue; clicking a time of the selected cue edits it.
+		if (r.track.locked || !this.store.selection().has(r.cue.id) || e.shiftKey || e.ctrlKey)
+			return;
+		e.stopPropagation();
+		this.editingTime.set({ id: r.cue.id, edge });
+	}
+
+	protected commitTime(text: string): void {
+		const t = this.editingTime();
+		this.editingTime.set(null);
+		const cue = t && this.store.find(t.id)?.cue;
+		const ms = parseTime(text, this.store.project().fps);
+		if (!cue || ms === null) return;
+		const [start, end] = t.edge === 'start' ? [ms, cue.end] : [cue.start, ms];
+		if (start >= end || (start === cue.start && end === cue.end)) return;
+		this.store.apply(
+			t.edge === 'start' ? 'Set start' : 'Set end',
+			edits.setTiming(t.id, start, end),
+		);
+	}
+
+	protected onTimeKey(e: KeyboardEvent): void {
+		if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+		else if (e.key === 'Escape') {
+			e.stopPropagation();
+			this.editingTime.set(null);
+		}
+	}
+
+	private replaced(text: string): string {
+		return text.replace(matcher(this.query().trim()), () => this.replacement());
+	}
+
+	/** Replace in the selected matching cue (or the first one), then select the next match. */
+	protected replaceOne(): void {
+		const rows = this.rows().filter((r) => !r.ref.track.locked);
+		if (!rows.length) return;
+		const at = rows.findIndex((r) => this.store.selection().has(r.id));
+		const target = rows[Math.max(0, at)];
+		this.store.apply('Replace', edits.setText(target.id, this.replaced(target.text)));
+		const next = this.rows().find((r) => r.ref.index > target.ref.index && !r.ref.track.locked);
+		if (next) {
+			this.store.select(next.id);
+			this.playback.seek(next.ref.cue.start);
+		}
+	}
+
+	protected replaceAll(): void {
+		const rows = this.rows().filter((r) => !r.ref.track.locked);
+		if (!rows.length) return;
+		const n = rows.reduce((sum, r) => sum + r.parts.filter((p) => p.hit).length, 0);
+		this.store.apply(`Replace ${n} ${n === 1 ? 'match' : 'matches'}`, (p) => {
+			for (const r of rows) edits.setText(r.id, this.replaced(r.text))(p);
+		});
+	}
+
+	protected closeReplace(): void {
+		this.ui.replaceOpen.set(false);
+		this.replacement.set('');
+	}
+}
+
+/** Case-insensitive, literal match of `query`. */
+function matcher(query: string): RegExp {
+	return new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+}
+
+/** `text` split into runs, marking the ones that match the search. */
+function splitMatches(text: string, query: string): { text: string; hit: boolean }[] {
+	const parts: { text: string; hit: boolean }[] = [];
+	let last = 0;
+	for (const m of text.matchAll(matcher(query))) {
+		if (m.index > last) parts.push({ text: text.slice(last, m.index), hit: false });
+		parts.push({ text: m[0], hit: true });
+		last = m.index + m[0].length;
+	}
+	if (last < text.length) parts.push({ text: text.slice(last), hit: false });
+	return parts;
 }

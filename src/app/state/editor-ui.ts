@@ -10,8 +10,15 @@ export class EditorUi {
 	readonly sideTab = signal<SideTab>('cues');
 	/** Track whose header name is being edited inline. */
 	readonly renamingTrack = signal<TrackId | null>(null);
+	/** Cue list shows its "Replace with" row (Ctrl+H). */
+	readonly replaceOpen = signal(false);
 	/** Timeline snapping (N). */
 	readonly snapping = signal(true);
 	/** Zooms the timeline (Ctrl+= / Ctrl+- / Ctrl+0); set by the timeline while it's showing. */
 	zoomTimeline: ((step: TimelineZoom) => void) | null = null;
+
+	openReplace(): void {
+		this.sideTab.set('cues');
+		this.replaceOpen.set(true);
+	}
 }

@@ -14,14 +14,40 @@
 		}
 		@if (showCaptions()) {
 			@for (c of captions(); track c.id) {
-				<div class="caption-window" [style]="c.window">
-					@for (line of c.lines; track $index) {
-						<span class="caption-line" [style]="c.text">{{ line }}</span>
-						@if (!$last) {
-							<br />
+				@if (editing() === c.id) {
+					<div class="caption-window editing" [style]="c.window">
+						<span
+							#editor
+							class="caption-line"
+							contenteditable="plaintext-only"
+							spellcheck="true"
+							aria-label="Caption text"
+							bcTooltip="Save"
+							tooltipKeys="Enter"
+							bcAutofocus
+							[style]="c.text"
+							(click)="$event.stopPropagation()"
+							(blur)="commit(c.id, editor.innerText)"
+							(keydown)="onEditKey($event, c.id)"
+							>{{ c.source }}</span
+						>
+					</div>
+				} @else {
+					<div
+						class="caption-window"
+						[class.locked]="c.locked"
+						[style]="c.window"
+						(click)="select($event, c.id)"
+						(dblclick)="edit(c.id, c.locked)"
+					>
+						@for (line of c.lines; track $index) {
+							<span class="caption-line" [style]="c.text">{{ line }}</span>
+							@if (!$last) {
+								<br />
+							}
 						}
-					}
-				</div>
+					</div>
+				}
 			}
 		}
 	</div>

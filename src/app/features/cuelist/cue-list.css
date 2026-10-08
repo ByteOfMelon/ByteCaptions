@@ -70,6 +70,48 @@
 	color: var(--color-text-faded);
 	white-space: nowrap;
 }
+.spacer {
+	flex: 1;
+}
+.row.selected .time.editable {
+	cursor: text;
+}
+.row.selected .time.editable:hover {
+	color: var(--color-text);
+}
+.time-editor {
+	width: 13ch;
+	margin-block: -2px;
+	padding: 2px var(--spacing-xs);
+	border: none;
+	border-radius: var(--radius-small);
+	background: var(--color-panel);
+	box-shadow:
+		inset 0 0 0 var(--outline-width) var(--color-control-border),
+		var(--focus-ring);
+	color: var(--color-text);
+	font: inherit;
+	outline: none;
+}
+.hit {
+	color: var(--color-brand);
+	font-weight: 700;
+}
+
+.replace {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+}
+.replace bc-field {
+	flex: 1;
+}
+.replace-actions {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--spacing-sm);
+}
+
 .text {
 	margin: 0;
 	white-space: pre-line;
