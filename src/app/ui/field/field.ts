@@ -86,10 +86,13 @@ export class NumberField {
 	readonly step$ = input(1, { alias: 'step' });
 	readonly suffix = input<string>();
 	readonly disabled = input(false, { transform: booleanAttribute });
+	/** Error from outside (e.g. "Must be shorter than max duration."); typing errors win. */
+	readonly invalid = input<string | null>(null, { alias: 'error' });
 
 	private readonly draft = signal<string | null>(null);
 	protected readonly text = computed(() => this.draft() ?? String(this.value()));
-	protected readonly error = computed(() => {
+	protected readonly error = computed(() => this.draftError() ?? this.invalid());
+	private readonly draftError = computed(() => {
 		const d = this.draft();
 		if (d === null) return null;
 		const n = Number(d);
@@ -105,7 +108,7 @@ export class NumberField {
 	/** Typed values apply on Enter or blur, so typing "82" is one edit, not "8" then "82". */
 	protected commit(): void {
 		const d = this.draft();
-		if (d === null || this.error()) return;
+		if (d === null || this.draftError()) return;
 		this.draft.set(null);
 		if (Number(d) !== this.value()) this.value.set(Number(d));
 	}

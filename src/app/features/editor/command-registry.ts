@@ -25,6 +25,7 @@ import {
 	LucideReplace,
 	LucideSave,
 	LucideScissors,
+	LucideSettings,
 	LucideTimer,
 	LucideTrash2,
 	LucideUndo2,
@@ -265,6 +266,12 @@ export class CommandRegistry {
 				label: 'Edit style presets…',
 				icon: LucidePalette.icon,
 				run: () => this.dialogs.presets(),
+			},
+			{
+				id: 'project-settings',
+				label: 'Project settings…',
+				icon: LucideSettings.icon,
+				run: () => this.dialogs.projectSettings(),
 			},
 			{
 				id: 'save',

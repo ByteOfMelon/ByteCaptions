@@ -3,6 +3,7 @@ import { Dialogs } from '../../ui/dialog/dialog';
 import { Transcription } from '../../state/transcription';
 import { CueId, StyleId, TrackId } from '../../core/model/types';
 import { ExportDialog } from '../export/export-dialog';
+import { ProjectSettingsDialog, SettingsTab } from '../settings/project-settings-dialog';
 import { StylePresetsDialog } from '../presets/style-presets-dialog';
 import { ShiftTimingDialog } from '../timeline/shift-timing-dialog';
 import { TranscribeDialog } from '../transcribe/transcribe-dialog';
@@ -29,6 +30,10 @@ export class EditorDialogs {
 
 	transcribe(): void {
 		if (this.transcription.available) this.dialogs.open(TranscribeDialog);
+	}
+
+	projectSettings(initialTab?: SettingsTab): void {
+		this.dialogs.open(ProjectSettingsDialog, { inputs: initialTab ? { initialTab } : {} });
 	}
 
 	presets(initialStyleId?: StyleId): void {

@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { addTrack } from '../core/commands/edits';
 import { formatForFilename, sniffFormat } from '../core/formats';
 import { createProject, createTrack } from '../core/model/defaults';
-import { Project } from '../core/model/types';
+import { MediaRef, Project } from '../core/model/types';
 import { PROJECT_EXTENSION, parseProject, serializeProject } from '../core/project/serialize';
 import {
 	CAPTION_FILTER,
@@ -180,16 +180,27 @@ export class ProjectFiles {
 
 	/** Link a video to the open project (dropped on the editor). */
 	async linkVideo(file: PickedFile): Promise<void> {
-		const info = await probeVideo(file.mediaUrl());
+		const media = await this.videoRef(file);
 		this.media.load(file);
 		this.store.apply('Link video', (p) => {
-			p.media = {
-				path: file.path ?? file.name,
-				hash: '',
-				durationMs: info?.durationMs ?? p.media?.durationMs ?? 0,
-				width: info?.width ?? 0,
-				height: info?.height ?? 0,
-			};
+			p.media = media;
 		});
+	}
+
+	/** Probe `file` for the project's media reference (Link video, Project settings). */
+	async videoRef(file: PickedFile): Promise<MediaRef> {
+		const info = await probeVideo(file.mediaUrl());
+		return {
+			path: file.path ?? file.name,
+			hash: '',
+			durationMs: info?.durationMs ?? this.store.project().media?.durationMs ?? 0,
+			width: info?.width ?? 0,
+			height: info?.height ?? 0,
+		};
+	}
+
+	/** Play `file` in the preview (its project media is set separately). */
+	loadVideo(file: PickedFile): void {
+		this.media.load(file);
 	}
 }

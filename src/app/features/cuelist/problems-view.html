@@ -10,6 +10,13 @@
 	<span class="text-faded">{{ store.cueCount() | count: 'cue' }} checked</span>
 </div>
 
+<div class="rules text-small">
+	<span class="text-faded">{{ rules() }}</span>
+	<button type="button" class="link" (click)="dialogs.projectSettings('rules')">
+		Edit rules
+	</button>
+</div>
+
 <div class="list">
 	@for (item of items(); track item.key) {
 		<article class="problem" [class.selected]="item.selected" (click)="open(item.problem)">

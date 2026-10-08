@@ -4,6 +4,7 @@ import * as edits from '../../core/commands/edits';
 import { cueText } from '../../core/model/cue';
 import { Problem, readingSpeed } from '../../core/lint/rules';
 import { formatTimecode } from '../../core/time/timecode';
+import { EditorDialogs } from '../editor/editor-dialogs';
 import { ProjectStore } from '../../state/project-store';
 import { Button } from '../../ui/button/button';
 import { Select } from '../../ui/select/select';
@@ -25,6 +26,7 @@ function problemKey(p: Problem): string {
 export class ProblemsView {
 	protected readonly store = inject(ProjectStore);
 	private readonly playback = inject(Playback);
+	protected readonly dialogs = inject(EditorDialogs);
 
 	protected readonly filter = signal<string>(ALL);
 	/** Ignored for this session; persisting ignores in the project is a later decision. */
@@ -58,6 +60,12 @@ export class ProblemsView {
 					selected: this.store.selection().has(p.cueId),
 				};
 			});
+	});
+
+	/** "42 chars • 2 lines • 20 cps • 0.7–7 s": the rules the checks use. */
+	protected readonly rules = computed(() => {
+		const r = this.store.project().settings;
+		return `${r.maxCharsPerLine} chars • ${r.maxLines} ${r.maxLines === 1 ? 'line' : 'lines'} • ${r.maxCps} cps • ${r.minDurationMs / 1000}–${r.maxDurationMs / 1000} s`;
 	});
 
 	protected readonly errors = computed(

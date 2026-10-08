@@ -1,0 +1,34 @@
+bc-tabs {
+	align-self: flex-start;
+}
+
+.panel {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-md);
+}
+
+.fps {
+	width: 240px;
+}
+
+.video-row {
+	display: flex;
+	align-items: flex-end;
+	gap: var(--spacing-sm);
+}
+.video {
+	flex: 1;
+	min-width: 0;
+}
+/* Long paths keep their end (the file name) visible. */
+.video input:not(:focus) {
+	direction: rtl;
+	text-align: left;
+}
+
+.rules {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--spacing-md);
+}
