@@ -12,6 +12,8 @@ export class EditorUi {
 	readonly renamingTrack = signal<TrackId | null>(null);
 	/** Cue list shows its "Replace with" row (Ctrl+H). */
 	readonly replaceOpen = signal(false);
+	/** Timeline times as timecode frames (HH:MM:SS:FF) or milliseconds (HH:MM:SS.mmm). */
+	readonly timeUnits = signal<'frames' | 'ms'>('frames');
 	/** Timeline snapping (N). */
 	readonly snapping = signal(true);
 	/** Zooms the timeline (Ctrl+= / Ctrl+- / Ctrl+0); set by the timeline while it's showing. */

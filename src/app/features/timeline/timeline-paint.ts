@@ -1,7 +1,7 @@
 import { cueText } from '../../core/model/cue';
 import { Cue, CueId, Ms, Track } from '../../core/model/types';
 import { Problem } from '../../core/lint/rules';
-import { formatTimecode } from '../../core/time/timecode';
+import { formatClock, formatTimecode } from '../../core/time/timecode';
 import { AudioWaveform, PEAKS_PER_SECOND } from '../../state/audio-peaks';
 
 /** Vertical layout of the lanes canvas; the track header column mirrors it. */
@@ -70,6 +70,8 @@ export interface PaintInput {
 	playhead: Ms;
 	duration: Ms;
 	fps: number;
+	/** Ruler labels in milliseconds instead of frames. */
+	msLabels: boolean;
 	snapAt: Ms | null;
 	box: { x0: number; y0: number; x1: number; y1: number } | null;
 	/** Edge being trimmed, with its time before the drag. */
@@ -139,7 +141,8 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 	ctx.font = '12px "Space Mono", monospace';
 	ctx.textBaseline = 'top';
 	for (let t = Math.floor(t0 / major) * major; t <= t1; t += major) {
-		ctx.fillText(formatTimecode(t, input.fps), Math.round(msToX(v, t)) + 4, 2);
+		const label = input.msLabels ? formatClock(t) : formatTimecode(t, input.fps);
+		ctx.fillText(label, Math.round(msToX(v, t)) + 4, 2);
 	}
 
 	// Lanes scroll vertically under the fixed ruler.

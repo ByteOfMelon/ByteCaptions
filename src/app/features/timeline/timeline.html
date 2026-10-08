@@ -1,7 +1,14 @@
 <header class="bar">
 	<div class="side">
 		<h2 class="text-heading-3">Timeline</h2>
-		<span class="text-mono-small text-faded">{{ timecode() }}</span>
+		<button
+			type="button"
+			class="timecode text-mono-small"
+			[bcTooltip]="ui.timeUnits() === 'ms' ? 'Show frames' : 'Show milliseconds'"
+			(click)="ui.timeUnits.set(ui.timeUnits() === 'ms' ? 'frames' : 'ms')"
+		>
+			{{ timecode() }}
+		</button>
 	</div>
 	<div class="tools">
 		<button

@@ -203,6 +203,15 @@ export class CommandRegistry {
 				run: () => this.ui.snapping.update((on) => !on),
 			},
 			{
+				id: 'time-units',
+				label:
+					this.ui.timeUnits() === 'ms'
+						? 'Show timeline times in frames'
+						: 'Show timeline times in milliseconds',
+				icon: LucideClock.icon,
+				run: () => this.ui.timeUnits.update((u) => (u === 'ms' ? 'frames' : 'ms')),
+			},
+			{
 				id: 'zoom-fit',
 				label: 'Zoom timeline to fit',
 				icon: LucideFoldHorizontal.icon,

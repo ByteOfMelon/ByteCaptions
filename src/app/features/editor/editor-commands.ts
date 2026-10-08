@@ -211,7 +211,8 @@ export class EditorCommands {
 		this.store.selection.set(new Set(copies.map((c) => c.cue.id)));
 	}
 
-	selectAllOnTrack(trackId = this.store.primary()?.track.id): void {
+	/** Ctrl+A: the selected cue's track, or the first unlocked one when nothing is selected. */
+	selectAllOnTrack(trackId = this.targetTrack()): void {
 		const t = trackId ? this.store.track(trackId) : undefined;
 		if (t) this.store.selection.set(new Set(t.cues.map((c) => c.id)));
 	}

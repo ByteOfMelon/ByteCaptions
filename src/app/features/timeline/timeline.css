@@ -219,3 +219,20 @@ canvas {
 .hud.left {
 	transform: translateX(-100%);
 }
+
+/* Click the playhead time to switch the timeline between frames and milliseconds. */
+.timecode {
+	padding: 0;
+	border: none;
+	border-radius: var(--radius-small);
+	background: none;
+	color: var(--color-text-faded);
+	cursor: pointer;
+}
+.timecode:hover {
+	color: var(--color-text);
+}
+.timecode:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+}

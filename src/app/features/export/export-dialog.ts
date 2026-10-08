@@ -8,6 +8,8 @@ import {
 	SaveTarget,
 	basename,
 	canPickSaveTarget,
+	confirmAction,
+	fileExists,
 	dirname,
 	isDesktop,
 	pickSaveTarget,
@@ -60,6 +62,8 @@ export class ExportDialog implements OnInit {
 	private readonly files = inject(ProjectFiles);
 	/** Browser save handle from Browse (desktop uses the path in the field). */
 	private handle: FileSystemFileHandle | undefined;
+	/** Path chosen in the save dialog, which already asked about replacing it. */
+	private browsedPath: string | null = null;
 	/** What the user typed or browsed to; empty means the default. */
 	protected readonly fileName = signal('');
 	protected readonly error = signal<string | null>(null);
@@ -156,6 +160,7 @@ export class ExportDialog implements OnInit {
 		const target = await pickSaveTarget(this.path(), this.filter());
 		if (!target) return;
 		this.handle = target.handle;
+		this.browsedPath = target.path ?? null;
 		this.fileName.set(target.path ?? target.name);
 	}
 
@@ -179,6 +184,19 @@ export class ExportDialog implements OnInit {
 				: await pickSaveTarget(this.path(), this.filter())
 			: { name: basename(this.path()), path: null, handle: this.handle };
 		if (!target) return;
+		// The save dialog asks before replacing a file; a typed path doesn't, so ask here.
+		if (
+			isDesktop &&
+			isAbsolute(this.path()) &&
+			this.path() !== this.browsedPath &&
+			(await fileExists(target.path!)) &&
+			!(await confirmAction(
+				`${target.name} already exists. Replace it?`,
+				'Replace file',
+				'Replace',
+			))
+		)
+			return;
 		this.busy.set(true);
 		try {
 			await writeText(target, FORMATS[this.format()].export(subset));

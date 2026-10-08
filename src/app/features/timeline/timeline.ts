@@ -25,7 +25,7 @@ import {
 } from '@lucide/angular';
 import { setTiming, moveCues, updateTrack } from '../../core/commands/edits';
 import { CueId, Ms, Track, TrackId } from '../../core/model/types';
-import { formatTimecode } from '../../core/time/timecode';
+import { formatClock, formatTimecode } from '../../core/time/timecode';
 import { EditorUi, TimelineZoom } from '../../state/editor-ui';
 import { ProjectStore } from '../../state/project-store';
 import { AudioPeaks } from '../../state/audio-peaks';
@@ -152,7 +152,9 @@ export class Timeline {
 	private drag: Drag | null = null;
 
 	protected readonly timecode = computed(() =>
-		formatTimecode(this.store.playhead(), this.store.project().fps),
+		this.ui.timeUnits() === 'ms'
+			? formatClock(this.store.playhead())
+			: formatTimecode(this.store.playhead(), this.store.project().fps),
 	);
 	/** Fully zoomed out shows the whole video, however long it is. */
 	private readonly minPxPerS = computed(() => {
@@ -236,6 +238,7 @@ export class Timeline {
 				playhead: this.store.playhead(),
 				duration: this.store.duration(),
 				fps: this.store.project().fps,
+				msLabels: this.ui.timeUnits() === 'ms',
 				snapAt: this.snapAt(),
 				box: this.box(),
 				trim: this.trim(),
