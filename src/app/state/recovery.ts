@@ -22,6 +22,19 @@ export interface RecoveryEntry {
 const DELAY_MS = 2000;
 const BROWSER_PREFIX = 'bc.recovery.';
 
+/**
+ * The open project, kept in sessionStorage so a reload of the window (not a restart of the
+ * app) reopens it: from its recovery copy when it has unsaved changes, else from where it's
+ * saved, else (a new project with no changes yet) from the copy kept here.
+ */
+interface SessionProject {
+	projectId: string;
+	path: string | null;
+	dirty: boolean;
+	project?: string;
+}
+const SESSION_KEY = 'bc.session';
+
 /** Where recovery copies live: the app's data folder on desktop, localStorage in the browser. */
 const storage = {
 	async dir(): Promise<string> {
@@ -62,6 +75,27 @@ const storage = {
 	},
 };
 
+function readSession(): SessionProject | null {
+	try {
+		return JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? 'null') as SessionProject | null;
+	} catch {
+		return null;
+	}
+}
+
+function writeSession(s: SessionProject): void {
+	try {
+		sessionStorage.setItem(SESSION_KEY, JSON.stringify(s));
+	} catch {
+		// Too big or storage blocked: a reload falls back to the Start screen's recovery list.
+		try {
+			sessionStorage.removeItem(SESSION_KEY);
+		} catch {
+			// Storage blocked.
+		}
+	}
+}
+
 /**
  * Autosave for crash recovery (PLAN §5.1). While the open project has unsaved changes, a copy
  * is written a couple of seconds after each edit and when the window loses focus. Saving, or
@@ -78,13 +112,21 @@ export class Recovery {
 	private readonly written = new Set<string>();
 	private lastId: string | null = null;
 	private timer: ReturnType<typeof setTimeout> | null = null;
+	/** The project open before the window reloaded, if it did. */
+	private readonly previous = readSession();
 
 	constructor() {
-		void this.refresh();
 		effect(() => {
 			const id = this.store.project().id;
 			const dirty = this.store.dirty();
+			const path = this.files.currentPath();
 			untracked(() => {
+				writeSession({
+					projectId: id,
+					path,
+					dirty,
+					project: dirty || path ? undefined : serializeProject(this.store.project()),
+				});
 				// Switching projects only happens after saving or choosing to discard.
 				if (this.lastId && this.lastId !== id) void this.discard(this.lastId);
 				this.lastId = id;
@@ -93,6 +135,28 @@ export class Recovery {
 			});
 		});
 		window.addEventListener('blur', () => void this.flush());
+	}
+
+	/**
+	 * After the window reloads, reopen the project that was open, then list the leftover copies.
+	 * Runs before the app first renders (app.config.ts).
+	 */
+	async resume(): Promise<void> {
+		const s = this.previous;
+		try {
+			if (s?.dirty) {
+				const entry = (await storage.list()).find((e) => e.projectId === s.projectId);
+				if (entry) await this.recover(entry);
+			} else if (s?.path && isDesktop) {
+				await this.files.open(s.path);
+			} else if (s?.project) {
+				await this.files.restore(parseProject(s.project), null);
+				this.store.dirty.set(false);
+			}
+		} catch (e) {
+			console.warn('Could not reopen the project after reloading', e);
+		}
+		await this.refresh();
 	}
 
 	async refresh(): Promise<void> {

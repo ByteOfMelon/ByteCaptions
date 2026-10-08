@@ -148,6 +148,8 @@
 }
 
 .progress {
+	/* Space Mono's glyph box is taller than its line, which made the dialog scroll by 1px. */
+	overflow: clip;
 	display: flex;
 	flex-direction: column;
 	gap: var(--spacing-sm);
