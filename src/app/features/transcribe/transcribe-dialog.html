@@ -1,0 +1,219 @@
+@switch (job.phase()) {
+	@case ('setup') {
+		<bc-dialog heading="Auto-transcribe" [subtitle]="job.privacyNote()" [width]="600">
+			<div class="row">
+				<bc-select
+					label="Spoken language"
+					[options]="languageOptions"
+					[value]="job.options().language"
+					(valueChange)="job.setOptions({ language: $any($event) })"
+				/>
+				<bc-select
+					label="Put cues on"
+					[options]="targetOptions()"
+					[value]="job.options().target"
+					(valueChange)="job.setOptions({ target: $any($event) })"
+				/>
+			</div>
+
+			<div class="group">
+				<span class="text-small" id="tx-model">Model</span>
+				<div class="models" role="radiogroup" aria-labelledby="tx-model">
+					@for (m of models; track m.id) {
+						<button
+							type="button"
+							role="radio"
+							class="model"
+							[attr.aria-checked]="job.options().model === m.id"
+							(click)="job.setOptions({ model: m.id })"
+						>
+							<span class="radio" aria-hidden="true"></span>
+							<span class="model-text">
+								<span class="model-head">
+									<span class="text-body-bold">{{ m.name }}</span>
+									@if (m.recommended) {
+										<span class="text-small recommended">Recommended</span>
+									}
+									<span class="text-small size" [class.ready]="downloaded(m.id)">
+										{{ m.size }} •
+										{{ downloaded(m.id) ? 'Downloaded' : 'Not downloaded' }}
+									</span>
+								</span>
+								<span class="text-small text-faded"
+									>{{ m.description }} {{ job.estimate(m) }}</span
+								>
+							</span>
+						</button>
+					}
+				</div>
+			</div>
+
+			<bc-toggle
+				labelStart
+				[checked]="job.options().wordTimings"
+				(checkedChange)="job.setOptions({ wordTimings: $event })"
+			>
+				<span class="option-text">
+					<span>Word-level timings</span>
+					<span class="text-small text-faded"
+						>Needed for the word highlight in the Transcript tab.</span
+					>
+				</span>
+			</bc-toggle>
+			<bc-toggle
+				labelStart
+				[checked]="job.options().flagLowConfidence"
+				(checkedChange)="job.setOptions({ flagLowConfidence: $event })"
+			>
+				<span class="option-text">
+					<span>Flag low-confidence words</span>
+					<span class="text-small text-faded"
+						>Underlines words the model is unsure about.</span
+					>
+				</span>
+			</bc-toggle>
+
+			<div dialogFooter>
+				<span class="footer-note">
+					{{
+						needsDownload()
+							? 'Needs ' + selectedModel().size + ' free'
+							: 'Model is downloaded'
+					}}
+				</span>
+				<button bcButton (click)="ref.close()">Cancel</button>
+				<button bcButton variant="primary" (click)="start()">
+					{{ needsDownload() ? 'Download and transcribe' : 'Transcribe' }}
+				</button>
+			</div>
+		</bc-dialog>
+	}
+
+	@case ('done') {
+		@if (job.result(); as r) {
+			<bc-dialog heading="Auto-transcribe" [subtitle]="job.summary()" [width]="600">
+				<ng-container *ngTemplateOutlet="steps" />
+				<div class="result">
+					<div class="result-head">
+						<span class="color" [style.background]="r.trackColor"></span>
+						<span
+							>Added to
+							{{ job.options().target === 'new' ? 'new track' : 'track' }} "{{
+								r.trackName
+							}}"</span
+						>
+					</div>
+					<div class="stats">
+						<div class="stat">
+							<span class="text-heading-2">{{ r.cues }}</span>
+							<span class="text-small text-faded">cues</span>
+						</div>
+						<div class="stat">
+							<span class="text-heading-2 warn">{{ r.lowConfidence }}</span>
+							<span class="text-small text-faded">low-confidence words</span>
+						</div>
+						<div class="stat">
+							<span class="text-heading-2 warn">{{ r.speedWarnings }}</span>
+							<span class="text-small text-faded">reading-speed warnings</span>
+						</div>
+					</div>
+				</div>
+				<div dialogFooter>
+					<span class="footer-note">Finished in {{ r.took }}</span>
+					<button bcButton (click)="reviewProblems()">Review problems</button>
+					<button bcButton variant="primary" (click)="finish()">Done</button>
+				</div>
+			</bc-dialog>
+		}
+	}
+
+	@default {
+		<bc-dialog heading="Auto-transcribe" [subtitle]="job.summary()" [width]="600">
+			<ng-container *ngTemplateOutlet="steps" />
+
+			@if (job.phase() === 'running') {
+				<div class="progress">
+					<div
+						class="bar"
+						role="progressbar"
+						aria-label="Transcription progress"
+						[attr.aria-valuenow]="Math.round(job.progress() * 100)"
+						aria-valuemin="0"
+						aria-valuemax="100"
+					>
+						<span [style.width.%]="job.progress() * 100"></span>
+					</div>
+					@if (job.download()) {
+						<span class="text-small text-faded"
+							>Downloading the model. This only happens once.</span
+						>
+					} @else {
+						<span class="text-mono-small text-faded"
+							>{{ position() }} &nbsp;•&nbsp; {{ job.remaining() }}</span
+						>
+					}
+				</div>
+				@if (job.lines().length) {
+					<div class="lines">
+						<span class="text-small">Latest lines</span>
+						@for (l of job.lines(); track $index) {
+							<div class="line">
+								<span class="text-mono-small text-faded">{{ time(l.at) }}</span>
+								<span>{{ l.text }}</span>
+							</div>
+						}
+					</div>
+				}
+			}
+			@if (job.error(); as err) {
+				<bc-notice tone="danger" [heading]="err.title" [detail]="err.detail" />
+			}
+			@if (job.phase() === 'running') {
+				<div dialogFooter>
+					<span class="footer-note">You can keep editing while this runs.</span>
+					<button bcButton [disabled]="job.stopping()" (click)="job.stop()">
+						{{ job.stopping() ? 'Stopping…' : 'Stop' }}
+					</button>
+					<button bcButton variant="primary" (click)="ref.close()">
+						Run in background
+					</button>
+				</div>
+			}
+			@if (job.phase() === 'error') {
+				<div dialogFooter>
+					<div class="footer-start">
+						<button bcButton variant="primary" (click)="start()">Retry download</button>
+						@if (job.options().model !== 'fast') {
+							<button bcButton (click)="useFast()">Use Fast instead</button>
+						}
+					</div>
+				</div>
+			}
+		</bc-dialog>
+	}
+}
+
+<ng-template #steps>
+	<ol class="steps">
+		@for (s of job.steps(); track s.id) {
+			<li [class]="s.status">
+				@switch (s.status) {
+					@case ('done') {
+						<svg lucideCheck class="icon"></svg>
+					}
+					@case ('running') {
+						<svg lucideLoaderCircle class="icon spin"></svg>
+					}
+					@case ('error') {
+						<svg lucideX class="icon"></svg>
+					}
+					@default {
+						<svg lucideCircle class="icon"></svg>
+					}
+				}
+				<span class="step-label">{{ s.label }}</span>
+				<span class="text-mono-small step-detail">{{ s.detail }}</span>
+			</li>
+		}
+	</ol>
+</ng-template>

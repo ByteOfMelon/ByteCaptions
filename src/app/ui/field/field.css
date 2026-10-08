@@ -1,0 +1,101 @@
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+	min-width: 0;
+}
+
+.label {
+	color: var(--color-text);
+}
+
+.box {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+	height: 36px;
+	padding: var(--spacing-sm) var(--spacing-md);
+	border-radius: var(--radius-control);
+	background: var(--color-panel);
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-control-border);
+	color: var(--color-text);
+}
+
+.box:focus-within {
+	box-shadow:
+		inset 0 0 0 var(--outline-width) var(--color-control-border),
+		var(--focus-ring);
+}
+
+.box.invalid {
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-danger);
+}
+.box.invalid:focus-within {
+	box-shadow:
+		inset 0 0 0 var(--outline-width) var(--color-danger),
+		var(--focus-ring);
+}
+
+.helper {
+	color: var(--color-text-faded);
+}
+.helper.error {
+	color: var(--color-danger);
+}
+
+:host(.disabled) .label,
+:host(.disabled) .box {
+	color: var(--color-text-faded);
+}
+
+/* Projected input fills the row; long values ellipsize. */
+.box ::ng-deep input {
+	flex: 1;
+	min-width: 0;
+	padding: 0;
+	border: none;
+	outline: none;
+	background: transparent;
+	color: inherit;
+	font: 500 16px / var(--line-height) var(--font-ui);
+	text-overflow: ellipsis;
+}
+.box.mono ::ng-deep input {
+	font: 400 16px / var(--line-height) var(--font-mono);
+	font-variant-numeric: tabular-nums;
+}
+.box ::ng-deep input::placeholder {
+	color: var(--color-text-faded);
+	opacity: 1;
+}
+.box ::ng-deep input:disabled {
+	color: var(--color-text-faded);
+}
+.box ::ng-deep svg.lucide {
+	width: 20px;
+	height: 20px;
+}
+
+/* Number field */
+.suffix {
+	color: var(--color-text-faded);
+}
+.stepper {
+	position: relative;
+	display: grid;
+	grid-template-rows: 1fr 1fr;
+	width: 20px;
+	height: 20px;
+}
+.stepper button {
+	z-index: 1;
+	padding: 0;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+}
+.stepper svg {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}

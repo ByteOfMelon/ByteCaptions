@@ -1,0 +1,76 @@
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-md);
+	flex: 1;
+	min-height: 0;
+}
+
+.summary {
+	display: flex;
+	gap: var(--spacing-md);
+}
+.error {
+	color: var(--color-danger);
+}
+.warn {
+	color: var(--color-warning);
+}
+
+.list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+}
+
+.problem {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+	padding: var(--spacing-md);
+	border-radius: var(--radius-control);
+	background: var(--color-card);
+	cursor: pointer;
+}
+.problem.selected {
+	background: var(--color-selected);
+}
+
+.title {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+	margin: 0;
+	font: 800 16px / var(--line-height) var(--font-ui);
+}
+.title svg.lucide {
+	width: 16px;
+	height: 16px;
+}
+.location,
+.detail {
+	color: var(--color-text-faded);
+}
+.detail {
+	margin: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.actions {
+	display: flex;
+	gap: var(--spacing-sm);
+}
+/* Fix buttons sit on a card, so they use the page background to stand out (per design). */
+.actions .fix {
+	background: var(--color-bg);
+}
+
+.empty {
+	margin: 0;
+	padding: var(--spacing-sm);
+}

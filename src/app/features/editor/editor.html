@@ -1,0 +1,93 @@
+<header class="toolbar">
+	<div class="group">
+		<a class="home" routerLink="/" bcTooltip="Home">
+			<svg lucideCaptions class="logo" aria-hidden="true"></svg>
+			<span class="app-name">ByteCaptions</span>
+		</a>
+		<span class="text-small text-faded project">{{ store.project().name }}</span>
+		@if (store.dirty()) {
+			<span class="text-small text-faded">Unsaved changes</span>
+		} @else if (!files.saved()) {
+			<span class="text-small text-faded">Not saved</span>
+		} @else {
+			<span class="text-small saved">Saved</span>
+		}
+	</div>
+
+	<div class="group center">
+		<button
+			bcIconButton
+			variant="ghost"
+			aria-label="Undo"
+			[bcTooltip]="undoTip()"
+			tooltipKeys="Ctrl+Z"
+			[disabled]="!store.canUndo()"
+			(click)="commands.undo()"
+		>
+			<svg lucideUndo2></svg>
+		</button>
+		<button
+			bcIconButton
+			variant="ghost"
+			aria-label="Redo"
+			[bcTooltip]="redoTip()"
+			tooltipKeys="Ctrl+Shift+Z"
+			[disabled]="!store.canRedo()"
+			(click)="commands.redo()"
+		>
+			<svg lucideRedo2></svg>
+		</button>
+	</div>
+
+	<div class="group end">
+		<button type="button" class="palette" (click)="openPalette()">
+			<svg lucideSearch></svg>
+			<span class="text-faded">Search commands</span>
+			<bc-kbd keys="Ctrl+K" />
+		</button>
+		<!-- Transcription is desktop-only (local Whisper). -->
+		@if (transcription.available) {
+			@switch (transcription.phase()) {
+				@case ('running') {
+					<button
+						bcButton
+						[progress]="transcription.progress() * 100"
+						bcTooltip="Show progress"
+						(click)="editorDialogs.transcribe()"
+					>
+						{{ transcription.download() ? 'Downloading model…' : 'Transcribing…' }}
+						{{ Math.round(transcription.progress() * 100) }}%
+					</button>
+				}
+				@case ('done') {
+					<button bcButton bcTooltip="Show results" (click)="editorDialogs.transcribe()">
+						<svg lucideCheck class="ok"></svg>Transcript ready
+					</button>
+				}
+				@case ('error') {
+					<button bcButton bcTooltip="Show details" (click)="editorDialogs.transcribe()">
+						<svg lucideCircleAlert class="failed"></svg>Transcription failed
+					</button>
+				}
+				@default {
+					<button bcButton (click)="editorDialogs.transcribe()">Auto-transcribe</button>
+				}
+			}
+		}
+		<button bcButton variant="primary" (click)="editorDialogs.export()">Export</button>
+	</div>
+</header>
+
+<div class="workspace">
+	<bc-side-panel class="panel cues" />
+	<bc-preview-panel class="panel preview" />
+	<bc-inspector class="panel inspector" />
+</div>
+
+<bc-timeline class="panel timeline" />
+
+@if (files.error(); as message) {
+	<bc-notice class="file-error" tone="danger" heading="Something went wrong" [detail]="message">
+		<button bcButton noticeAction (click)="files.error.set(null)">Dismiss</button>
+	</bc-notice>
+}

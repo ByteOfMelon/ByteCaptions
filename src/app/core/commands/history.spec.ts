@@ -109,6 +109,21 @@ describe('edits', () => {
 		expect(cues(h)).toHaveLength(2);
 	});
 
+	it('ripple deletes, closing the deleted time on that track only', () => {
+		const h = setup();
+		const t2 = createTrack('Two');
+		t2.id = 't2';
+		t2.cues = [{ ...createCue(2000, 2500, 'other'), id: 'x' }];
+		h.apply('Add track', edits.addTrack(t2));
+		h.apply('w', (p) => {
+			p.tracks[0].cues[1].words = [{ text: 'second', start: 2000, end: 3000 }];
+		});
+		h.apply('Ripple', edits.rippleDeleteCues(['a']));
+		expect(cues(h)).toMatchObject([{ id: 'b', start: 1000, end: 2000 }]);
+		expect(cues(h)[0].words![0].start).toBe(1000);
+		expect(cues(h, 1)[0]).toMatchObject({ start: 2000, end: 2500 });
+	});
+
 	it('shifts cues after a time', () => {
 		const h = setup();
 		h.apply('Shift', edits.shiftAfter(1500, 250));

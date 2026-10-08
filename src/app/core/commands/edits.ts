@@ -46,6 +46,45 @@ export function deleteCues(ids: CueId[]) {
 	};
 }
 
+/**
+ * Delete cues and close the time they took up: later cues on the same track move earlier by
+ * however much deleted time came before them. Other tracks are left alone.
+ */
+export function rippleDeleteCues(ids: CueId[]) {
+	return (p: P) => {
+		const set = new Set(ids);
+		for (const t of p.tracks) {
+			if (t.locked) continue;
+			const removed = t.cues.filter((c) => set.has(c.id));
+			if (!removed.length) continue;
+			t.cues = t.cues.filter((c) => !set.has(c.id));
+			// Deleted time before `ms`, counting overlapping deleted cues once.
+			const before = (ms: Ms) => {
+				let total = 0;
+				let reached = 0;
+				for (const c of [...removed].sort((a, b) => a.start - b.start)) {
+					const s = Math.max(c.start, reached);
+					const e = Math.min(c.end, ms);
+					if (e > s) total += e - s;
+					reached = Math.max(reached, c.end);
+				}
+				return total;
+			};
+			for (const c of t.cues) {
+				const d = Math.min(before(c.start), c.start);
+				if (!d) continue;
+				c.start -= d;
+				c.end -= d;
+				c.words?.forEach((w) => {
+					w.start -= d;
+					w.end -= d;
+				});
+			}
+			sortCues(t.cues);
+		}
+	};
+}
+
 export function setText(cueId: CueId, text: string) {
 	return (p: P) => {
 		const { track, cue } = findCue(p, cueId);

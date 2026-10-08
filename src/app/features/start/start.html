@@ -1,0 +1,130 @@
+<main class="start">
+	<header class="brand">
+		<div class="logo">
+			<svg lucideCaptions class="logo-icon" aria-hidden="true"></svg>
+			<h1 class="text-heading-1">ByteCaptions</h1>
+		</div>
+		<p class="text-body text-faded">
+			The open-source video editing-style subtitle editor • Made by
+			<a class="site" [href]="website" (click)="openWebsite($event)"
+				>Michael Webb/Byte of Melon</a
+			>
+		</p>
+	</header>
+
+	@for (r of recovered(); track r.entry.projectId) {
+		<bc-notice
+			class="recovered"
+			tone="warning"
+			[heading]="'Recover unsaved changes to ' + r.entry.name + '?'"
+			[detail]="r.detail"
+		>
+			<button bcButton variant="ghost" noticeAction (click)="discardRecovered(r.entry)">
+				Discard
+			</button>
+			<button bcButton variant="primary" noticeAction (click)="recover(r.entry)">
+				Recover
+			</button>
+		</bc-notice>
+	}
+
+	<div class="actions">
+		@if (dragging(); as d) {
+			<div class="card drop" role="status">
+				<span class="tile"><svg lucideUpload></svg></span>
+				<span class="card-text">
+					<span class="text-body-bold">{{ d.title }}</span>
+					<span class="text-small text-faded drop-name">{{ d.name }}</span>
+					@if (d.detail) {
+						<span class="text-small text-faded">{{ d.detail }}</span>
+					}
+				</span>
+				<span class="text-mono-small text-faded keys">Release to import</span>
+			</div>
+		} @else {
+			<button type="button" class="card new" (click)="newProject()">
+				<span class="tile"><svg lucideFilm></svg></span>
+				<span class="card-text">
+					<span class="text-body-bold">New project</span>
+					<span class="text-small text-faded"
+						>Drop a video here, or click to choose one. MP4, MOV, MKV, WebM.</span
+					>
+				</span>
+				<span class="text-mono-small text-faded keys">Ctrl N</span>
+			</button>
+		}
+		<button type="button" class="card" (click)="openProject()">
+			<span class="tile"><svg lucideFolderOpen></svg></span>
+			<span class="card-text">
+				<span class="text-body-bold">Open project</span>
+				<span class="text-small text-faded">Continue a saved .bcproj file.</span>
+			</span>
+			<span class="text-mono-small text-faded keys">Ctrl O</span>
+		</button>
+		<button type="button" class="card" (click)="importCaptions()">
+			<span class="tile"><svg lucideCaptions></svg></span>
+			<span class="card-text">
+				<span class="text-body-bold">Import captions</span>
+				<span class="text-small text-faded"
+					>Start from an existing SRV3, SRT, VTT or SBV file.</span
+				>
+			</span>
+			<span class="text-mono-small text-faded keys">Ctrl I</span>
+		</button>
+	</div>
+
+	@if (error(); as message) {
+		<bc-notice
+			class="error"
+			tone="danger"
+			heading="Couldn't open that file"
+			[detail]="message"
+		/>
+	}
+
+	<section class="recent" aria-labelledby="recent-title">
+		<div class="recent-head">
+			<h2 class="text-heading-3" id="recent-title">Recent projects</h2>
+			<span class="text-small text-faded"
+				>{{ recent().length }} project{{ recent().length === 1 ? '' : 's' }}</span
+			>
+		</div>
+		@for (r of recent(); track r.id) {
+			<button type="button" class="project" (click)="openRecent(r)">
+				<span class="thumb"><svg lucideFilm></svg></span>
+				<span class="info">
+					<span class="text-body name">{{ r.fileName }}</span>
+					@if (r.folder) {
+						<span class="text-small text-faded path" [title]="r.folder"
+							><bdi>{{ r.folder }}</bdi></span
+						>
+					}
+				</span>
+				<span class="meta">
+					<span class="text-small text-faded">{{ r.edited }}</span>
+					<span class="text-mono-small text-faded">{{ r.meta }}</span>
+				</span>
+			</button>
+		} @empty {
+			<p class="empty text-small text-faded">Projects you open or save will show up here.</p>
+		}
+	</section>
+
+	<footer class="text-small text-faded">
+		v{{ version }}&nbsp; • &nbsp;<button
+			type="button"
+			class="link"
+			aria-disabled="true"
+			bcTooltip="Not built yet"
+		>
+			Settings</button
+		>&nbsp; • &nbsp;<button
+			type="button"
+			class="link"
+			aria-disabled="true"
+			bcTooltip="Not built yet"
+		>
+			Keyboard shortcuts
+		</button>
+	</footer>
+</main>

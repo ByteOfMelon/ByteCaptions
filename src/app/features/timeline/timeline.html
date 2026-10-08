@@ -1,0 +1,176 @@
+<header class="bar">
+	<div class="side">
+		<h2 class="text-heading-3">Timeline</h2>
+		<span class="text-mono-small text-faded">{{ timecode() }}</span>
+	</div>
+	<div class="tools">
+		<button
+			bcIconButton
+			variant="ghost"
+			aria-label="Split at playhead"
+			bcTooltip="Split at playhead"
+			tooltipKeys="S"
+			(click)="commands.splitAtPlayhead()"
+		>
+			<svg lucideScissors></svg>
+		</button>
+		<button
+			bcIconButton
+			variant="ghost"
+			aria-label="Snapping"
+			bcTooltip="Snapping"
+			tooltipKeys="N"
+			[pressed]="ui.snapping()"
+			(click)="ui.snapping.set(!ui.snapping())"
+		>
+			<svg lucideMagnet></svg>
+		</button>
+	</div>
+	<div class="side end">
+		<button
+			bcIconButton
+			variant="ghost"
+			aria-label="Zoom out"
+			bcTooltip="Zoom out"
+			tooltipKeys="Ctrl+-"
+			(click)="zoomBy(-10)"
+		>
+			<svg lucideZoomOut></svg>
+		</button>
+		<input
+			class="zoom"
+			type="range"
+			min="0"
+			max="100"
+			step="1"
+			aria-label="Zoom"
+			[value]="zoom()"
+			(input)="onZoomInput($event)"
+		/>
+		<button
+			bcIconButton
+			variant="ghost"
+			aria-label="Zoom in"
+			bcTooltip="Zoom in"
+			tooltipKeys="Ctrl+="
+			(click)="zoomBy(10)"
+		>
+			<svg lucideZoomIn></svg>
+		</button>
+	</div>
+</header>
+
+<div class="body">
+	<div class="headers" (wheel)="onHeadersWheel($event)">
+		<div class="ruler-spacer"></div>
+		<div class="header-scroll">
+			<div class="header-list" [style.transform]="'translateY(' + -scrollY() + 'px)'">
+				@for (h of headers(); track h.track.id) {
+					<div
+						class="track"
+						[class.muted]="h.track.muted"
+						(contextmenu)="onHeaderMenu($event, h.track)"
+					>
+						<span class="color" [style.background]="h.track.color"></span>
+						<div class="info">
+							@if (ui.renamingTrack() === h.track.id) {
+								<input
+									class="name rename"
+									aria-label="Track name"
+									[value]="h.track.name"
+									bcAutoselect
+									(keydown.enter)="
+										finishRename(h.track, $any($event.target).value)
+									"
+									(keydown.escape)="ui.renamingTrack.set(null)"
+									(blur)="finishRename(h.track, $any($event.target).value)"
+								/>
+							} @else {
+								<span class="name" (dblclick)="ui.renamingTrack.set(h.track.id)">{{
+									h.track.name
+								}}</span>
+							}
+							<span class="preset">
+								@if (h.style) {
+									<bc-style-chip [style]="h.style" />
+									<span class="text-small text-faded">{{ h.style.name }}</span>
+								}
+							</span>
+						</div>
+						<div class="toggles">
+							<button
+								type="button"
+								[attr.aria-label]="h.track.muted ? 'Show track' : 'Hide track'"
+								[bcTooltip]="
+									h.track.muted ? 'Show in preview' : 'Hide from preview'
+								"
+								[class.off]="h.track.muted"
+								(click)="toggleTrack(h.track, 'muted')"
+							>
+								@if (h.track.muted) {
+									<svg lucideEyeOff></svg>
+								} @else {
+									<svg lucideEye></svg>
+								}
+							</button>
+							<button
+								type="button"
+								aria-label="Lock track"
+								bcTooltip="Lock"
+								[attr.aria-pressed]="h.track.locked"
+								[class.off]="!h.track.locked"
+								(click)="toggleTrack(h.track, 'locked')"
+							>
+								@if (h.track.locked) {
+									<svg lucideLock></svg>
+								} @else {
+									<svg lucideLockOpen></svg>
+								}
+							</button>
+							<button
+								type="button"
+								aria-label="Solo track"
+								bcTooltip="Solo"
+								[attr.aria-pressed]="h.track.solo"
+								[class.off]="!h.track.solo"
+								(click)="toggleTrack(h.track, 'solo')"
+							>
+								<svg lucideHeadphones></svg>
+							</button>
+						</div>
+					</div>
+				}
+				<div class="audio">
+					<svg lucideAudioLines></svg>
+					<span class="text-small text-faded">Audio</span>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="lanes">
+		<canvas
+			#canvas
+			role="application"
+			aria-label="Timeline lanes"
+			[style.cursor]="cursor()"
+			(pointerdown)="onPointerDown($event)"
+			(pointermove)="onPointerMove($event)"
+			(pointerup)="onPointerUp($event)"
+			(pointercancel)="onPointerUp($event)"
+			(wheel)="onWheel($event)"
+			(contextmenu)="onContextMenu($event)"
+		></canvas>
+		@if (hud(); as h) {
+			<div
+				class="hud text-small"
+				[class.left]="h.align === 'left'"
+				[style.left.px]="h.x"
+				[style.top.px]="h.y"
+				role="status"
+			>
+				{{ h.text }}
+			</div>
+		}
+	</div>
+</div>

@@ -1,0 +1,211 @@
+.row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--spacing-md);
+}
+.group {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+}
+
+/* Model radio cards */
+.models {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+}
+.model {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-md);
+	padding: var(--spacing-md);
+	border: none;
+	border-radius: var(--radius-control);
+	background: transparent;
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-control-border);
+	color: var(--color-text);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+.model:hover {
+	background: var(--color-card);
+}
+.model[aria-checked='true'] {
+	background: var(--color-selected);
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-brand);
+}
+.model:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+.radio {
+	flex-shrink: 0;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-control-border);
+}
+.model[aria-checked='true'] .radio {
+	box-shadow:
+		inset 0 0 0 2px var(--color-brand),
+		inset 0 0 0 5px var(--color-selected);
+	background: var(--color-brand);
+}
+.model-text {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+	min-width: 0;
+}
+.model-head {
+	display: flex;
+	align-items: baseline;
+	gap: var(--spacing-sm);
+}
+.recommended {
+	color: var(--color-brand);
+}
+.size {
+	margin-left: auto;
+	color: var(--color-text-faded);
+	white-space: nowrap;
+}
+.size.ready {
+	color: var(--color-success);
+}
+
+.option-text {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 2px;
+}
+
+/* Steps */
+.steps {
+	/* The spinning icon's rotated corners would otherwise make the dialog scroll. */
+	overflow: clip;
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.steps li {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+}
+.icon {
+	flex-shrink: 0;
+	width: 16px;
+	height: 16px;
+}
+.done .icon {
+	color: var(--color-success);
+}
+.running .icon {
+	color: var(--color-brand);
+}
+.error .icon {
+	color: var(--color-danger);
+}
+.waiting .icon,
+.waiting .step-label,
+.done .step-label {
+	color: var(--color-text-faded);
+}
+.running .step-label {
+	font-weight: 800;
+}
+.step-label {
+	flex: 1;
+}
+.step-detail {
+	color: var(--color-text-faded);
+}
+.spin {
+	animation: spin 1s linear infinite;
+}
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.spin {
+		animation: none;
+	}
+}
+
+.progress {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+}
+.bar {
+	height: 8px;
+	overflow: hidden;
+	border-radius: 4px;
+	background: var(--color-selected);
+}
+.bar span {
+	display: block;
+	height: 100%;
+	border-radius: 4px;
+	background: var(--color-brand);
+	transition: width 0.3s;
+}
+
+.lines,
+.result {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+	padding: var(--spacing-md);
+	border-radius: var(--radius-control);
+	background: var(--color-bg);
+}
+.line {
+	display: flex;
+	align-items: baseline;
+	gap: var(--spacing-sm);
+	min-width: 0;
+}
+.line span:last-child {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.result-head {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+}
+.color {
+	flex-shrink: 0;
+	width: 4px;
+	height: 20px;
+	border-radius: var(--radius-small);
+}
+.stats {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: var(--spacing-sm);
+}
+.stat {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+	padding: var(--spacing-md);
+	border-radius: var(--radius-control);
+	background: var(--color-card);
+}
+.warn {
+	color: var(--color-warning);
+}

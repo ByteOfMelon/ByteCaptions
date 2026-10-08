@@ -1,0 +1,132 @@
+<!-- Dev-only component gallery, served at /gallery. -->
+<main class="gallery">
+	<header>
+		<h1 class="text-heading-1">Core components</h1>
+		<button bcButton variant="ghost" (click)="theme.toggle()">
+			@if (theme.theme() === 'dark') {
+				<svg lucideSun></svg>
+			} @else {
+				<svg lucideMoon></svg>
+			}
+			{{ theme.theme() }}
+		</button>
+	</header>
+
+	<section>
+		<h2 class="text-heading-3">Buttons</h2>
+		<div class="row">
+			<button bcButton variant="primary">Transcribe</button>
+			<button bcButton variant="primary" disabled>Transcribe</button>
+			<button bcButton variant="primary" [progress]="progress()">
+				Transcribing… {{ progress() }}%
+			</button>
+		</div>
+		<div class="row">
+			<button bcButton>Export</button>
+			<button bcButton><svg lucidePlus></svg> New preset</button>
+			<button bcButton disabled>Export</button>
+		</div>
+		<div class="row">
+			<button bcButton variant="ghost">Cancel</button>
+			<button bcButton variant="ghost" disabled>Cancel</button>
+		</div>
+		<div class="row">
+			<button bcButton variant="danger">Delete track</button>
+			<button bcButton variant="danger" disabled>Delete track</button>
+		</div>
+		<div class="row">
+			<button bcIconButton aria-label="Split"><svg lucideScissors></svg></button>
+			<button bcIconButton aria-label="Split" disabled><svg lucideScissors></svg></button>
+		</div>
+	</section>
+
+	<section>
+		<h2 class="text-heading-3">Navigation &amp; overlays</h2>
+		<div class="row">
+			<bc-tabs [tabs]="tabs" [(value)]="tab" />
+			<bc-kbd keys="Ctrl+B" /> <bc-kbd keys="Ctrl+Shift+Z" /> <bc-kbd keys="Space" />
+		</div>
+		<div class="row">
+			<button
+				bcIconButton
+				aria-label="Split"
+				bcTooltip="Split at playhead"
+				tooltipKeys="Ctrl+B"
+			>
+				<svg lucideScissors></svg>
+			</button>
+			<div class="menu-target text-small" (contextmenu)="openCueMenu($event)">
+				Right-click here for the cue menu • last: {{ lastMenu() }}
+			</div>
+		</div>
+	</section>
+
+	<section>
+		<h2 class="text-heading-3">Inputs</h2>
+		<div class="row top">
+			<bc-field label="Find" #f1
+				><input [id]="f1.fieldId" placeholder="Search cues…" /><svg lucideSearch></svg
+			></bc-field>
+			<bc-field label="Track name" #f2
+				><input [id]="f2.fieldId" value="Speaker A"
+			/></bc-field>
+			<bc-field label="Track name" error="Track name can’t be empty." #f3
+				><input [id]="f3.fieldId" placeholder="Name this track"
+			/></bc-field>
+			<bc-field label="Track name" disabled #f4
+				><input [id]="f4.fieldId" value="Dialogue" disabled
+			/></bc-field>
+			<bc-field label="Save to" #f5
+				><input
+					[id]="f5.fieldId"
+					value="C:\Users\Michael\Videos\Exports\my-very-long-project-name\captions.srv3" /><svg
+					lucideFolder
+				></svg
+			></bc-field>
+		</div>
+		<div class="row top">
+			<bc-number-field
+				class="narrow"
+				label="Max chars / line"
+				[(value)]="maxChars"
+				[min]="10"
+				[max]="80"
+			/>
+			<bc-number-field
+				class="narrow"
+				label="Text size"
+				[(value)]="size"
+				[min]="25"
+				[max]="400"
+				suffix="%"
+			/>
+			<bc-field class="timecode" label="Start" mono #f6
+				><input [id]="f6.fieldId" value="00:01:23:12"
+			/></bc-field>
+		</div>
+	</section>
+
+	<section>
+		<h2 class="text-heading-3">Selection controls</h2>
+		<div class="row top">
+			<bc-select label="Font" [options]="fonts" [(value)]="font" />
+			<bc-select label="Font" [options]="fonts" [(value)]="font" disabled />
+		</div>
+		<div class="row">
+			<bc-checkbox [(checked)]="karaoke">Karaoke</bc-checkbox>
+			<bc-checkbox disabled>Karaoke</bc-checkbox>
+			<bc-toggle [(checked)]="snapping">Snapping</bc-toggle>
+			<bc-toggle disabled>Snapping</bc-toggle>
+		</div>
+		<div class="row">
+			<bc-radio name="anchor" value="top" [(group)]="anchor">Top</bc-radio>
+			<bc-radio name="anchor" value="bottom" [(group)]="anchor">Bottom</bc-radio>
+			<bc-radio name="anchor" value="none" disabled [(group)]="anchor">Disabled</bc-radio>
+		</div>
+		<div class="row top">
+			<bc-slider class="narrow-200" label="Background opacity" [(value)]="bgOpacity" />
+			<bc-color-field class="narrow-200" label="Text color" value="#FFFFFF" [opacity]="100" />
+			<bc-color-field class="narrow-200" label="Background" value="#000000" [opacity]="75" />
+		</div>
+	</section>
+</main>

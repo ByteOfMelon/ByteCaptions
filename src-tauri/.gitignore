@@ -2,3 +2,6 @@
 # will have compiled files and executables
 /target/
 /gen/schemas
+
+# Bundled helper binaries (ffmpeg, the Vulkan loader); fetched by scripts/fetch-*.mjs
+/binaries/

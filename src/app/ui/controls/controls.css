@@ -1,0 +1,221 @@
+/* Checkbox / Radio / Toggle */
+.control {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--spacing-md);
+	color: var(--color-text);
+	font: 500 16px / var(--line-height) var(--font-ui);
+	cursor: pointer;
+	user-select: none;
+}
+/* Toggle with its label first, filling the row. */
+:host(.label-start) {
+	display: flex;
+}
+:host(.label-start) .control {
+	flex: 1;
+	flex-direction: row-reverse;
+	justify-content: space-between;
+}
+.control input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+.control:has(input:disabled) {
+	color: var(--color-text-faded);
+	cursor: default;
+}
+
+.box {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	flex-shrink: 0;
+	border-radius: var(--radius-small);
+	background: var(--color-panel);
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-control-border);
+	color: var(--color-on-brand);
+}
+.box svg.lucide {
+	width: 16px;
+	height: 16px;
+}
+input:checked + .box {
+	background: var(--color-brand);
+	box-shadow: none;
+}
+
+.box.radio {
+	border-radius: 50%;
+}
+input:checked + .box.radio {
+	background: var(--color-brand);
+	box-shadow:
+		inset 0 0 0 5px var(--color-brand),
+		inset 0 0 0 10px var(--color-on-brand);
+}
+
+.track {
+	position: relative;
+	width: 36px;
+	height: 20px;
+	flex-shrink: 0;
+	border-radius: 10px;
+	background: var(--color-selected);
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-control-border);
+	transition: background 120ms;
+}
+.thumb {
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background: var(--color-text);
+	transition: transform 120ms;
+}
+input:checked + .track {
+	background: var(--color-brand);
+	box-shadow: none;
+}
+input:checked + .track .thumb {
+	transform: translateX(16px);
+	background: var(--color-on-brand);
+}
+
+input:focus-visible + .box,
+input:focus-visible + .track {
+	box-shadow: var(--focus-ring);
+}
+input:disabled + .box,
+input:disabled + .track {
+	opacity: 0.5;
+}
+
+/* Slider */
+:host(.slider) {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+	min-width: 0;
+}
+.slider-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--spacing-sm);
+	height: 20px;
+	color: var(--color-text);
+}
+input[type='range'] {
+	--fill: 0%;
+	width: 100%;
+	height: 16px;
+	margin: 0;
+	background: transparent;
+	appearance: none;
+	cursor: pointer;
+}
+input[type='range']::-webkit-slider-runnable-track {
+	height: 4px;
+	border-radius: 2px;
+	background: linear-gradient(
+		to right,
+		var(--color-brand) var(--fill),
+		var(--color-control-border) var(--fill)
+	);
+}
+input[type='range']::-webkit-slider-thumb {
+	width: 16px;
+	height: 16px;
+	margin-top: -6px;
+	border-radius: 50%;
+	background: var(--color-text);
+	appearance: none;
+}
+input[type='range']:focus-visible {
+	outline: none;
+}
+input[type='range']:focus-visible::-webkit-slider-thumb {
+	box-shadow: var(--focus-ring);
+}
+input[type='range']:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+/* Color field */
+:host(.color-field) {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+	min-width: 0;
+}
+.label {
+	color: var(--color-text);
+}
+.color-box {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+	height: 36px;
+	padding: var(--spacing-sm) var(--spacing-md);
+	border-radius: var(--radius-control);
+	background: var(--color-panel);
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-control-border);
+	font: 400 16px / var(--line-height) var(--font-mono);
+}
+.color-box:focus-within {
+	box-shadow:
+		inset 0 0 0 var(--outline-width) var(--color-control-border),
+		var(--focus-ring);
+}
+.pick {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+	cursor: pointer;
+}
+.pick input {
+	position: absolute;
+	width: 20px;
+	height: 20px;
+	opacity: 0;
+}
+.swatch {
+	width: 20px;
+	height: 20px;
+	flex-shrink: 0;
+	border-radius: var(--radius-small);
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-control-border);
+}
+.opacity {
+	field-sizing: content;
+	min-width: 1ch;
+	padding: 0;
+	border: none;
+	outline: none;
+	background: transparent;
+	color: var(--color-text-faded);
+	font: inherit;
+	text-align: right;
+}
+.opacity:focus {
+	color: var(--color-text);
+}
+/* WebView2/Chromium size the input to its value; elsewhere fit "100". */
+@supports not (field-sizing: content) {
+	.opacity {
+		width: 3ch;
+	}
+}
+.opacity-wrap {
+	display: inline-flex;
+	color: var(--color-text-faded);
+}

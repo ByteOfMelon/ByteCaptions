@@ -1,0 +1,38 @@
+<bc-select aria-label="Filter problems by track" [options]="filterOptions()" [(value)]="filter" />
+
+<div class="summary text-small">
+	@if (errors()) {
+		<span class="error">{{ errors() }} {{ errors() === 1 ? 'error' : 'errors' }}</span>
+	}
+	@if (warnings()) {
+		<span class="warn">{{ warnings() }} {{ warnings() === 1 ? 'warning' : 'warnings' }}</span>
+	}
+	<span class="text-faded">{{ store.cueCount() | count: 'cue' }} checked</span>
+</div>
+
+<div class="list">
+	@for (item of items(); track item.key) {
+		<article class="problem" [class.selected]="item.selected" (click)="open(item.problem)">
+			<h3 class="title">
+				@if (item.problem.severity === 'error') {
+					<svg lucideCircleX class="error" aria-label="Error"></svg>
+				} @else {
+					<svg lucideTriangleAlert class="warn" aria-label="Warning"></svg>
+				}
+				<span>{{ item.title }}</span>
+			</h3>
+			<span class="location text-mono-small">{{ item.location }}</span>
+			<p class="detail text-small">{{ item.detail }}</p>
+			<div class="actions" (click)="$event.stopPropagation()">
+				@if (item.fixLabel) {
+					<button bcButton class="fix" (click)="applyFix(item.problem)">
+						{{ item.fixLabel }}
+					</button>
+				}
+				<button bcButton variant="ghost" (click)="ignore(item.key)">Ignore</button>
+			</div>
+		</article>
+	} @empty {
+		<p class="empty text-small text-faded">No problems. Nice.</p>
+	}
+</div>

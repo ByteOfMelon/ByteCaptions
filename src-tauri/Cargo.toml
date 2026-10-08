@@ -15,11 +15,22 @@ name = "app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.7.0" }
+tauri-build = { version = "2.7.0", features = [] }
 
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
-tauri = { version = "2.12.0" }
+tauri = { version = "2.12.0", features = ["protocol-asset"] }
 tauri-plugin-log = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-opener = "2"
+whisper-rs = { version = "0.16", features = ["raw-api"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "http2"] }
+sha2 = "0.10"
+
+# Transcription on the GPU through Vulkan (any vendor), falling back to the CPU; see src/gpu.rs.
+# Building needs the Vulkan SDK (VULKAN_SDK set by its installer).
+[target.'cfg(windows)'.dependencies]
+whisper-rs = { version = "0.16", features = ["raw-api", "vulkan"] }

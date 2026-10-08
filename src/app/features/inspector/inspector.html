@@ -1,0 +1,21 @@
+<header class="panel-header">
+	<h2 class="text-heading-3">Inspector</h2>
+	@if (subject(); as s) {
+		<span class="text-small text-faded">{{ s.title }}</span>
+	}
+</header>
+
+@if (subject(); as s) {
+	<fieldset class="body" [disabled]="s.locked">
+		<bc-select
+			label="Style preset"
+			[options]="presetOptions()"
+			[value]="s.styleId"
+			(valueChange)="applyPreset($any($event))"
+		/>
+		<bc-style-fields [style]="s.style" (styleChange)="setStyle($event)" />
+		<bc-anchor-picker [position]="s.position" (positionChange)="setPosition($event)" />
+	</fieldset>
+} @else {
+	<p class="empty text-small text-faded">Select a cue to edit its style and position.</p>
+}

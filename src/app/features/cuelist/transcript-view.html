@@ -1,0 +1,67 @@
+<bc-select
+	aria-label="Track"
+	[options]="trackOptions()"
+	[value]="trackId()"
+	(valueChange)="setTrack($any($event))"
+/>
+
+<div class="meta text-small">
+	<span class="text-faded"
+		>{{ track()?.cues?.length ?? 0 | count: 'cue' }} • {{ duration() }} long</span
+	>
+	@if (lowConfidence()) {
+		<span class="warn"
+			>{{ lowConfidence() }} low-confidence
+			{{ lowConfidence() === 1 ? 'word' : 'words' }}</span
+		>
+	}
+</div>
+
+<div class="document">
+	@for (para of paragraphs(); track $index) {
+		<div class="paragraph" [class.current]="para.current">
+			<span class="start text-mono-small">{{ para.start }}</span>
+			<p class="text">
+				@for (seg of para.segments; track seg.cue.id) {
+					@if (!$first) {
+						<span class="break" aria-label="cue break">•</span>
+					}
+					@if (editing() === seg.cue.id) {
+						<span
+							class="segment editing"
+							contenteditable="plaintext-only"
+							spellcheck="true"
+							(blur)="commit(seg.cue, $any($event.target).textContent)"
+							(keydown)="onEditKey($event, seg.cue)"
+							>{{ seg.text }}</span
+						>
+					} @else {
+						<span
+							class="segment"
+							[class.selected]="seg.selected"
+							(dblclick)="!track()?.locked && editing.set(seg.cue.id)"
+						>
+							@if (seg.words) {
+								@for (w of seg.words; track $index) {
+									<span
+										class="word"
+										[class.current]="w.current"
+										[class.unsure]="w.unsure"
+										(click)="clickSegment($event, seg.cue, $index)"
+										>{{ w.text }}</span
+									>{{ ' ' }}
+								}
+							} @else {
+								<span (click)="clickSegment($event, seg.cue)">{{ seg.text }}</span>
+							}
+						</span>
+					}
+				}
+			</p>
+		</div>
+	}
+</div>
+
+<p class="hint text-small text-faded">
+	• marks a cue break. Double-click a cue to edit it. Underlined words are low confidence.
+</p>

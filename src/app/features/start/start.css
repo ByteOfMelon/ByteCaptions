@@ -1,0 +1,249 @@
+:host {
+	display: block;
+	min-height: 100vh;
+	overflow: auto;
+	background: var(--color-bg);
+}
+
+.start {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: var(--spacing-xxl);
+	width: min(800px, 100% - 2 * var(--spacing-lg));
+	min-height: 100vh;
+	margin: 0 auto;
+	padding: var(--spacing-xxl) 0;
+}
+
+/* Brand */
+.brand {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--spacing-sm);
+	text-align: center;
+}
+.logo {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-md);
+}
+.logo-icon {
+	width: 40px;
+	height: 40px;
+	color: var(--color-brand);
+}
+h1,
+h2,
+p {
+	margin: 0;
+}
+
+.site {
+	color: inherit;
+	text-underline-offset: 3px;
+}
+.site:hover {
+	color: var(--color-text);
+}
+.site:focus-visible {
+	border-radius: var(--radius-small);
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+
+/* Start actions */
+.actions {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: var(--spacing-lg);
+	width: 100%;
+}
+.card {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--spacing-md);
+	min-height: 184px;
+	padding: var(--spacing-lg);
+	border: none;
+	border-radius: var(--radius-panel);
+	background: var(--color-panel);
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-outline);
+	color: var(--color-text);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+button.card:hover {
+	background: var(--color-card);
+}
+.card:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+/* The drop target is outlined dashed in brand until a file is dragged over it. */
+.card.new {
+	box-shadow: none;
+	outline: 1.5px dashed var(--color-brand);
+	outline-offset: -1.5px;
+}
+.card.new:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+.card.drop {
+	background: var(--color-selected);
+	box-shadow: inset 0 0 0 2px var(--color-brand);
+	cursor: copy;
+}
+.tile {
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 48px;
+	height: 48px;
+	border-radius: var(--radius-control);
+	background: var(--color-selected);
+}
+.tile svg {
+	width: 24px;
+	height: 24px;
+}
+.new .tile,
+.drop .tile {
+	background: var(--color-brand);
+	color: var(--color-bg);
+}
+.card-text {
+	min-width: 0;
+	max-width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+}
+.drop-name {
+	overflow: hidden;
+	max-width: 100%;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.keys {
+	margin-top: auto;
+}
+
+.error,
+.recovered {
+	width: 100%;
+}
+
+/* Recent projects */
+.recent {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+	width: 100%;
+	padding: var(--spacing-sm);
+	border-radius: var(--radius-panel);
+	background: var(--color-panel);
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-outline);
+}
+.recent-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	height: 36px;
+	padding: 0 var(--spacing-sm);
+}
+.project {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-md);
+	min-height: 55px;
+	padding: var(--spacing-sm);
+	border: none;
+	border-radius: var(--radius-control);
+	background: transparent;
+	color: var(--color-text);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+.project:hover {
+	background: var(--color-selected);
+}
+.project:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+.thumb {
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 64px;
+	height: 36px;
+	border-radius: var(--radius-small);
+	background: var(--color-selected);
+}
+.thumb svg {
+	width: 16px;
+	height: 16px;
+}
+.project:hover .thumb {
+	background: var(--color-card);
+}
+.info {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+	min-width: 0;
+}
+.name,
+.path {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+/* Long folders lose their start, keeping the folder name visible. */
+.path {
+	direction: rtl;
+	text-align: left;
+}
+.meta {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: var(--spacing-xs);
+	white-space: nowrap;
+}
+.empty {
+	padding: var(--spacing-md) var(--spacing-sm);
+}
+
+footer {
+	display: flex;
+	align-items: center;
+}
+.link {
+	padding: 0;
+	border: none;
+	background: none;
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+}
+.link[aria-disabled='true'] {
+	cursor: default;
+}
+
+@media (max-width: 720px) {
+	.actions {
+		grid-template-columns: 1fr;
+	}
+	.card {
+		min-height: 0;
+	}
+}

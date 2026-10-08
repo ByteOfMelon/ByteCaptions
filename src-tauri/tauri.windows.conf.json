@@ -1,0 +1,10 @@
+{
+	"$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+	"bundle": {
+		"resources": {
+			"licenses/FFMPEG-LICENSE.txt": "licenses/FFMPEG-LICENSE.txt",
+			"licenses/VULKAN-RUNTIME-LICENSE.txt": "licenses/VULKAN-RUNTIME-LICENSE.txt",
+			"binaries/vulkan/vulkan-1.dll": "vulkan/vulkan-1.dll"
+		}
+	}
+}

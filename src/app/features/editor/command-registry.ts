@@ -1,0 +1,256 @@
+import { Injectable, computed, inject } from '@angular/core';
+import {
+	LucideArrowDown,
+	LucideArrowUp,
+	LucideClock,
+	LucideDelete,
+	LucideFileInput,
+	LucideFolderOpen,
+	LucideFoldHorizontal,
+	LucideMagnet,
+	LucideMerge,
+	LucideMonitor,
+	LucideMoon,
+	LucideSun,
+	LucideTriangleAlert,
+	LucideType,
+	LucideCaptions,
+	LucidePalette,
+	LucidePause,
+	LucidePlay,
+	LucideRedo2,
+	LucideSave,
+	LucideScissors,
+	LucideTimer,
+	LucideTrash2,
+	LucideUndo2,
+	LucideUpload,
+	type LucideIconData,
+} from '@lucide/angular';
+import { EditorUi } from '../../state/editor-ui';
+import { isDesktop } from '../../state/file-io';
+import { ProjectFiles } from '../../state/project-files';
+import { ProjectStore } from '../../state/project-store';
+import { ThemePreference, ThemeService } from '../../theme/theme.service';
+import { EditorCommands } from './editor-commands';
+import { EditorDialogs } from './editor-dialogs';
+
+export interface Command {
+	id: string;
+	label: string;
+	icon: LucideIconData;
+	keys?: string;
+	/** Commands about the selected cue are listed under "For cue N". */
+	scope?: 'cue';
+	/** Opens the timecode prompt in the palette instead of running. */
+	prompt?: 'timecode';
+	enabled?: () => boolean;
+	run: () => void;
+}
+
+const THEMES: { id: ThemePreference; label: string; icon: LucideIconData }[] = [
+	{ id: 'system', label: 'Match system', icon: LucideMonitor.icon },
+	{ id: 'light', label: 'Light', icon: LucideSun.icon },
+	{ id: 'dark', label: 'Dark', icon: LucideMoon.icon },
+];
+
+/** Every command the palette can run. Keys shown here are placeholders (handoff §4). */
+@Injectable({ providedIn: 'root' })
+export class CommandRegistry {
+	private readonly store = inject(ProjectStore);
+	private readonly cmd = inject(EditorCommands);
+	private readonly dialogs = inject(EditorDialogs);
+	private readonly files = inject(ProjectFiles);
+	private readonly ui = inject(EditorUi);
+	private readonly theme = inject(ThemeService);
+
+	readonly all = computed<Command[]>(() => {
+		const hasCue = () => !!this.store.primary();
+		const playing = this.store.playing();
+		return [
+			{
+				id: 'split',
+				label: 'Split cue at playhead',
+				icon: LucideScissors.icon,
+				keys: 'S',
+				scope: 'cue',
+				run: () => this.cmd.splitAtPlayhead(),
+			},
+			{
+				id: 'merge',
+				label: 'Merge with next cue',
+				icon: LucideMerge.icon,
+				keys: 'M',
+				scope: 'cue',
+				enabled: hasCue,
+				run: () => this.cmd.merge(),
+			},
+			{
+				id: 'preset',
+				label: 'Change style preset…',
+				icon: LucideType.icon,
+				scope: 'cue',
+				enabled: hasCue,
+				run: () => this.dialogs.presets(),
+			},
+			{
+				id: 'set-start',
+				label: 'Set start to playhead',
+				icon: LucideTimer.icon,
+				keys: '[',
+				scope: 'cue',
+				enabled: hasCue,
+				run: () => this.cmd.setStartToPlayhead(),
+			},
+			{
+				id: 'set-end',
+				label: 'Set end to playhead',
+				icon: LucideTimer.icon,
+				keys: ']',
+				scope: 'cue',
+				enabled: hasCue,
+				run: () => this.cmd.setEndToPlayhead(),
+			},
+			{
+				id: 'delete',
+				label: 'Delete cue',
+				icon: LucideTrash2.icon,
+				keys: 'Del',
+				scope: 'cue',
+				enabled: hasCue,
+				run: () => this.cmd.deleteSelected(),
+			},
+			{
+				id: 'ripple-delete',
+				label: 'Ripple delete cue',
+				icon: LucideDelete.icon,
+				keys: 'Shift+Del',
+				scope: 'cue',
+				enabled: hasCue,
+				run: () => this.cmd.rippleDeleteSelected(),
+			},
+			{
+				id: 'goto',
+				label: 'Go to timecode…',
+				icon: LucideClock.icon,
+				keys: 'Ctrl+G',
+				prompt: 'timecode',
+				run: () => {},
+			},
+			{
+				id: 'next-problem',
+				label: 'Go to next problem',
+				icon: LucideArrowDown.icon,
+				keys: 'F8',
+				run: () => this.cmd.goToProblem(1),
+			},
+			{
+				id: 'prev-problem',
+				label: 'Go to previous problem',
+				icon: LucideArrowUp.icon,
+				keys: 'Shift+F8',
+				run: () => this.cmd.goToProblem(-1),
+			},
+			{
+				id: 'play',
+				label: playing ? 'Pause' : 'Play',
+				icon: playing ? LucidePause.icon : LucidePlay.icon,
+				keys: 'Space',
+				run: () => this.cmd.togglePlay(),
+			},
+			{
+				id: 'snapping',
+				label: this.ui.snapping() ? 'Turn snapping off' : 'Turn snapping on',
+				icon: LucideMagnet.icon,
+				keys: 'N',
+				run: () => this.ui.snapping.update((on) => !on),
+			},
+			{
+				id: 'zoom-fit',
+				label: 'Zoom timeline to fit',
+				icon: LucideFoldHorizontal.icon,
+				keys: 'Ctrl+0',
+				run: () => this.ui.zoomTimeline?.('fit'),
+			},
+			{
+				id: 'undo',
+				label: 'Undo',
+				icon: LucideUndo2.icon,
+				keys: 'Ctrl+Z',
+				enabled: () => this.store.canUndo(),
+				run: () => this.cmd.undo(),
+			},
+			{
+				id: 'redo',
+				label: 'Redo',
+				icon: LucideRedo2.icon,
+				keys: 'Ctrl+Shift+Z',
+				enabled: () => this.store.canRedo(),
+				run: () => this.cmd.redo(),
+			},
+			// Desktop only: transcription runs Whisper locally.
+			...(isDesktop
+				? [
+						{
+							id: 'transcribe',
+							label: 'Auto-transcribe…',
+							icon: LucideCaptions.icon,
+							keys: 'Ctrl+T',
+							run: () => this.dialogs.transcribe(),
+						},
+					]
+				: []),
+			{
+				id: 'export',
+				label: 'Export…',
+				icon: LucideUpload.icon,
+				keys: 'Ctrl+E',
+				run: () => this.dialogs.export(),
+			},
+			{
+				id: 'presets',
+				label: 'Edit style presets…',
+				icon: LucidePalette.icon,
+				run: () => this.dialogs.presets(),
+			},
+			{
+				id: 'save',
+				label: 'Save project',
+				icon: LucideSave.icon,
+				keys: 'Ctrl+S',
+				run: () => void this.files.save(),
+			},
+			{
+				id: 'open',
+				label: 'Open project…',
+				icon: LucideFolderOpen.icon,
+				keys: 'Ctrl+O',
+				run: () => void this.files.open(),
+			},
+			{
+				id: 'import',
+				label: 'Import captions…',
+				icon: LucideFileInput.icon,
+				keys: 'Ctrl+I',
+				run: () => void this.files.importCaptions(),
+			},
+			{
+				id: 'tab-problems',
+				label: 'Show problems',
+				icon: LucideTriangleAlert.icon,
+				run: () => this.ui.sideTab.set('problems'),
+			},
+			// The theme options other than the current one ("Theme: Match system" etc.).
+			...THEMES.filter((t) => t.id !== this.theme.preference()).map((t) => ({
+				id: `theme-${t.id}`,
+				label: `Theme: ${t.label}`,
+				icon: t.icon,
+				run: () => this.theme.setPreference(t.id),
+			})),
+		];
+	});
+
+	get(id: string): Command | undefined {
+		return this.all().find((c) => c.id === id);
+	}
+}

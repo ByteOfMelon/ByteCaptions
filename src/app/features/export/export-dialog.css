@@ -1,0 +1,87 @@
+.group {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+}
+
+.formats {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: var(--spacing-sm);
+}
+.format {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--spacing-xs);
+	min-height: 100px;
+	padding: var(--spacing-md);
+	border: none;
+	border-radius: var(--radius-control);
+	background: transparent;
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-control-border);
+	color: var(--color-text);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+.format:hover {
+	background: var(--color-card);
+}
+.format[aria-checked='true'] {
+	background: var(--color-selected);
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-brand);
+}
+.format:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+
+.tracks {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+	padding: var(--spacing-xs);
+	border-radius: var(--radius-control);
+	background: var(--color-bg);
+}
+.track {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+	height: 36px;
+	padding: 0 var(--spacing-sm);
+	border-radius: var(--radius-small);
+	cursor: pointer;
+}
+.track:hover {
+	background: var(--color-card);
+}
+.color {
+	flex-shrink: 0;
+	width: 4px;
+	height: 20px;
+	border-radius: var(--radius-small);
+}
+.name {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.save-row {
+	display: flex;
+	align-items: flex-end;
+	gap: var(--spacing-sm);
+}
+.save-to {
+	flex: 1;
+	min-width: 0;
+}
+/* Long paths keep their end (the file name) visible. */
+.save-to input:not(:focus) {
+	direction: rtl;
+	text-align: left;
+}

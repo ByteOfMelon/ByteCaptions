@@ -57,7 +57,10 @@ export function formatForFilename(name: string): FormatInfo | undefined {
 
 /** Guess format from content when the extension is missing or wrong. */
 export function sniffFormat(src: string): FormatInfo | undefined {
-	const head = src.replace(/^\uFEFF/, '').trimStart().slice(0, 200);
+	const head = src
+		.replace(/^\uFEFF/, '')
+		.trimStart()
+		.slice(0, 200);
 	if (/^<\?xml|^<timedtext/.test(head) && /format="3"/.test(src.slice(0, 500)))
 		return FORMATS.srv3;
 	if (head.startsWith('WEBVTT')) return FORMATS.vtt;

@@ -1,0 +1,44 @@
+:host {
+	display: flex;
+	flex-direction: column;
+	max-width: calc(100vw - 32px);
+	max-height: calc(100vh - 32px);
+	border-radius: var(--radius-panel);
+	background: var(--color-panel);
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-outline);
+}
+
+.head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--spacing-md);
+	padding: var(--spacing-md) var(--spacing-lg);
+}
+.titles {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+	min-width: 0;
+}
+.titles.inline {
+	flex-direction: row;
+	align-items: baseline;
+	gap: var(--spacing-sm);
+}
+h2 {
+	margin: 0;
+}
+
+.body {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-lg);
+	min-height: 0;
+	padding: 0 var(--spacing-lg);
+	overflow-y: auto;
+}
+/* Bodies without a footer still need bottom padding. */
+.body:last-child {
+	padding-bottom: var(--spacing-lg);
+}

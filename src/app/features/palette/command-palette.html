@@ -1,0 +1,92 @@
+<div class="search">
+	@if (mode() === 'timecode') {
+		<svg lucideClock aria-hidden="true"></svg>
+	} @else {
+		<svg lucideSearch aria-hidden="true"></svg>
+	}
+	<input
+		bcAutofocus
+		role="combobox"
+		aria-label="Command palette"
+		aria-controls="palette-list"
+		aria-expanded="true"
+		[attr.aria-activedescendant]="items().length ? 'palette-item-' + active() : null"
+		[placeholder]="placeholder()"
+		[value]="query()"
+		(input)="query.set($any($event.target).value)"
+		(keydown)="onKey($event)"
+		spellcheck="false"
+		autocomplete="off"
+	/>
+	@if (summary()) {
+		<span class="text-small text-faded">{{ summary() }}</span>
+	}
+</div>
+
+<div class="list" id="palette-list" role="listbox" #list>
+	@for (section of sections(); track section.title) {
+		@if (section.title) {
+			<div class="section text-small text-faded" role="presentation">{{ section.title }}</div>
+		}
+		@for (item of section.items; track item.key) {
+			@let i = index(item);
+			<div
+				class="item"
+				role="option"
+				[id]="'palette-item-' + i"
+				[attr.data-index]="i"
+				[attr.aria-selected]="i === active()"
+				[class.active]="i === active()"
+				(pointermove)="active.set(i)"
+				(click)="run(item)"
+			>
+				@switch (item.kind) {
+					@case ('command') {
+						<svg [lucideIcon]="item.cmd.icon" aria-hidden="true"></svg>
+						<span class="label">
+							@for (seg of highlight(item.cmd.label, query()); track $index) {
+								<span [class.match]="seg.m">{{ seg.t }}</span>
+							}
+						</span>
+						@if (item.cmd.keys) {
+							<bc-kbd [keys]="item.cmd.keys" />
+						}
+					}
+					@case ('cue') {
+						<svg lucideCaptions aria-hidden="true"></svg>
+						<span class="label two-line">
+							<span class="cue-text">
+								@for (seg of highlight(item.text, query()); track $index) {
+									<span [class.match]="seg.m">{{ seg.t }}</span>
+								}
+							</span>
+							<span class="text-small text-faded">
+								Cue {{ item.ref.index }} • {{ timecode(item.ref.cue.start) }} •
+								{{ item.ref.track.name }}
+							</span>
+						</span>
+					}
+					@case ('time') {
+						<svg lucideClock aria-hidden="true"></svg>
+						<span class="label">Go to {{ timecode(item.ms) }}</span>
+						<bc-kbd keys="Enter" />
+					}
+				}
+			</div>
+		}
+	} @empty {
+		<p class="empty text-small text-faded">
+			@if (mode() === 'timecode') {
+				Enter a time like 1:23, 01:23.500 or 00:01:23:15.
+			} @else {
+				Nothing matches “{{ query() }}”.
+			}
+		</p>
+	}
+</div>
+
+<footer class="hints text-small text-faded">
+	<span><bc-kbd keys="↑" /><bc-kbd keys="↓" /> Move</span>
+	<span><bc-kbd keys="Enter" /> Run</span>
+	<span><bc-kbd keys="Esc" /> Close</span>
+</footer>

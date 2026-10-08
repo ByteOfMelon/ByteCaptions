@@ -1,0 +1,106 @@
+<header class="panel-header">
+	<h2 class="text-heading-3">Preview</h2>
+	<bc-select class="mode" [options]="modes" [(value)]="mode" />
+</header>
+
+<div class="frame" [class.dragging]="dragging()" (click)="playback.toggle()">
+	<div #frame class="stage">
+		@if (playback.mediaUrl(); as url) {
+			<video #video [src]="url" preload="auto"></video>
+		} @else {
+			<div class="empty text-small">
+				Drop a video here to preview it • captions play without one
+			</div>
+		}
+		@if (showCaptions()) {
+			@for (c of captions(); track c.id) {
+				<div class="caption-window" [style]="c.window">
+					@for (line of c.lines; track $index) {
+						<span class="caption-line" [style]="c.text">{{ line }}</span>
+						@if (!$last) {
+							<br />
+						}
+					}
+				</div>
+			}
+		}
+	</div>
+</div>
+
+<div class="transport">
+	<div class="timecode text-mono-small">
+		<span>{{ timecode() }}</span>
+		<span class="text-faded">/ {{ durationTc() }}</span>
+	</div>
+	<div class="controls">
+		<button
+			bcIconButton
+			variant="ghost"
+			aria-label="Previous cue"
+			bcTooltip="Previous cue"
+			tooltipKeys="↑"
+			(click)="playback.jumpCue(-1)"
+		>
+			<svg lucideSkipBack></svg>
+		</button>
+		<button
+			bcIconButton
+			variant="ghost"
+			aria-label="Previous frame"
+			bcTooltip="Previous frame"
+			tooltipKeys="←"
+			(click)="playback.stepFrames(-1)"
+		>
+			<svg lucideChevronLeft></svg>
+		</button>
+		<button
+			bcIconButton
+			variant="primary"
+			[attr.aria-label]="store.playing() ? 'Pause' : 'Play'"
+			bcTooltip="Play / pause"
+			tooltipKeys="Space"
+			(click)="playback.toggle()"
+		>
+			@if (store.playing()) {
+				<svg lucidePause></svg>
+			} @else {
+				<svg lucidePlay></svg>
+			}
+		</button>
+		<button
+			bcIconButton
+			variant="ghost"
+			aria-label="Next frame"
+			bcTooltip="Next frame"
+			tooltipKeys="→"
+			(click)="playback.stepFrames(1)"
+		>
+			<svg lucideChevronRight></svg>
+		</button>
+		<button
+			bcIconButton
+			variant="ghost"
+			aria-label="Next cue"
+			bcTooltip="Next cue"
+			tooltipKeys="↓"
+			(click)="playback.jumpCue(1)"
+		>
+			<svg lucideSkipForward></svg>
+		</button>
+	</div>
+	<div class="right">
+		<button bcButton variant="ghost" bcTooltip="Playback speed" (click)="cycleRate()">
+			{{ rateLabel() }}
+		</button>
+		<button
+			bcIconButton
+			variant="ghost"
+			aria-label="Show captions"
+			bcTooltip="Show captions"
+			[pressed]="showCaptions()"
+			(click)="showCaptions.set(!showCaptions())"
+		>
+			<svg lucideCaptions></svg>
+		</button>
+	</div>
+</div>

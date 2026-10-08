@@ -1,0 +1,73 @@
+<bc-field #find>
+	<input
+		[id]="find.fieldId"
+		aria-label="Find"
+		placeholder="Search cues…"
+		[value]="query()"
+		(input)="query.set($any($event.target).value)"
+	/>
+	<svg lucideSearch aria-hidden="true"></svg>
+</bc-field>
+
+<div class="meta text-small">
+	<span class="text-faded"
+		>{{ store.cueCount() | count: 'cue' }} • {{ trackCount() | count: 'track' }}</span
+	>
+	@if (warnings()) {
+		<span class="warn">{{ warnings() }} {{ warnings() === 1 ? 'warning' : 'warnings' }}</span>
+	}
+</div>
+
+<div #list class="rows" role="listbox" aria-label="Cues" aria-multiselectable="true">
+	@for (row of rows(); track row.id) {
+		<div
+			class="row"
+			role="option"
+			tabindex="-1"
+			[attr.data-cue]="row.id"
+			[attr.aria-selected]="row.selected"
+			[class.selected]="row.selected"
+			[class.playing]="row.playing"
+			[class.locked]="row.ref.track.locked"
+			(click)="click($event, row.ref)"
+			(dblclick)="!row.ref.track.locked && editing.set(row.id)"
+		>
+			<span class="track-color" [style.background]="row.ref.track.color"></span>
+			<div class="content">
+				<div class="times text-mono-small">
+					<span>{{ row.ref.index }}</span>
+					<span>{{ row.timing }}</span>
+					@if (row.cps) {
+						<span class="cps">{{ row.cps }} cps</span>
+					} @else if (row.problem) {
+						<span [class]="row.problem === 'error' ? 'error' : 'cps'">•</span>
+					}
+				</div>
+				@if (editing() === row.id) {
+					<textarea
+						#editor
+						bcAutofocus="select"
+						class="editor"
+						rows="2"
+						[value]="row.text"
+						(blur)="commit(row.id, editor.value)"
+						(keydown)="onEditKey($event, row.id)"
+						(click)="$event.stopPropagation()"
+					></textarea>
+				} @else {
+					<p class="text">{{ row.text }}</p>
+				}
+			</div>
+		</div>
+	} @empty {
+		<p class="empty text-small text-faded">
+			@if (query()) {
+				No cues match “{{ query() }}”.
+			} @else {
+				No cues yet. Press Enter to add one at the playhead{{
+					canTranscribe ? ', or run Auto-transcribe' : ''
+				}}.
+			}
+		</p>
+	}
+</div>

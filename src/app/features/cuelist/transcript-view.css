@@ -1,0 +1,93 @@
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-md);
+	flex: 1;
+	min-height: 0;
+}
+
+.meta {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--spacing-sm);
+}
+.warn {
+	color: var(--color-warning);
+}
+
+.document {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+}
+
+.paragraph {
+	display: flex;
+	gap: var(--spacing-md);
+	padding: var(--spacing-sm);
+	border-radius: var(--radius-control);
+}
+.paragraph.current {
+	background: var(--color-selected);
+}
+.start {
+	width: 64px;
+	flex-shrink: 0;
+	padding-top: 2px;
+	color: var(--color-text-faded);
+}
+.text {
+	flex: 1;
+	min-width: 0;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.break {
+	margin: 0 var(--spacing-sm);
+	color: var(--color-text-faded);
+	font-size: 12px;
+	vertical-align: middle;
+	user-select: none;
+}
+
+.segment {
+	border-radius: var(--radius-small);
+	cursor: text;
+}
+.segment.selected {
+	box-shadow: 0 0 0 2px var(--color-selected);
+	background: var(--color-selected);
+}
+.segment.editing {
+	padding: 0 2px;
+	background: var(--color-panel);
+	box-shadow: var(--focus-ring);
+	outline: none;
+}
+
+.word {
+	cursor: pointer;
+}
+.word:hover {
+	text-decoration: underline;
+	text-decoration-color: var(--color-text-faded);
+}
+.word.current {
+	color: var(--color-brand);
+	font-weight: 800;
+}
+.word.unsure {
+	text-decoration: underline;
+	text-decoration-color: var(--color-warning);
+	text-decoration-thickness: 2px;
+	text-underline-offset: 3px;
+	color: var(--color-warning);
+}
+
+.hint {
+	margin: 0;
+}

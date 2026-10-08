@@ -1,0 +1,96 @@
+/*
+ * Design tokens, mirrored from the Penpot "ByteCaptions App" token sets
+ * (Core, Palette, Mode/Dark, Mode/Light). Components must use these vars, never raw hex.
+ * Dark is the default; set data-theme="light" on <html> for light mode.
+ */
+
+/* Core */
+:root {
+	--color-brand: #809d6d;
+	--color-brand-dark: #5f7a4e;
+
+	--radius-panel: 16px;
+	--radius-control: 8px;
+	--radius-small: 4px;
+
+	--spacing-xs: 4px;
+	--spacing-sm: 8px;
+	--spacing-md: 12px;
+	--spacing-lg: 16px;
+	--spacing-xl: 24px;
+	--spacing-xxl: 32px;
+
+	--outline-width: 1px;
+	--focus-ring-width: 2px;
+	--scrim: rgb(0 0 0 / 0.75);
+
+	--font-ui: 'Inter Variable', 'Inter', system-ui, sans-serif;
+	--font-mono: 'Space Mono', ui-monospace, monospace;
+	--line-height: 1.25;
+}
+
+/* Mode/Dark (default) */
+:root,
+[data-theme='dark'] {
+	color-scheme: dark;
+	--color-bg: #151517;
+	--color-panel: #1b1b1e;
+	--color-card: #27272b;
+	--color-selected: #2d2d3a;
+	--color-text: #fcfcfc;
+	--color-text-faded: rgb(252 252 252 / 0.5);
+	--color-info: #6b9bea;
+	--color-warning: #c89a08;
+	--color-success: #3dba5c;
+	--color-danger: #f06464;
+	--color-focus: var(--color-brand);
+	--color-outline: var(--color-selected);
+	--color-control-border: #6a6a7a;
+	--color-brand-hover: #8fab7c;
+	--color-brand-pressed: #718d5f;
+	--color-danger-hover: #f37d7d;
+	--color-danger-pressed: #d95757;
+	--color-on-brand: #151517;
+	--color-on-danger: #151517;
+	--color-track-1: #4a6fa5;
+	--color-track-2: #7e60a6;
+	--color-track-3: #9a6a3e;
+	--color-track-4: #3b7c6f;
+	/* Not a Penpot token: labels on track-colored cue blocks. Light text in both modes,
+	   since the track colors don't change (≥ 5:1 on all four). */
+	--color-on-track: #fcfcfc;
+}
+
+/* Mode/Light */
+[data-theme='light'] {
+	color-scheme: light;
+	--color-bg: #f8f8ff;
+	--color-panel: #e4e4ef;
+	--color-card: #fdfdff;
+	--color-selected: #dcdcff;
+	--color-text: #030303;
+	--color-text-faded: rgb(3 3 3 / 0.6);
+	--color-info: #00409f;
+	--color-warning: #7d5f00;
+	--color-success: #006b1d;
+	--color-danger: #c80808;
+	--color-focus: var(--color-brand-dark);
+	--color-outline: var(--color-selected);
+	--color-control-border: #7c7c90;
+	--color-brand-hover: #8fab7c;
+	--color-brand-pressed: #718d5f;
+	--color-danger-hover: #d42b2b;
+	--color-danger-pressed: #a90707;
+	--color-on-brand: #030303;
+	--color-on-danger: #fcfcfc;
+	--color-track-1: #4a6fa5;
+	--color-track-2: #7e60a6;
+	--color-track-3: #9a6a3e;
+	--color-track-4: #3b7c6f;
+	--color-on-track: #fcfcfc;
+}
+
+/* Focus ring as drawn in Penpot: 2px bg-colored gap, then a 4px focus-colored ring. */
+:root {
+	--focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 6px var(--color-focus);
+}

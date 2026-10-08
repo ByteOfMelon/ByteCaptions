@@ -1,0 +1,111 @@
+<bc-dialog heading="Style presets" [subtitle]="subtitle()" inlineSubtitle [width]="1120">
+	<div class="layout">
+		<nav class="presets" aria-label="Presets">
+			<div class="preset-list" role="listbox" aria-label="Presets">
+				@for (p of list(); track p.id) {
+					<button
+						type="button"
+						role="option"
+						class="preset"
+						[attr.aria-selected]="p.id === selectedId()"
+						(click)="select(p.id)"
+					>
+						<bc-style-chip large [style]="p.style" />
+						<span class="preset-text">
+							<span class="preset-name">{{ p.style.name }}</span>
+							<span class="text-small text-faded">{{ p.used }}</span>
+						</span>
+					</button>
+				}
+			</div>
+			<button bcButton variant="ghost" class="new" (click)="create()">
+				<svg lucidePlus></svg>New preset
+			</button>
+		</nav>
+
+		<section class="preview-col">
+			<div class="controls">
+				<bc-field class="sample" label="Sample text" #f>
+					<input
+						[id]="f.fieldId"
+						[value]="sample()"
+						(input)="sample.set($any($event.target).value)"
+					/>
+				</bc-field>
+				<bc-select
+					class="mode"
+					label="Preview as"
+					[options]="modes"
+					[value]="previewMode()"
+					(valueChange)="previewMode.set($any($event))"
+				/>
+			</div>
+
+			<div class="stage" [class]="backdrop()" aria-label="Preset preview" role="img">
+				<div class="window" [style]="windowCss()">
+					<span class="line" [style]="sampleCss()">{{ sample() }}</span>
+				</div>
+			</div>
+
+			<div class="check">
+				<span class="text-small">Check against</span>
+				<bc-tabs
+					idPrefix="backdrop"
+					[tabs]="backdrops"
+					[value]="backdrop()"
+					(valueChange)="backdrop.set($event)"
+				/>
+			</div>
+
+			<div class="usage">
+				<span class="text-small">Tracks using this preset</span>
+				@for (t of tracksUsing(); track t.id) {
+					<div class="usage-row">
+						<span class="color" [style.background]="t.color"></span>
+						<span class="usage-name">{{ t.name }}</span>
+						<span class="text-small text-faded">{{ t.count }}</span>
+					</div>
+				} @empty {
+					<span class="text-small text-faded">No cues use this preset yet.</span>
+				}
+			</div>
+
+			<p class="hint text-small text-faded">
+				Changes apply to every cue that uses this preset. YouTube may substitute fonts on
+				some devices.
+			</p>
+		</section>
+
+		<section class="properties" aria-label="Preset properties">
+			<bc-field label="Preset name" #n>
+				<input
+					[id]="n.fieldId"
+					[value]="current().name"
+					(change)="rename($any($event.target).value)"
+				/>
+			</bc-field>
+			<bc-style-fields showEdge [style]="current()" (styleChange)="updateStyle($event)" />
+			<bc-anchor-picker [position]="position()" (positionChange)="updatePosition($event)" />
+		</section>
+	</div>
+
+	<div dialogFooter>
+		<div class="footer-start">
+			<button bcButton variant="ghost" (click)="duplicate()">Duplicate</button>
+			<button
+				bcButton
+				variant="ghost"
+				class="delete"
+				[disabled]="selectedId() === defaultId"
+				[bcTooltip]="
+					selectedId() === defaultId ? 'The default preset can\'t be deleted' : ''
+				"
+				(click)="remove()"
+			>
+				Delete
+			</button>
+		</div>
+		<button bcButton (click)="ref.close()">Cancel</button>
+		<button bcButton variant="primary" (click)="save()">Save changes</button>
+	</div>
+</bc-dialog>

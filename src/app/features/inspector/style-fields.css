@@ -1,0 +1,50 @@
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-md);
+}
+
+.size-row {
+	display: flex;
+	align-items: flex-end;
+	gap: var(--spacing-md);
+}
+.size {
+	width: 120px;
+}
+
+/* Segmented B / I / U toggles */
+.emphasis {
+	display: flex;
+	gap: var(--spacing-xs);
+	padding: 2px;
+	border-radius: var(--radius-control);
+	background: var(--color-bg);
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-outline);
+}
+.emphasis button {
+	display: grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: none;
+	border-radius: var(--radius-small);
+	background: transparent;
+	color: var(--color-text);
+	cursor: pointer;
+}
+.emphasis button:hover {
+	background: var(--color-card);
+}
+.emphasis button[aria-pressed='true'] {
+	background: var(--color-selected);
+}
+.emphasis button:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+.emphasis svg.lucide {
+	width: 20px;
+	height: 20px;
+}

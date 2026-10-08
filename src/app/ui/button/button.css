@@ -1,0 +1,127 @@
+:host {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 36px;
+	padding: var(--spacing-sm) var(--spacing-md);
+	border: none;
+	border-radius: var(--radius-control);
+	overflow: hidden;
+	font: 800 16px / var(--line-height) var(--font-ui);
+	white-space: nowrap;
+	text-decoration: none;
+	cursor: pointer;
+	user-select: none;
+}
+
+:host(.icon) {
+	width: 36px;
+	padding: var(--spacing-sm);
+}
+
+:host ::ng-deep svg.lucide {
+	width: 20px;
+	height: 20px;
+}
+
+.content {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+	min-width: 0;
+}
+
+:host(:focus-visible) {
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+
+/* Primary: brand fill (Export, Save, Transcribe) */
+:host(.primary) {
+	background: var(--color-brand);
+	color: var(--color-on-brand);
+}
+:host(.primary:hover:not(:disabled)) {
+	background: var(--color-brand-hover);
+}
+:host(.primary:active:not(:disabled)) {
+	background: var(--color-brand-pressed);
+}
+
+/* Secondary: card fill with a 1px outline */
+:host(.secondary) {
+	background: var(--color-card);
+	color: var(--color-text);
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-outline);
+}
+:host(.secondary:hover:not(:disabled)) {
+	background: var(--color-selected);
+}
+:host(.secondary:active:not(:disabled)) {
+	background: var(--color-panel);
+}
+:host(.secondary:focus-visible) {
+	box-shadow:
+		inset 0 0 0 var(--outline-width) var(--color-outline),
+		var(--focus-ring);
+}
+
+/* Ghost: no fill */
+:host(.ghost) {
+	background: transparent;
+	color: var(--color-text);
+}
+:host(.ghost:hover:not(:disabled)) {
+	background: var(--color-card);
+}
+:host(.ghost:active:not(:disabled)) {
+	background: var(--color-selected);
+}
+/* Danger */
+:host(.danger) {
+	background: var(--color-danger);
+	color: var(--color-on-danger);
+}
+:host(.danger:hover:not(:disabled)) {
+	background: var(--color-danger-hover);
+}
+:host(.danger:active:not(:disabled)) {
+	background: var(--color-danger-pressed);
+}
+
+:host(:disabled),
+:host([aria-disabled='true']) {
+	background: var(--color-card);
+	color: var(--color-text-faded);
+	box-shadow: none;
+	cursor: default;
+}
+
+/* Icon buttons keep their outline when disabled */
+:host(.secondary.icon:disabled) {
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-outline);
+}
+:host(.ghost:disabled) {
+	background: transparent;
+}
+
+/* Toggled-on tool (e.g. snapping) */
+:host(.on:not(:disabled)) {
+	background: var(--color-selected);
+}
+
+/* Progress: card track with a brand fill growing behind the label */
+:host(.in-progress) {
+	background: var(--color-card);
+	color: var(--color-text);
+	cursor: default;
+}
+.progress {
+	position: absolute;
+	inset: 0 auto 0 0;
+	background: var(--color-brand);
+	opacity: 0.35;
+	transition: width 200ms linear;
+}

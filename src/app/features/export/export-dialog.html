@@ -1,0 +1,87 @@
+<bc-dialog heading="Export captions" [subtitle]="subtitle()">
+	<section class="group">
+		<span class="text-small" id="export-format">Format</span>
+		<div class="formats" role="radiogroup" aria-labelledby="export-format">
+			@for (c of cards; track c.id) {
+				<button
+					type="button"
+					role="radio"
+					class="format"
+					[attr.aria-checked]="format() === c.id"
+					(click)="setFormat(c.id)"
+				>
+					<span class="text-body-bold">{{ c.name }}</span>
+					<span class="text-small text-faded">{{ c.description }}</span>
+				</button>
+			}
+		</div>
+	</section>
+
+	@if (loses().length) {
+		<bc-notice tone="info" [heading]="styleNotice().title" [detail]="styleNotice().detail">
+			<button bcButton noticeAction variant="ghost" (click)="setFormat('srv3')">
+				Use SRV3
+			</button>
+		</bc-notice>
+	}
+
+	<section class="group">
+		<span class="text-small" id="export-tracks">Tracks</span>
+		<div class="tracks" role="group" aria-labelledby="export-tracks">
+			@for (t of project().tracks; track t.id) {
+				<label class="track">
+					<bc-checkbox
+						[checked]="included().has(t.id)"
+						(checkedChange)="toggleTrack(t.id, $event)"
+					/>
+					<span class="color" [style.background]="t.color"></span>
+					<span class="name">{{ t.name }}</span>
+					<span class="text-mono-small text-faded">{{
+						t.cues.length | count: 'cue'
+					}}</span>
+				</label>
+			}
+		</div>
+		<span class="text-small text-faded">Selected tracks are combined into one file.</span>
+	</section>
+
+	<div class="save-row">
+		<bc-field class="save-to" label="Save to" #f>
+			<input
+				[id]="f.fieldId"
+				[value]="path()"
+				(change)="fileName.set($any($event.target).value)"
+				spellcheck="false"
+			/>
+		</bc-field>
+		@if (canBrowse) {
+			<button bcButton (click)="browse()"><svg lucideFolder></svg>Browse</button>
+		}
+	</div>
+
+	@if (error(); as message) {
+		<bc-notice tone="danger" heading="Export failed" [detail]="message" />
+	}
+
+	@if (problems().errors + problems().warnings) {
+		<bc-notice
+			[tone]="problems().errors ? 'danger' : 'warning'"
+			[heading]="problemTitle()"
+			detail="It's recommended to review these before exporting."
+		>
+			<button bcButton noticeAction variant="ghost" (click)="review()">Review</button>
+		</bc-notice>
+	}
+
+	<div dialogFooter>
+		<button bcButton (click)="ref.close()">Cancel</button>
+		<button
+			bcButton
+			variant="primary"
+			[disabled]="!included().size || busy()"
+			(click)="export()"
+		>
+			Export
+		</button>
+	</div>
+</bc-dialog>

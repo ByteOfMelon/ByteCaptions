@@ -1,0 +1,12 @@
+# Build settings for whisper.cpp (compiled by whisper-rs-sys with CMake; its C bindings are
+# generated with bindgen, which needs LLVM's libclang).
+[env]
+# Don't tune for the build machine's CPU: release builds must run on users' CPUs.
+# AVX2 + FMA + F16C covers Intel Haswell (2013) / AMD Excavator (2015) and newer.
+GGML_NATIVE = "OFF"
+GGML_AVX = "ON"
+GGML_AVX2 = "ON"
+GGML_FMA = "ON"
+GGML_F16C = "ON"
+# Keeps whisper.cpp's nested CMake builds within Windows' path length limit (see the file).
+CMAKE_TOOLCHAIN_FILE = { value = "cmake/short-paths.cmake", relative = true }

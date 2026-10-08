@@ -2,10 +2,21 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<title>Bytecaptions</title>
+		<title>ByteCaptions</title>
 		<base href="/" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" type="image/x-icon" href="favicon.ico" />
+		<script>
+			// Apply the theme before the app boots so it doesn't flash the wrong one: the
+			// user's choice if they made one, otherwise the system's.
+			try {
+				const t = localStorage.getItem('bc.theme');
+				const light = t
+					? t === 'light'
+					: matchMedia('(prefers-color-scheme: light)').matches;
+				document.documentElement.setAttribute('data-theme', light ? 'light' : 'dark');
+			} catch {}
+		</script>
 	</head>
 	<body>
 		<app-root></app-root>

@@ -1,0 +1,56 @@
+@for (entry of items(); track $index) {
+	@switch (entry.kind) {
+		@case ('separator') {
+			<div class="separator" role="separator"></div>
+		}
+		@case ('header') {
+			<div class="header text-small">{{ $any(entry).label }}</div>
+		}
+		@default {
+			@let item = asItem(entry);
+			<div class="row">
+				<button
+					type="button"
+					role="menuitem"
+					class="item"
+					tabindex="-1"
+					[class.danger]="item.danger"
+					[class.active]="active() === $index || openSub() === $index"
+					[attr.aria-haspopup]="item.submenu ? 'menu' : null"
+					[attr.aria-expanded]="item.submenu ? openSub() === $index : null"
+					[disabled]="item.disabled"
+					(mouseenter)="hover($index)"
+					(click)="activate($index)"
+				>
+					@if (item.icon) {
+						<svg [lucideIcon]="item.icon" aria-hidden="true"></svg>
+					} @else if (item.swatch) {
+						<span class="swatch" [style.background]="item.swatch"></span>
+					}
+					<span class="label">{{ item.label }}</span>
+					@if (item.value) {
+						<span class="value text-small">{{ item.value }}</span>
+					}
+					@if (item.keys) {
+						<bc-kbd [keys]="item.keys" />
+					}
+					@if (item.checked) {
+						<svg lucideCheck class="check" aria-label="Selected"></svg>
+					}
+					@if (item.submenu) {
+						<svg lucideChevronRight class="chevron" aria-hidden="true"></svg>
+					}
+				</button>
+				@if (item.submenu && openSub() === $index) {
+					<bc-menu
+						class="submenu"
+						[items]="item.submenu"
+						nested
+						(select)="select.emit($event)"
+						(back)="closeSub()"
+					/>
+				}
+			</div>
+		}
+	}
+}

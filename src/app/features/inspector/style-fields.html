@@ -1,0 +1,81 @@
+@let s = captionStyle();
+<bc-select
+	label="Font"
+	[options]="fontOptions"
+	[value]="s.font === 'default' ? 'propSans' : s.font"
+	(valueChange)="set('font', $any($event))"
+/>
+
+<div class="size-row">
+	<bc-number-field
+		class="size"
+		label="Text size"
+		suffix="%"
+		[min]="75"
+		[max]="400"
+		[step]="25"
+		[value]="s.scale * 100"
+		(valueChange)="setPercent('scale', $event)"
+	/>
+	<div class="emphasis" role="group" aria-label="Emphasis">
+		<button
+			type="button"
+			aria-label="Bold"
+			bcTooltip="Bold"
+			[attr.aria-pressed]="s.bold"
+			(click)="set('bold', !s.bold)"
+		>
+			<svg lucideBold></svg>
+		</button>
+		<button
+			type="button"
+			aria-label="Italic"
+			bcTooltip="Italic"
+			[attr.aria-pressed]="s.italic"
+			(click)="set('italic', !s.italic)"
+		>
+			<svg lucideItalic></svg>
+		</button>
+		<button
+			type="button"
+			aria-label="Underline"
+			bcTooltip="Underline"
+			[attr.aria-pressed]="s.underline"
+			(click)="set('underline', !s.underline)"
+		>
+			<svg lucideUnderline></svg>
+		</button>
+	</div>
+</div>
+
+<bc-color-field
+	label="Text color"
+	[value]="s.textColor"
+	[opacity]="s.textOpacity * 100"
+	(valueChange)="set('textColor', $event)"
+	(opacityChange)="setPercent('textOpacity', $event)"
+/>
+<bc-color-field
+	label="Background"
+	[value]="s.bgColor"
+	[opacity]="s.bgOpacity * 100"
+	(valueChange)="set('bgColor', $event)"
+	(opacityChange)="setPercent('bgOpacity', $event)"
+/>
+
+@if (showEdge()) {
+	<bc-select
+		label="Edge"
+		[options]="edgeOptions"
+		[value]="s.edge"
+		(valueChange)="set('edge', $any($event))"
+	/>
+	@if (s.edge !== 'none') {
+		<bc-color-field
+			label="Edge color"
+			[value]="s.edgeColor"
+			[showOpacity]="false"
+			(valueChange)="set('edgeColor', $event)"
+		/>
+	}
+}

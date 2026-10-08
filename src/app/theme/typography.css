@@ -1,0 +1,56 @@
+/* Typography styles from Penpot. Inter for UI, Space Mono for timecodes, shortcuts and numbers. */
+
+.text-heading-1,
+.text-heading-2,
+.text-heading-3,
+.text-body,
+.text-body-bold,
+.text-small {
+	font-family: var(--font-ui);
+	line-height: var(--line-height);
+	letter-spacing: 0;
+}
+
+.text-heading-1 {
+	font-size: 24px;
+	font-weight: 900;
+}
+.text-heading-2 {
+	font-size: 20px;
+	font-weight: 900;
+}
+.text-heading-3 {
+	font-size: 16px;
+	font-weight: 900;
+}
+.text-body {
+	font-size: 16px;
+	font-weight: 500;
+}
+.text-body-bold {
+	font-size: 16px;
+	font-weight: 800;
+}
+.text-small {
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.text-mono,
+.text-mono-small {
+	font-family: var(--font-mono);
+	font-weight: 400;
+	line-height: var(--line-height);
+	font-variant-numeric: tabular-nums;
+}
+
+.text-mono {
+	font-size: 16px;
+}
+.text-mono-small {
+	font-size: 12px;
+}
+
+.text-faded {
+	color: var(--color-text-faded);
+}

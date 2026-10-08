@@ -1,0 +1,143 @@
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+	height: 100vh;
+	padding: var(--spacing-sm);
+	overflow: hidden;
+	background: var(--color-bg);
+}
+
+/* Equal-width sides keep undo/redo truly centered. */
+.toolbar {
+	display: grid;
+	grid-template-columns: 1fr auto 1fr;
+	align-items: center;
+	flex-shrink: 0;
+	gap: var(--spacing-sm);
+	height: 36px;
+	padding: 0 var(--spacing-sm);
+}
+.group {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-md);
+	min-width: 0;
+}
+.group.center {
+	gap: var(--spacing-xs);
+}
+.group.end {
+	justify-content: flex-end;
+	gap: var(--spacing-sm);
+}
+.home {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-md);
+	flex-shrink: 0;
+	margin: -4px;
+	padding: 4px;
+	border-radius: var(--radius-small);
+	color: var(--color-text);
+	text-decoration: none;
+}
+.home:hover {
+	background: var(--color-card);
+}
+.home:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+.logo {
+	flex-shrink: 0;
+	width: 24px;
+	height: 24px;
+	color: var(--color-brand);
+}
+.app-name {
+	font-weight: 900;
+	white-space: nowrap;
+}
+.project {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.saved {
+	color: var(--color-success);
+	white-space: nowrap;
+}
+
+.palette {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+	width: 265px;
+	height: 36px;
+	padding: 0 var(--spacing-sm) 0 var(--spacing-md);
+	border: none;
+	border-radius: var(--radius-control);
+	background: var(--color-panel);
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-control-border);
+	color: var(--color-text);
+	font: inherit;
+	cursor: pointer;
+}
+.palette span {
+	flex: 1;
+	text-align: left;
+}
+.palette:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+
+.workspace {
+	display: flex;
+	flex: 1;
+	gap: var(--spacing-sm);
+	min-height: 0;
+}
+
+.panel {
+	padding: var(--spacing-lg);
+	border-radius: var(--radius-panel);
+	background: var(--color-panel);
+	box-shadow: inset 0 0 0 var(--outline-width) var(--color-outline);
+}
+.cues {
+	width: 360px;
+	flex-shrink: 0;
+}
+.preview {
+	flex: 1;
+	min-width: 0;
+}
+.inspector {
+	width: 320px;
+	flex-shrink: 0;
+}
+.timeline {
+	flex-shrink: 0;
+	height: 300px;
+}
+
+.ok {
+	color: var(--color-success);
+}
+.failed {
+	color: var(--color-danger);
+}
+
+.file-error {
+	position: fixed;
+	bottom: var(--spacing-lg);
+	left: 50%;
+	z-index: 800;
+	width: min(560px, 100% - 2 * var(--spacing-lg));
+	transform: translateX(-50%);
+	box-shadow:
+		inset 0 0 0 var(--outline-width) var(--color-danger),
+		0 8px 24px rgb(0 0 0 / 0.4);
+}
