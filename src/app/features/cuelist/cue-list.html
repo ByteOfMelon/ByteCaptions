@@ -78,11 +78,14 @@
 							<input
 								#time
 								class="time-editor"
+								[class.invalid]="!!timeError()"
+								[bcErrorTip]="timeError()"
 								bcAutofocus="select"
 								[attr.aria-label]="edge === 'start' ? 'Start time' : 'End time'"
 								[value]="edge === 'start' ? row.start : row.end"
 								spellcheck="false"
 								(blur)="commitTime(time.value)"
+								(input)="onTimeInput(time.value)"
 								(keydown)="onTimeKey($event)"
 								(click)="$event.stopPropagation()"
 							/>

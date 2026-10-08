@@ -22,10 +22,11 @@ import { Autofocus } from '../../ui/autofocus/autofocus';
 import { isDesktop } from '../../state/file-io';
 import { Playback } from '../player/playback';
 import { CountPipe } from '../../ui/count/count';
+import { ErrorTip } from '../../ui/tooltip/tooltip';
 
 @Component({
 	selector: 'bc-cue-list',
-	imports: [CountPipe, Field, Autofocus, Button, IconButton, LucideSearch, LucideX],
+	imports: [CountPipe, Field, Autofocus, ErrorTip, Button, IconButton, LucideSearch, LucideX],
 	templateUrl: './cue-list.html',
 	styleUrl: './cue-list.css',
 })
@@ -42,6 +43,7 @@ export class CueList {
 	protected readonly editing = signal<string | null>(null);
 	/** The start or end time being typed into. */
 	protected readonly editingTime = signal<{ id: CueId; edge: 'start' | 'end' } | null>(null);
+	protected readonly timeError = signal<string | null>(null);
 
 	/** Rows don't depend on the playhead or selection, so playback doesn't rebuild them. */
 	protected readonly rows = computed(() => {
@@ -139,26 +141,52 @@ export class CueList {
 		this.editingTime.set({ id: r.cue.id, edge });
 	}
 
-	protected commitTime(text: string): void {
+	/** Why `text` can't be the edited time, or null if it can. */
+	private timeProblem(text: string): string | null {
 		const t = this.editingTime();
-		this.editingTime.set(null);
 		const cue = t && this.store.find(t.id)?.cue;
+		if (!cue) return null;
 		const ms = parseTime(text, this.store.project().fps);
-		if (!cue || ms === null) return;
+		if (ms === null) return 'Not a valid time.';
+		if (t.edge === 'start' && ms >= cue.end) return 'Start must be before end.';
+		if (t.edge === 'end' && ms <= cue.start) return 'End must be after start.';
+		return null;
+	}
+
+	/** Enter keeps the editor open on a bad time and says why; leaving it reverts. */
+	protected commitTime(text: string, keepOpen = false): void {
+		const t = this.editingTime();
+		if (!t) return;
+		const error = this.timeProblem(text);
+		if (error && keepOpen) return this.timeError.set(error);
+		this.closeTime();
+		const cue = this.store.find(t.id)?.cue;
+		const ms = parseTime(text, this.store.project().fps);
+		if (error || !cue || ms === null) return;
 		const [start, end] = t.edge === 'start' ? [ms, cue.end] : [cue.start, ms];
-		if (start >= end || (start === cue.start && end === cue.end)) return;
+		if (start === cue.start && end === cue.end) return;
 		this.store.apply(
 			t.edge === 'start' ? 'Set start' : 'Set end',
 			edits.setTiming(t.id, start, end),
 		);
 	}
 
+	/** Once shown, the error follows the typing. */
+	protected onTimeInput(text: string): void {
+		if (this.timeError()) this.timeError.set(this.timeProblem(text));
+	}
+
 	protected onTimeKey(e: KeyboardEvent): void {
-		if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+		if (e.key === 'Enter') this.commitTime((e.target as HTMLInputElement).value, true);
 		else if (e.key === 'Escape') {
 			e.stopPropagation();
-			this.editingTime.set(null);
+			this.closeTime();
 		}
+	}
+
+	private closeTime(): void {
+		this.editingTime.set(null);
+		this.timeError.set(null);
 	}
 
 	private replaced(text: string): string {

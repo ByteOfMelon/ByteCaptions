@@ -93,6 +93,11 @@
 	font: inherit;
 	outline: none;
 }
+.time-editor.invalid {
+	box-shadow:
+		inset 0 0 0 var(--outline-width) var(--color-danger),
+		var(--focus-ring);
+}
 .hit {
 	color: var(--color-brand);
 	font-weight: 700;

@@ -31,7 +31,7 @@ import { ProjectStore } from '../../state/project-store';
 import { AudioPeaks } from '../../state/audio-peaks';
 import { ThemeService } from '../../theme/theme.service';
 import { IconButton } from '../../ui/button/button';
-import { Tooltip } from '../../ui/tooltip/tooltip';
+import { ErrorTip, Tooltip } from '../../ui/tooltip/tooltip';
 import { EditorCommands } from '../editor/editor-commands';
 import { Playback } from '../player/playback';
 import { StyleChip } from '../player/style-chip';
@@ -107,6 +107,7 @@ interface Hud {
 	selector: 'bc-timeline',
 	imports: [
 		AutoSelect,
+		ErrorTip,
 		IconButton,
 		Tooltip,
 		StyleChip,
@@ -288,10 +289,23 @@ export class Timeline {
 		this.store.apply(`${verb} ${track.name}`, updateTrack(track.id, { [key]: !track[key] }));
 	}
 
-	protected finishRename(track: Track, name: string): void {
+	protected readonly renameError = signal<string | null>(null);
+
+	/** Enter keeps the field open on an empty name and says why; leaving it reverts. */
+	protected finishRename(track: Track, name: string, keepOpen = false): void {
 		if (this.ui.renamingTrack() !== track.id) return;
-		this.ui.renamingTrack.set(null);
+		if (!name.trim() && keepOpen) return this.renameError.set('Track name can’t be empty.');
+		this.cancelRename();
 		this.commands.renameTrack(track.id, name);
+	}
+
+	protected cancelRename(): void {
+		this.ui.renamingTrack.set(null);
+		this.renameError.set(null);
+	}
+
+	protected onRenameInput(name: string): void {
+		if (name.trim()) this.renameError.set(null);
 	}
 
 	// ---- Context menus ---------------------------------------------------

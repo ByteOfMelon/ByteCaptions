@@ -82,15 +82,18 @@
 						<div class="info">
 							@if (ui.renamingTrack() === h.track.id) {
 								<input
+									#rename
 									class="name rename"
 									aria-label="Track name"
+									placeholder="Name this track"
+									[class.invalid]="!!renameError()"
+									[bcErrorTip]="renameError()"
 									[value]="h.track.name"
 									bcAutoselect
-									(keydown.enter)="
-										finishRename(h.track, $any($event.target).value)
-									"
-									(keydown.escape)="ui.renamingTrack.set(null)"
-									(blur)="finishRename(h.track, $any($event.target).value)"
+									(input)="onRenameInput(rename.value)"
+									(keydown.enter)="finishRename(h.track, rename.value, true)"
+									(keydown.escape)="cancelRename()"
+									(blur)="finishRename(h.track, rename.value)"
 								/>
 							} @else {
 								<span class="name" (dblclick)="ui.renamingTrack.set(h.track.id)">{{

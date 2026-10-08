@@ -59,6 +59,9 @@ svg.lucide {
 	white-space: nowrap;
 	pointer-events: none;
 }
+.bc-tooltip.error {
+	color: var(--color-danger);
+}
 .bc-tooltip kbd {
 	padding: 0 4px;
 	border-radius: var(--radius-small);
