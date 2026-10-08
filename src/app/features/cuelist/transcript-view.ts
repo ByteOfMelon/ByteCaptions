@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import * as edits from '../../core/commands/edits';
-import { cueText } from '../../core/model/cue';
+import { cueText, wordGap } from '../../core/model/cue';
 import { Cue, Track } from '../../core/model/types';
 import { formatTimecode } from '../../core/time/timecode';
 import { ProjectStore } from '../../state/project-store';
@@ -16,6 +16,8 @@ interface Word {
 	text: string;
 	current: boolean;
 	unsure: boolean;
+	/** Space after the word (none in Chinese and Japanese). */
+	gap: string;
 }
 
 interface Segment {
@@ -86,10 +88,11 @@ export class TranscriptView {
 				selected: sel.has(cue.id),
 				text: cueText(cue),
 				words:
-					cue.words?.map((w) => ({
+					cue.words?.map((w, i, all) => ({
 						text: w.text,
 						current: current && w.start <= t && t < w.end,
 						unsure: (w.confidence ?? 1) < LOW_CONFIDENCE,
+						gap: wordGap(w.text, all[i + 1]?.text ?? ''),
 					})) ?? null,
 			};
 			if (!out.length || cue.start - prevEnd > PARAGRAPH_GAP_MS) {

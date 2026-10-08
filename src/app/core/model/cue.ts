@@ -4,6 +4,34 @@ export function cueText(cue: Cue): string {
 	return cue.runs.map((r) => r.text).join('');
 }
 
+/**
+ * Characters of scripts written without spaces between words: Chinese, Japanese kana and
+ * CJK / full-width punctuation. (Korean separates words with spaces.)
+ */
+const UNSPACED = /[　-ヿ㐀-䶿一-鿿豈-﫿＀-￯]/;
+/** Full-width characters: the above plus Korean Hangul. */
+const WIDE = /[ᄀ-ᇿ　-ヿ㄰-㆏㐀-䶿一-鿿가-힯豈-﫿＀-｠￠-￦]/;
+
+/** What goes between two words: a space, or nothing next to Chinese or Japanese. */
+export function wordGap(before: string, after: string): string {
+	return UNSPACED.test(before.at(-1) ?? '') || UNSPACED.test(after[0] ?? '') ? '' : ' ';
+}
+
+/** Words joined into text, with spaces only where the language uses them. */
+export function joinWords(words: readonly { text: string }[]): string {
+	return words.reduce(
+		(s, w, i) => (i ? s + wordGap(words[i - 1].text, w.text) : '') + w.text,
+		'',
+	);
+}
+
+/** Width in half-width columns, for line lengths: full-width characters count as two. */
+export function textWidth(text: string): number {
+	let width = 0;
+	for (const c of text) width += WIDE.test(c) ? 2 : 1;
+	return width;
+}
+
 export function sortCues(cues: Cue[]): void {
 	cues.sort((a, b) => a.start - b.start || a.end - b.end);
 }

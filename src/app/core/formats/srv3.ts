@@ -5,6 +5,7 @@
  * follow YTSubConverter (github.com/arcusmaximus/YTSubConverter), studied as a
  * reference; this is an independent implementation.
  */
+import { joinWords, wordGap } from '../model/cue';
 import { newId } from '../model/defaults';
 import {
 	Anchor,
@@ -191,16 +192,14 @@ export function exportSrv3(project: Project): { xml: string; stats: Srv3Stats } 
 				const start = i === 0 ? cue.start : words[i].start;
 				const end = i + 1 < words.length ? words[i + 1].start : cue.end;
 				if (end <= start) continue;
-				const before = words
-					.slice(0, i + 1)
-					.map((w) => w.text)
-					.join(' ');
-				const after = words
-					.slice(i + 1)
-					.map((w) => w.text)
-					.join(' ');
+				const before = joinWords(words.slice(0, i + 1));
+				const after = joinWords(words.slice(i + 1));
 				const sections: Section[] = [{ text: before, pen: sung }];
-				if (after) sections.push({ text: ' ' + after, pen: unsung });
+				if (after)
+					sections.push({
+						text: wordGap(words[i].text, words[i + 1].text) + after,
+						pen: unsung,
+					});
 				lines.push({ start, end, wp, ws, sections });
 			}
 			continue;

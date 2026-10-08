@@ -49,7 +49,7 @@
 										[class.unsure]="w.unsure"
 										(click)="clickSegment($event, seg.cue, $index)"
 										>{{ w.text }}</span
-									>{{ ' ' }}
+									>{{ w.gap }}
 								}
 							} @else {
 								<span (click)="clickSegment($event, seg.cue)">{{ seg.text }}</span>

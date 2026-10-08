@@ -249,8 +249,17 @@ fn drop_loops(mut segments: Vec<Vec<Word>>) -> Vec<Word> {
 	out
 }
 
-/// Join the recognized tokens into words: a token starting with a space starts a new word,
-/// and so does every segment. Timestamps are in centiseconds; words get milliseconds.
+/// Whether a token starts with a Chinese or Japanese character (kana and CJK ideographs,
+/// U+3040–U+9FFF), by its UTF-8 lead bytes. Those languages don't put spaces between words,
+/// so each such token is a word of its own (a character or two). CJK punctuation
+/// (U+3000–U+303F) and tokens holding the rest of a split character stay attached.
+fn starts_unspaced(bytes: &[u8]) -> bool {
+	matches!(bytes, [0xE3, 0x81..=0xBF, ..] | [0xE4..=0xE9, ..])
+}
+
+/// Join the recognized tokens into words: a token starting with a space (or a Chinese or
+/// Japanese character) starts a new word, and so does every segment. Timestamps are in
+/// centiseconds; words get milliseconds.
 fn words(ctx: &WhisperContext, state: &whisper_rs::WhisperState) -> Vec<Word> {
 	struct Pending {
 		bytes: Vec<u8>,
@@ -294,7 +303,7 @@ fn words(ctx: &WhisperContext, state: &whisper_rs::WhisperState) -> Vec<Word> {
 				data.t0.clamp(seg_start, seg_end),
 				data.t1.clamp(seg_start, seg_end),
 			);
-			if bytes.first() == Some(&b' ') || current.is_none() {
+			if bytes.first() == Some(&b' ') || starts_unspaced(bytes) || current.is_none() {
 				flush(current.take(), &mut out);
 				current = Some(Pending {
 					bytes: Vec::new(),
@@ -357,6 +366,18 @@ mod tests {
 
 	fn texts(words: &[Word]) -> Vec<(&str, i64)> {
 		words.iter().map(|w| (w.text.as_str(), w.start)).collect()
+	}
+
+	#[test]
+	fn chinese_and_japanese_tokens_start_words() {
+		assert!(starts_unspaced("我".as_bytes()));
+		assert!(starts_unspaced("です".as_bytes()));
+		assert!(starts_unspaced(&"我".as_bytes()[..2])); // first part of a split character
+		assert!(!starts_unspaced(&"我".as_bytes()[2..])); // the rest of it
+		assert!(!starts_unspaced("。".as_bytes()));
+		assert!(!starts_unspaced("！".as_bytes()));
+		assert!(!starts_unspaced(" 안녕".as_bytes()));
+		assert!(!starts_unspaced("hello".as_bytes()));
 	}
 
 	#[test]

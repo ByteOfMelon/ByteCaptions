@@ -1,3 +1,4 @@
+import { joinWords, textWidth, wordGap } from '../model/cue';
 import { createCue } from '../model/defaults';
 import { Cue, Ms, ProjectSettings, WordTiming } from '../model/types';
 
@@ -7,7 +8,8 @@ import { Cue, Ms, ProjectSettings, WordTiming } from '../model/types';
  * and reading speed. Breaks prefer sentence ends, then clause punctuation, then pauses.
  *
  * Word text is expected trimmed (punctuation attached, e.g. "Hello,") and is joined with
- * single spaces.
+ * single spaces, or none in Chinese and Japanese. Line lengths count full-width characters
+ * as two.
  */
 
 export interface SegmentOptions {
@@ -22,8 +24,8 @@ type Limits = Pick<
 	'maxCharsPerLine' | 'maxLines' | 'minDurationMs' | 'maxDurationMs' | 'minGapMs' | 'maxCps'
 >;
 
-const SENTENCE_END = /[.?!…]["'”’)\]]*$/;
-const CLAUSE_END = /[,;:—–-]["'”’)\]]*$/;
+const SENTENCE_END = /[.?!…。！？]["'”’)\]」』）]*$/;
+const CLAUSE_END = /[,;:—–\-、，；：]["'”’)\]」』）]*$/;
 /** Words a line or cue shouldn't end on, since they bind to what follows (English). */
 const WEAK_END =
 	/^(a|an|the|and|or|but|nor|of|to|in|on|at|for|with|from|by|as|into|than|that|if|my|your|his|her|its|our|their|this|these|those)$/i;
@@ -73,23 +75,22 @@ export function segmentWords(
 	return cues;
 }
 
-const joined = (words: WordTiming[]) => words.map((w) => w.text).join(' ');
-
 function fits(words: WordTiming[], limits: Limits): boolean {
 	if (words.at(-1)!.end - words[0].start > limits.maxDurationMs) return false;
 	return wrap(words, limits.maxCharsPerLine).length <= limits.maxLines;
 }
 
-/** Greedy wrap into lines of at most `max` characters (a longer single word gets its own line). */
+/** Greedy wrap into lines at most `max` wide (a wider single word gets its own line). */
 function wrap(words: WordTiming[], max: number): string[] {
 	const lines: string[] = [];
 	let line = '';
-	for (const w of words) {
-		if (line && line.length + 1 + w.text.length > max) {
+	words.forEach((w, i) => {
+		const longer = line ? line + wordGap(words[i - 1].text, w.text) + w.text : w.text;
+		if (line && textWidth(longer) > max) {
 			lines.push(line);
 			line = w.text;
-		} else line = line ? `${line} ${w.text}` : w.text;
-	}
+		} else line = longer;
+	});
 	if (line) lines.push(line);
 	return lines;
 }
@@ -107,7 +108,7 @@ function bestBreak(words: WordTiming[], limits: Limits): number {
 		if (!fits(left, limits)) break;
 		const before = words[at - 1];
 		const gap = words[at].start - before.end;
-		const fill = joined(left).length / capacity;
+		const fill = textWidth(joinWords(left)) / capacity;
 		const score =
 			(SENTENCE_END.test(before.text) ? 6 : CLAUSE_END.test(before.text) ? 3 : 0) +
 			Math.min(gap / 150, 3) -
@@ -130,22 +131,23 @@ function bestBreak(words: WordTiming[], limits: Limits): number {
  */
 export function layoutLines(words: WordTiming[], limits: Limits): string[] {
 	const max = limits.maxCharsPerLine;
-	const text = joined(words);
-	if (text.length <= max || limits.maxLines < 2 || words.length < 2) return [text];
+	const text = joinWords(words);
+	if (textWidth(text) <= max || limits.maxLines < 2 || words.length < 2) return [text];
 
 	let best: string[] | null = null;
 	let bestScore = Infinity;
 	for (let at = 1; at < words.length; at++) {
-		const a = joined(words.slice(0, at));
-		const b = joined(words.slice(at));
-		if (a.length > max || b.length > max) continue;
+		const a = joinWords(words.slice(0, at));
+		const b = joinWords(words.slice(at));
+		const [aw, bw] = [textWidth(a), textWidth(b)];
+		if (aw > max || bw > max) continue;
 		const prev = words[at - 1].text;
 		const score =
-			Math.abs(a.length - b.length) -
+			Math.abs(aw - bw) -
 			(SENTENCE_END.test(prev) ? 12 : CLAUSE_END.test(prev) ? 8 : 0) +
 			(WEAK_END.test(prev) ? 10 : 0) +
 			// Slightly prefer a shorter top line (bottom-heavy pyramid reads better).
-			(a.length > b.length ? 2 : 0);
+			(aw > bw ? 2 : 0);
 		if (score < bestScore) {
 			bestScore = score;
 			best = [a, b];

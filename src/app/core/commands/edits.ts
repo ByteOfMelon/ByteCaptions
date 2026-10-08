@@ -4,7 +4,7 @@
  */
 import { Draft } from 'immer';
 import { createCue, newId } from '../model/defaults';
-import { cueText, sortCues } from '../model/cue';
+import { cueText, joinWords, sortCues } from '../model/cue';
 import { Cue, CueId, Ms, Project, Track, TrackId } from '../model/types';
 
 type P = Draft<Project>;
@@ -91,10 +91,7 @@ export function setText(cueId: CueId, text: string) {
 		assertUnlocked(track);
 		cue.runs = [{ text }];
 		// Word timings no longer match edited text.
-		if (
-			cue.words &&
-			cue.words.map((w) => w.text).join(' ') !== text.replace(/\s+/g, ' ').trim()
-		) {
+		if (cue.words && joinWords(cue.words) !== text.replace(/\s+/g, ' ').trim()) {
 			delete cue.words;
 			delete cue.karaoke;
 		}
@@ -186,8 +183,8 @@ export function splitCue(cueId: CueId, atMs: Ms, out?: { rightId?: CueId }) {
 		if (cue.words?.length) {
 			leftWords = cue.words.filter((w) => (w.start + w.end) / 2 < atMs);
 			rightWords = cue.words.filter((w) => (w.start + w.end) / 2 >= atMs);
-			leftText = leftWords.map((w) => w.text).join(' ');
-			rightText = rightWords.map((w) => w.text).join(' ');
+			leftText = joinWords(leftWords);
+			rightText = joinWords(rightWords);
 		} else {
 			const text = cueText(cue);
 			const ratio = (atMs - cue.start) / (cue.end - cue.start);
@@ -233,9 +230,7 @@ export function mergeCues(ids: CueId[]) {
 		first.end = Math.max(...cues.map((c) => c.end));
 		first.runs = [
 			{
-				text: cues
-					.map((c) => cueText(c))
-					.join(' ')
+				text: joinWords(cues.map((c) => ({ text: cueText(c).trim() })))
 					.replace(/\s+/g, ' ')
 					.trim(),
 			},

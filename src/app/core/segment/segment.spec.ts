@@ -1,4 +1,4 @@
-import { cueText } from '../model/cue';
+import { cueText, joinWords, textWidth } from '../model/cue';
 import { defaultSettings } from '../model/defaults';
 import { WordTiming } from '../model/types';
 import { layoutLines, segmentWords } from './segment';
@@ -129,5 +129,27 @@ describe('layoutLines', () => {
 			},
 		);
 		expect(lines).toEqual(['We tried everything we could,', 'but it still did not work']);
+	});
+
+	it('joins Chinese and Japanese without spaces', () => {
+		expect(texts(speak('我们 今天 去 公园。'))).toEqual(['我们今天去公园。']);
+		expect(texts(speak('今日 は 晴れ です。'))).toEqual(['今日は晴れです。']);
+	});
+
+	it('counts Chinese characters as two columns when wrapping', () => {
+		const words = speak([...'我们今天下午一起去公园散步然后在湖边吃了晚饭再回家'].join(' '));
+		const lines = layoutLines(words, limits);
+		expect(lines.length).toBe(2);
+		for (const line of lines) expect(textWidth(line)).toBeLessThanOrEqual(42);
+	});
+});
+
+describe('joinWords', () => {
+	it('spaces words only where the language does', () => {
+		expect(joinWords([{ text: 'Hello,' }, { text: 'world' }])).toBe('Hello, world');
+		expect(joinWords([{ text: '用' }, { text: 'iPhone' }, { text: '拍的' }])).toBe(
+			'用iPhone拍的',
+		);
+		expect(joinWords([{ text: '안녕' }, { text: '하세요' }])).toBe('안녕 하세요');
 	});
 });

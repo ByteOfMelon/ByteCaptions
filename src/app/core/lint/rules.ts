@@ -2,7 +2,7 @@
  * Live, non-blocking quality checks. Pure functions over the project; the UI
  * shows results as badges on cues and in the Problems tab.
  */
-import { cueText } from '../model/cue';
+import { cueText, textWidth } from '../model/cue';
 import { Cue, CueId, Ms, Project, Track, TrackId } from '../model/types';
 
 export type Severity = 'error' | 'warning';
@@ -101,7 +101,8 @@ export function lintTrack(project: Project, track: Track): Problem[] {
 		if (lines.length > s.maxLines) {
 			add(cue, 'tooManyLines', 'warning', `${lines.length} lines (max ${s.maxLines})`);
 		}
-		const longest = Math.max(...lines.map((l) => l.length));
+		// Full-width characters (Chinese, Japanese, Korean) count as two.
+		const longest = Math.max(...lines.map((l) => textWidth(l)));
 		if (longest > s.maxCharsPerLine) {
 			add(
 				cue,
