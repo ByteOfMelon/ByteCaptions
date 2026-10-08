@@ -6,13 +6,15 @@ import {
 	mergeCues,
 	moveCues,
 	removeTrack,
+	reorderTrack,
 	rippleDeleteCues,
 	setTiming,
 	splitCue,
 	updateTrack,
 } from '../../core/commands/edits';
-import { createCue, newId } from '../../core/model/defaults';
+import { createCue, createTrack, newId } from '../../core/model/defaults';
 import { Cue, CueId, Ms, StyleId, TrackId } from '../../core/model/types';
+import { TRACK_COLORS } from '../../state/project-files';
 import { ProjectStore } from '../../state/project-store';
 import { Playback } from '../player/playback';
 
@@ -170,6 +172,18 @@ export class EditorCommands {
 		this.clipboard = sel.map((r) => this.freshCopy(r.cue, -t0));
 	}
 
+	/** Copy the selection, then delete it (cues on locked tracks are copied but kept). */
+	cut(): void {
+		this.copy();
+		const ids = this.store
+			.selectedCues()
+			.filter((r) => !r.track.locked)
+			.map((r) => r.cue.id);
+		if (!ids.length) return;
+		this.store.apply(ids.length > 1 ? `Cut ${ids.length} cues` : 'Cut cue', deleteCues(ids));
+		this.store.clearSelection();
+	}
+
 	get canPaste(): boolean {
 		return this.clipboard.length > 0;
 	}
@@ -229,6 +243,30 @@ export class EditorCommands {
 		const rows = this.store.allCues().filter((r) => ids.includes(r.cue.id));
 		const minStart = Math.min(...rows.map((r) => r.cue.start));
 		this.store.apply('Shift timing', moveCues(ids, Math.max(-minStart, deltaMs)));
+	}
+
+	/** Add an empty track ("Track 3"…) below `afterId`, or at the bottom. Returns its id. */
+	newTrack(afterId?: TrackId): TrackId {
+		const p = this.store.project();
+		let n = p.tracks.length + 1;
+		while (p.tracks.some((t) => t.name === `Track ${n}`)) n++;
+		const track = createTrack(
+			`Track ${n}`,
+			TRACK_COLORS[p.tracks.length % TRACK_COLORS.length],
+		);
+		const after = p.tracks.findIndex((t) => t.id === afterId);
+		this.store.apply('New track', addTrack(track, after < 0 ? undefined : after + 1));
+		return track.id;
+	}
+
+	/** Move a track one place up (-1) or down (1) the stack. */
+	moveTrack(trackId: TrackId, by: -1 | 1): void {
+		const tracks = this.store.project().tracks;
+		const from = tracks.findIndex((t) => t.id === trackId);
+		const to = from + by;
+		if (from < 0 || to < 0 || to >= tracks.length) return;
+		const name = tracks[from].name;
+		this.store.apply(`Move ${name} ${by < 0 ? 'up' : 'down'}`, reorderTrack(trackId, to));
 	}
 
 	duplicateTrack(trackId: TrackId): void {

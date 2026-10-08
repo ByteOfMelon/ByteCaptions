@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { LucideFolder } from '@lucide/angular';
 import { FORMATS, FormatId } from '../../core/formats';
+import { exportSrv3 } from '../../core/formats/srv3';
 import { Project, TrackId } from '../../core/model/types';
 import { EditorUi } from '../../state/editor-ui';
 import {
@@ -91,6 +92,33 @@ export class ExportDialog implements OnInit {
 		return isDesktop && near && isAbsolute(near) ? `${dirname(near)}${sep(near)}${name}` : name;
 	});
 
+	/** The selected tracks combined, regardless of preview mute/solo. */
+	private readonly subset = computed<Project>(() => {
+		const ids = this.included();
+		const p = this.project();
+		return {
+			...p,
+			tracks: p.tracks
+				.filter((t) => ids.has(t.id))
+				.map((t) => ({ ...t, muted: false, solo: false })),
+		};
+	});
+
+	/** SRV3 files near the safe size may not load on YouTube (PLAN §4.1). */
+	protected readonly heavy = computed(() => {
+		if (this.format() !== 'srv3' || !this.included().size) return null;
+		const { weight, lines, bytes } = exportSrv3(this.subset()).stats;
+		if (weight < 0.8) return null;
+		return {
+			over: weight >= 1,
+			title:
+				weight >= 1
+					? 'This file may be too large for YouTube'
+					: 'This file is close to the size YouTube can show',
+			detail: `${lines} lines • ${(bytes / 1024).toFixed(0)} KB • ${Math.round(weight * 100)}% of the safe size. Merging cues or using fewer styles makes it smaller.`,
+		};
+	});
+
 	protected readonly problems = computed(() => {
 		const ids = this.included();
 		const list = this.store.problems().filter((p) => ids.has(p.trackId));
@@ -142,16 +170,8 @@ export class ExportDialog implements OnInit {
 	}
 
 	protected async export(): Promise<void> {
-		const ids = this.included();
-		if (!ids.size) return;
-		// Selected tracks combine into one file regardless of preview mute/solo.
-		const p = this.project();
-		const subset: Project = {
-			...p,
-			tracks: p.tracks
-				.filter((t) => ids.has(t.id))
-				.map((t) => ({ ...t, muted: false, solo: false })),
-		};
+		if (!this.included().size) return;
+		const subset = this.subset();
 		// On desktop a bare file name has no folder yet, so ask where.
 		let target: SaveTarget | null = isDesktop
 			? isAbsolute(this.path())

@@ -1,5 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { resolvePosition, resolveStyle } from '../../core/model/cue';
+import { newId } from '../../core/model/defaults';
 import { Position, StyleId } from '../../core/model/types';
 import { ProjectStore } from '../../state/project-store';
 import { Select } from '../../ui/select/select';
@@ -8,7 +9,7 @@ import { StyleChange, StyleFields } from './style-fields';
 
 /**
  * Style and position of the selected cue(s). Edits change the preset itself, so
- * every cue using it updates (PLAN §5.7); applying a different preset is per cue.
+ * every cue using it updates (PLAN §5.7); applying a different preset or position is per cue.
  */
 @Component({
 	selector: 'bc-inspector',
@@ -61,11 +62,26 @@ export class Inspector {
 		});
 	}
 
+	/** Positions are per cue: reuse a matching one, or add it, and point the selection at it. */
 	protected setPosition(changes: Partial<Position>): void {
 		const s = this.subject();
 		if (!s) return;
+		const ids = new Set(this.store.selectedCues().map((r) => r.cue.id));
+		const want: Position = { ...s.position, ...changes };
 		this.store.apply('Change position', (p) => {
-			Object.assign(p.positions[s.posId], changes);
+			const same = (a: Position) =>
+				(Object.keys(want) as (keyof Position)[]).every((k) => a[k] === want[k]);
+			let posId = Object.keys(p.positions).find((id) => same(p.positions[id]));
+			if (!posId) {
+				posId = newId('pos');
+				p.positions[posId] = want;
+			}
+			for (const t of p.tracks)
+				for (const c of t.cues)
+					if (ids.has(c.id)) {
+						if (posId === t.defaultPositionId) delete c.positionId;
+						else c.positionId = posId;
+					}
 		});
 	}
 }

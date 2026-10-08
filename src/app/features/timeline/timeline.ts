@@ -338,22 +338,36 @@ export class Timeline {
 		return { kind: 'lane', track, trackIndex: i };
 	}
 
-	/** Snap `ms` to the playhead or another cue's edge within SNAP_PX. Returns the snap delta. */
-	private snapDelta(points: Ms[], exclude: ReadonlySet<CueId>): number {
+	/**
+	 * Snap whichever of `points` is closest (within SNAP_PX) to the playhead, another cue's
+	 * edge, a word boundary or the edge of a silence; failing that, the first to a frame. Returns the snap delta. `exclude` are
+	 * the cues being dragged; a trimmed cue's own words still count (`ownWords`).
+	 */
+	private snapDelta(points: Ms[], exclude: ReadonlySet<CueId>, ownWords = false): number {
 		if (!this.ui.snapping()) return 0;
 		const fps = this.store.project().fps;
+		const tc = (ms: Ms) => formatTimecode(ms, fps);
 		const targets: { at: Ms; label: string }[] = [
 			{ at: 0, label: 'Snapped to start' },
 			{ at: this.store.playhead(), label: 'Snapped to playhead' },
+			...this.audio
+				.silenceEdges()
+				.map((at) => ({ at, label: `Snapped to silence ${tc(at)}` })),
 		];
 		for (const t of this.store.project().tracks)
 			t.cues.forEach((c, i) => {
-				if (exclude.has(c.id)) return;
-				const tc = (ms: Ms) => formatTimecode(ms, fps);
-				targets.push(
-					{ at: c.start, label: `Snapped to cue ${i + 1} • Start ${tc(c.start)}` },
-					{ at: c.end, label: `Snapped to cue ${i + 1} • End ${tc(c.end)}` },
-				);
+				const dragged = exclude.has(c.id);
+				if (!dragged)
+					targets.push(
+						{ at: c.start, label: `Snapped to cue ${i + 1} • Start ${tc(c.start)}` },
+						{ at: c.end, label: `Snapped to cue ${i + 1} • End ${tc(c.end)}` },
+					);
+				if (!dragged || ownWords)
+					for (const w of c.words ?? [])
+						targets.push(
+							{ at: w.start, label: `Snapped to "${w.text}" • Start ${tc(w.start)}` },
+							{ at: w.end, label: `Snapped to "${w.text}" • End ${tc(w.end)}` },
+						);
 			});
 		const limit = SNAP_PX / this.pxPerMs();
 		let best: { d: number; at: Ms; label: string } | null = null;
@@ -365,7 +379,9 @@ export class Timeline {
 			}
 		this.snapAt.set(best?.at ?? null);
 		this.snapLabel = best?.label ?? '';
-		return best?.d ?? 0;
+		if (best) return best.d;
+		const frame = 1000 / fps;
+		return Math.round(points[0] / frame) * frame - points[0];
 	}
 
 	protected onPointerDown(e: PointerEvent): void {
@@ -442,7 +458,7 @@ export class Timeline {
 				this.playback.seek(ms);
 				break;
 			case 'trim': {
-				const snap = this.snapDelta([ms], new Set([d.cueId]));
+				const snap = this.snapDelta([ms], new Set([d.cueId]), true);
 				const t = Math.round(ms + snap);
 				const minLen = 1000 / this.store.project().fps;
 				const [s, en] =
@@ -473,7 +489,10 @@ export class Timeline {
 				const a = d.orig.get(d.anchor);
 				// Pure vertical drags keep their timing; only horizontal movement snaps.
 				if (Math.abs(x - d.downX) < 3) delta = 0;
-				else if (a) delta += this.snapDelta([a.start + delta, a.end + delta], ids);
+				else if (a)
+					delta = Math.round(
+						delta + this.snapDelta([a.start + delta, a.end + delta], ids),
+					);
 				this.store.apply('Move cue', (p) => {
 					for (const [id, o] of d.orig) setTiming(id, o.start + delta, o.end + delta)(p);
 				});

@@ -1,5 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import {
+	LucideArrowDown,
+	LucideArrowUp,
 	LucideClipboardPaste,
 	LucideClock,
 	LucideCopy,
@@ -110,6 +112,15 @@ export class TimelineMenus {
 			},
 			{ kind: 'separator' },
 			{
+				id: 'cut',
+				label: 'Cut',
+				icon: LucideScissors.icon,
+				keys: 'Ctrl+X',
+				disabled: locked,
+			},
+			{ id: 'copy', label: 'Copy', icon: LucideCopy.icon, keys: 'Ctrl+C' },
+			{ kind: 'separator' },
+			{
 				id: 'preset',
 				label: 'Style preset',
 				icon: LucideType.icon,
@@ -210,6 +221,15 @@ export class TimelineMenus {
 			},
 			{ kind: 'separator' },
 			{
+				id: 'cut',
+				label: `Cut ${n} cues`,
+				icon: LucideScissors.icon,
+				keys: 'Ctrl+X',
+				disabled: !ids.length,
+			},
+			{ id: 'copy', label: `Copy ${n} cues`, icon: LucideCopy.icon, keys: 'Ctrl+C' },
+			{ kind: 'separator' },
+			{
 				id: 'delete',
 				label: `Delete ${n} cues`,
 				icon: LucideTrash2.icon,
@@ -229,6 +249,8 @@ export class TimelineMenus {
 		if (!id || this.runShared(id, ids, common)) return;
 		if (id === 'merge') this.commands.merge();
 		else if (id === 'shift') void this.dialogs.shiftTiming(ids);
+		else if (id === 'cut') this.commands.cut();
+		else if (id === 'copy') this.commands.copy();
 		else if (id === 'delete') this.commands.deleteSelected();
 		else if (id === 'ripple-delete') this.commands.rippleDeleteSelected();
 	}
@@ -287,7 +309,20 @@ export class TimelineMenus {
 				})),
 			},
 			{ kind: 'separator' },
+			{ id: 'new-track', label: 'New track', icon: LucidePlus.icon },
 			{ id: 'duplicate', label: 'Duplicate track', icon: LucideCopy.icon },
+			{
+				id: 'up',
+				label: 'Move up',
+				icon: LucideArrowUp.icon,
+				disabled: tracks[0].id === track.id,
+			},
+			{
+				id: 'down',
+				label: 'Move down',
+				icon: LucideArrowDown.icon,
+				disabled: tracks.at(-1)!.id === track.id,
+			},
 			{ id: 'export', label: 'Export this track…', icon: LucideUpload.icon },
 			{ kind: 'separator' },
 			{
@@ -303,7 +338,10 @@ export class TimelineMenus {
 		else if (id.startsWith('color:')) this.commands.setTrackColor(track.id, id.slice(6));
 		else if (id === 'edit-presets') this.dialogs.presets(track.defaultStyleId);
 		else if (id === 'rename') this.ui.renamingTrack.set(track.id);
+		else if (id === 'new-track') this.ui.renamingTrack.set(this.commands.newTrack(track.id));
 		else if (id === 'duplicate') this.commands.duplicateTrack(track.id);
+		else if (id === 'up') this.commands.moveTrack(track.id, -1);
+		else if (id === 'down') this.commands.moveTrack(track.id, 1);
 		else if (id === 'export') this.dialogs.export([track.id]);
 		else if (id === 'delete') this.commands.deleteTrack(track.id);
 	}

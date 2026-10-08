@@ -204,6 +204,9 @@ export class Editor implements OnDestroy {
 			case 'ctrl+c':
 				if (!this.store.selection().size || getSelection()?.toString()) return;
 				return run(() => this.commands.copy());
+			case 'ctrl+x':
+				if (!this.store.selection().size || getSelection()?.toString()) return;
+				return run(() => this.commands.cut());
 			case 'ctrl+v':
 				return this.commands.canPaste ? run(() => this.commands.paste()) : undefined;
 			case 'ctrl+d':

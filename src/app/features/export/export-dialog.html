@@ -59,6 +59,10 @@
 		}
 	</div>
 
+	@if (heavy(); as h) {
+		<bc-notice [tone]="h.over ? 'danger' : 'warning'" [heading]="h.title" [detail]="h.detail" />
+	}
+
 	@if (error(); as message) {
 		<bc-notice tone="danger" heading="Export failed" [detail]="message" />
 	}
