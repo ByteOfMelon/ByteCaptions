@@ -49,14 +49,36 @@ pub fn model_path(app: &AppHandle, name: &str) -> Result<PathBuf, String> {
 	Ok(models_dir(app)?.join(format!("ggml-{name}.bin")))
 }
 
-/// Names of the models that are downloaded.
+#[derive(Serialize)]
+pub struct InstalledModel {
+	name: String,
+	bytes: u64,
+}
+
+/// The models that are downloaded, with their size on disk.
 #[tauri::command]
-pub fn models_installed(app: AppHandle) -> Vec<String> {
+pub fn models_installed(app: AppHandle) -> Vec<InstalledModel> {
 	MODELS
 		.iter()
-		.filter(|m| model_path(&app, m).is_ok_and(|p| p.is_file()))
-		.map(|m| m.to_string())
+		.filter_map(|m| {
+			let meta = std::fs::metadata(model_path(&app, m).ok()?).ok()?;
+			meta.is_file().then(|| InstalledModel {
+				name: m.to_string(),
+				bytes: meta.len(),
+			})
+		})
 		.collect()
+}
+
+/// Delete a downloaded model to free up space. It downloads again when next used.
+#[tauri::command]
+pub fn model_delete(app: AppHandle, name: String) -> Result<(), String> {
+	match std::fs::remove_file(model_path(&app, &name)?) {
+		Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
+			Err(format!("Couldn't delete the model. ({e})"))
+		}
+		_ => Ok(()),
+	}
 }
 
 #[derive(Clone, Serialize)]

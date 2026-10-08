@@ -8,6 +8,7 @@ import {
 	ModelId,
 	TranscribeOptions,
 	TranscriptionEngine,
+	bytes,
 } from './transcription';
 
 type AsrEvent =
@@ -23,10 +24,6 @@ const CANCELLED = 'Cancelled';
 
 const stopped = () => new DOMException('Stopped', 'AbortError');
 
-function bytes(n: number): string {
-	return n >= 1e9 ? `${(n / 1e9).toFixed(1)} GB` : `${Math.round(n / 1e6)} MB`;
-}
-
 function clock(ms: Ms): string {
 	const s = Math.round(ms / 1000);
 	return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -38,7 +35,8 @@ function clock(ms: Ms): string {
  * grouped into cues here with the project's caption limits.
  */
 export class WhisperEngine implements TranscriptionEngine {
-	private installed = new Set<string>();
+	/** Downloaded models by whisper name, with their size in bytes. */
+	private installed = new Map<string, number>();
 
 	constructor(
 		private readonly mediaPath: () => string | null,
@@ -53,7 +51,8 @@ export class WhisperEngine implements TranscriptionEngine {
 
 	async refresh(): Promise<void> {
 		try {
-			this.installed = new Set(await invoke<string[]>('models_installed'));
+			const models = await invoke<{ name: string; bytes: number }[]>('models_installed');
+			this.installed = new Map(models.map((m) => [m.name, m.bytes]));
 			this.changed();
 		} catch (e) {
 			console.warn('Could not list models', e);
@@ -66,6 +65,19 @@ export class WhisperEngine implements TranscriptionEngine {
 		} catch (e) {
 			console.warn('Could not check for a GPU', e);
 			return null;
+		}
+	}
+
+	downloaded(): ReadonlyMap<string, number> {
+		// The speech detector is tiny and goes with every model.
+		return new Map([...this.installed].filter(([name]) => name !== VAD_MODEL));
+	}
+
+	async delete(name: string): Promise<void> {
+		try {
+			await invoke('model_delete', { name });
+		} finally {
+			await this.refresh();
 		}
 	}
 
@@ -105,8 +117,7 @@ export class WhisperEngine implements TranscriptionEngine {
 					emit({ type: 'step', step: 'download', status: 'error', detail: last });
 					throw new Error(`Model download failed|${e}`);
 				}
-				this.installed.add(name);
-				this.changed();
+				await this.refresh();
 			}
 			emit({ type: 'step', step: 'download', status: 'done', detail: model.size });
 

@@ -73,14 +73,48 @@
 				</span>
 			</bc-toggle>
 
+			@if (job.unused(); as u) {
+				<bc-notice
+					tone="info"
+					[heading]="'Unused models take up ' + u.size"
+					[detail]="unusedDetail()"
+				>
+					<button
+						bcButton
+						noticeAction
+						variant="ghost"
+						[disabled]="job.deleting()"
+						(click)="job.deleteModels(u.names)"
+					>
+						Delete
+					</button>
+				</bc-notice>
+			}
+			@if (job.deleteError(); as err) {
+				<bc-notice tone="danger" heading="Couldn't delete the model" [detail]="err" />
+			}
+
 			<div dialogFooter>
-				<span class="footer-note">
-					{{
-						needsDownload()
-							? 'Needs ' + selectedModel().size + ' free'
-							: 'Model is downloaded'
-					}}
-				</span>
+				@if (needsDownload()) {
+					<span class="footer-note">Needs {{ selectedModel().size }} free</span>
+				} @else {
+					<div class="footer-start">
+						<button
+							bcButton
+							variant="ghost"
+							class="delete"
+							[disabled]="job.deleting()"
+							[bcTooltip]="
+								'Frees up ' +
+								selectedModel().size +
+								'. It downloads again when you next use it.'
+							"
+							(click)="job.deleteModels([selectedModel().whisper])"
+						>
+							Delete model
+						</button>
+					</div>
+				}
 				<button bcButton (click)="ref.close()">Cancel</button>
 				<button bcButton variant="primary" (click)="start()">
 					{{ needsDownload() ? 'Download and transcribe' : 'Transcribe' }}

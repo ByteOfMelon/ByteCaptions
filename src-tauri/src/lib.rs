@@ -16,6 +16,7 @@ pub fn run() {
 			gpu::gpu_device,
 			models::models_installed,
 			models::model_download,
+			models::model_delete,
 			asr::transcribe,
 			jobs::job_cancel,
 		])

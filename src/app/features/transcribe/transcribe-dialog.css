@@ -77,6 +77,11 @@
 	color: var(--color-success);
 }
 
+/* As in the Style presets dialog. */
+.delete:not(:disabled) {
+	color: var(--color-danger);
+}
+
 .option-text {
 	display: flex;
 	flex: 1;

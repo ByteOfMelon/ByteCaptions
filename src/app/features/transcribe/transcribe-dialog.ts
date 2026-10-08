@@ -10,6 +10,7 @@ import { Toggle } from '../../ui/controls/controls';
 import { Dialog, DialogRef } from '../../ui/dialog/dialog';
 import { Notice } from '../../ui/notice/notice';
 import { Select } from '../../ui/select/select';
+import { Tooltip } from '../../ui/tooltip/tooltip';
 
 /** Auto-transcribe (PLAN §5.11): setup → running → done / error. Closing keeps it running. */
 @Component({
@@ -21,6 +22,7 @@ import { Select } from '../../ui/select/select';
 		Toggle,
 		Select,
 		Notice,
+		Tooltip,
 		LucideCheck,
 		LucideCircle,
 		LucideLoaderCircle,
@@ -49,10 +51,20 @@ export class TranscribeDialog {
 	protected readonly needsDownload = computed(
 		() => !this.job.isDownloaded(this.job.options().model),
 	);
+	protected readonly unusedDetail = computed(() => {
+		const names = this.job.unused()?.names ?? [];
+		const list =
+			names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
+		return `Whisper ${list} ${names.length > 1 ? 'are' : 'is'} no longer offered here.`;
+	});
 	protected readonly position = computed(
 		() =>
 			`${formatClock(this.job.mediaMs()).slice(0, 8)} of ${formatClock(this.job.durationMs()).slice(0, 8)}`,
 	);
+
+	constructor() {
+		this.job.refreshModels();
+	}
 
 	protected downloaded(id: ModelId): boolean {
 		return this.job.isDownloaded(id);

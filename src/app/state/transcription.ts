@@ -115,6 +115,12 @@ export type EngineEvent =
  */
 export interface TranscriptionEngine {
 	isDownloaded(model: ModelId): boolean;
+	/** Check which models are downloaded again (files may have changed outside the app). */
+	refresh(): Promise<void>;
+	/** Downloaded Whisper models by name, with their size in bytes. */
+	downloaded(): ReadonlyMap<string, number>;
+	/** Delete a downloaded model by whisper name. */
+	delete(name: string): Promise<void>;
 	/** The GPU transcription runs on, or null for the CPU. */
 	device(): Promise<string | null>;
 	run(
@@ -123,6 +129,10 @@ export interface TranscriptionEngine {
 		signal: AbortSignal,
 		emit: (e: EngineEvent) => void,
 	): Promise<Cue[]>;
+}
+
+export function bytes(n: number): string {
+	return n >= 1e9 ? `${(n / 1e9).toFixed(1)} GB` : `${Math.round(n / 1e6)} MB`;
 }
 
 /** "About 30 s" / "About 4 min": an estimate, rounded to what's worth showing. */
@@ -234,6 +244,41 @@ export class Transcription {
 	isDownloaded(model: ModelId): boolean {
 		this.downloads();
 		return !!this.engine?.isDownloaded(model);
+	}
+
+	/** Downloaded models the dialog doesn't offer (e.g. a hidden tier's), with their total size. */
+	readonly unused = computed(() => {
+		this.downloads();
+		const offered = new Set(MODELS.filter((m) => !m.hidden).map((m) => m.whisper));
+		const models = [...(this.engine?.downloaded() ?? [])].filter(([n]) => !offered.has(n));
+		if (!models.length) return null;
+		return {
+			names: models.map(([n]) => n),
+			size: bytes(models.reduce((sum, [, b]) => sum + b, 0)),
+		};
+	});
+
+	/** Check which models are downloaded again, unless a job is downloading one. */
+	refreshModels(): void {
+		if (!this.running()) void this.engine?.refresh();
+	}
+
+	/** A model delete is in progress. */
+	readonly deleting = signal(false);
+	readonly deleteError = signal<string | null>(null);
+
+	/** Delete downloaded models by whisper name, to free up space. */
+	async deleteModels(names: string[]): Promise<void> {
+		if (!this.engine) return;
+		this.deleting.set(true);
+		this.deleteError.set(null);
+		try {
+			for (const name of names) await this.engine.delete(name);
+		} catch (e) {
+			this.deleteError.set(String(e));
+		} finally {
+			this.deleting.set(false);
+		}
 	}
 
 	estimate(model: ModelInfo): string {
