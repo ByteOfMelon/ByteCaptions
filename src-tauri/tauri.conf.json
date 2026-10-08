@@ -6,8 +6,8 @@
 	"build": {
 		"frontendDist": "../dist/bytecaptions/browser",
 		"devUrl": "http://localhost:4200",
-		"beforeDevCommand": "npm run fetch:ffmpeg && npm run start",
-		"beforeBuildCommand": "npm run fetch:ffmpeg && npm run build"
+		"beforeDevCommand": "npm run fetch:ffmpeg && npm run fetch:vulkan && npm run start",
+		"beforeBuildCommand": "npm run fetch:ffmpeg && npm run fetch:vulkan && npm run build"
 	},
 	"app": {
 		"windows": [

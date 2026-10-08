@@ -8,5 +8,5 @@ GGML_AVX = "ON"
 GGML_AVX2 = "ON"
 GGML_FMA = "ON"
 GGML_F16C = "ON"
-# Keeps whisper.cpp's nested CMake builds within Windows' path length limit (see the file).
-CMAKE_TOOLCHAIN_FILE = { value = "cmake/short-paths.cmake", relative = true }
+# Fixes for building whisper.cpp on Windows (path length, release optimization); see the file.
+CMAKE_TOOLCHAIN_FILE = { value = "cmake/toolchain.cmake", relative = true }

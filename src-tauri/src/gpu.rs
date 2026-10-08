@@ -36,7 +36,9 @@ fn ensure_loader(app: &AppHandle) -> Result<(), String> {
 	static LOADED: OnceLock<Result<(), String>> = OnceLock::new();
 	LOADED
 		.get_or_init(|| {
-			if load("vulkan-1.dll".as_ref(), LOAD_LIBRARY_SEARCH_SYSTEM32) {
+			// Set to test the fallback on a PC that has a system loader.
+			let skip_system = std::env::var_os("BYTECAPTIONS_BUNDLED_VULKAN").is_some();
+			if !skip_system && load("vulkan-1.dll".as_ref(), LOAD_LIBRARY_SEARCH_SYSTEM32) {
 				return Ok(());
 			}
 			let bundled = app
@@ -46,6 +48,7 @@ fn ensure_loader(app: &AppHandle) -> Result<(), String> {
 				.join("vulkan")
 				.join("vulkan-1.dll");
 			if load(bundled.as_os_str(), LOAD_WITH_ALTERED_SEARCH_PATH) {
+				log::info!("Using the bundled Vulkan loader: {}", bundled.display());
 				Ok(())
 			} else {
 				// whisper.cpp would crash resolving its delay-loaded Vulkan import.
