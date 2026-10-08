@@ -63,9 +63,12 @@ video {
 
 .caption-window {
 	position: absolute;
+	/* Long lines wrap like YouTube's player: up to 96% of the video wide. max-content keeps
+	   the width independent of `left`, which would otherwise cap it at the space to the right. */
+	width: max-content;
 	max-width: 96%;
 	line-height: 1.3;
-	white-space: pre;
+	white-space: pre-wrap;
 	cursor: default;
 }
 .caption-window.editing {
