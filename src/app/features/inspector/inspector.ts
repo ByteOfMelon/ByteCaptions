@@ -1,12 +1,12 @@
 import { Component, computed, inject } from '@angular/core';
+import { setKaraoke } from '../../core/commands/edits';
 import { resolvePosition, resolveStyle } from '../../core/model/cue';
 import { newId } from '../../core/model/defaults';
-import { setKaraoke } from '../../core/commands/edits';
 import { DEFAULT_KARAOKE_COLOR, KARAOKE_COLORS } from '../../core/model/karaoke';
-import { Toggle } from '../../ui/controls/controls';
 import { Position, StyleId } from '../../core/model/types';
 import { ProjectStore } from '../../state/project-store';
 import { TextFormat } from '../../state/text-format';
+import { Toggle } from '../../ui/controls/controls';
 import { Select } from '../../ui/select/select';
 import { AnchorPicker } from './anchor-picker';
 import { StyleChange, StyleFields } from './style-fields';
