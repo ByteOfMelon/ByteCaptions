@@ -26,6 +26,13 @@ jobs:
             os: macos-latest
             target: aarch64-apple-darwin
             ffmpeg: darwin-arm64
+          - name: macOS (Intel)
+            os: macos-15-intel
+            target: x86_64-apple-darwin
+            ffmpeg: darwin-x64
+            # ort has no prebuilt ONNX Runtime for Intel Macs, so it's built from source.
+            ort-from-source: true
+            tauri-args: --config '{"bundle":{"macOS":{"minimumSystemVersion":"14.0"}}}'
           - name: Linux
             os: ubuntu-24.04 # ONNX Runtime (speaker separation) needs glibc 2.38+
             target: x86_64-unknown-linux-gnu
@@ -53,6 +60,35 @@ jobs:
           install_runtime: false
           cache: true
           stripdown: true
+
+      # Speaker separation links ONNX Runtime statically. ort downloads it for the other targets;
+      # for Intel Macs, build the version ort expects (1.28.0, CPU only: macOS doesn't use a GPU
+      # provider) and cache it, so only the first run pays for the build (about an hour). Its
+      # macOS minimum is 14.0, the same as Microsoft's own macOS builds of 1.28.
+      - name: ONNX Runtime cache
+        if: matrix.ort-from-source
+        id: ort-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/onnxruntime-build
+          key: onnxruntime-1.28.0-${{ matrix.target }}-macos14
+
+      - name: Build ONNX Runtime
+        if: matrix.ort-from-source && steps.ort-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch v1.28.0 --recurse-submodules --shallow-submodules https://github.com/microsoft/onnxruntime.git "$RUNNER_TEMP/onnxruntime"
+          cd "$RUNNER_TEMP/onnxruntime"
+          ./build.sh --config Release --build_dir ~/onnxruntime-build --parallel --skip_tests \
+            --compile_no_warning_as_error --apple_deploy_target 14.0 \
+            --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF
+          # ort only needs the static libraries; drop the object files so the cache stays small.
+          find ~/onnxruntime-build -type f ! -name '*.a' -delete
+
+      - name: Use the ONNX Runtime build
+        if: matrix.ort-from-source
+        run: |
+          echo "ORT_LIB_LOCATION=$HOME/onnxruntime-build" >> "$GITHUB_ENV"
+          echo "MACOSX_DEPLOYMENT_TARGET=14.0" >> "$GITHUB_ENV"
 
       - uses: actions/setup-node@v4
         with:
@@ -89,7 +125,7 @@ jobs:
         # Public builds have no Google sign-in client, so YouTube upload is off (BUILDING.md).
         uses: tauri-apps/tauri-action@v0
         with:
-          args: --target ${{ matrix.target }}
+          args: --target ${{ matrix.target }} ${{ matrix.tauri-args }}
 
       - uses: actions/upload-artifact@v4
         with:
