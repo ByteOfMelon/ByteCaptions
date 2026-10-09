@@ -1,5 +1,5 @@
-# Builds ByteCaptions for macOS and Linux (Windows is built locally for now: it needs the
-# Vulkan SDK). Run it from the Actions tab; the installers are attached to the run.
+# Builds ByteCaptions for Windows, macOS and Linux. Run it from the Actions tab; the
+# installers are attached to the run.
 name: Build
 
 on:
@@ -18,6 +18,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - name: Windows (x64)
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            ffmpeg: win32-x64
           - name: macOS (Apple Silicon)
             os: macos-latest
             target: aarch64-apple-darwin
@@ -39,6 +43,17 @@ jobs:
           # GStreamer plays video in WebKitGTK; the AppImage bundles it.
           sudo apt-get install -y libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav
 
+      # whisper.cpp's GPU backend on Windows is Vulkan; it needs the SDK's headers and shader
+      # compiler to build. The app bundles only the loader (npm run fetch:vulkan).
+      - name: Vulkan SDK
+        if: runner.os == 'Windows'
+        uses: jakoch/install-vulkan-sdk-action@v1
+        with:
+          vulkan_version: 1.4.363.0  # same as the dev machine
+          install_runtime: false
+          cache: true
+          stripdown: true
+
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -56,6 +71,19 @@ jobs:
       - run: npm ci
       - run: npm run fetch:ffmpeg -- ${{ matrix.ffmpeg }}
 
+      # The bundle needs DirectML.dll, which ort only downloads while it builds; build.rs copies
+      # it to binaries/directml. On a clean checkout that happens after Tauri checks its
+      # resources, so build once and put it in place by hand if it's still missing.
+      - name: Windows extras
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          npm run fetch:vulkan
+          mkdir -p src-tauri/binaries/directml
+          (cd src-tauri && cargo build --release --target ${{ matrix.target }} --features tauri/custom-protocol) || true
+          dll=src-tauri/target/${{ matrix.target }}/release/DirectML.dll
+          [ -f src-tauri/binaries/directml/DirectML.dll ] || cp "$dll" src-tauri/binaries/directml/
+
       - name: Build
         # Public builds have no Google sign-in client, so YouTube upload is off (BUILDING.md).
         uses: tauri-apps/tauri-action@v0
@@ -66,6 +94,8 @@ jobs:
         with:
           name: ByteCaptions-${{ matrix.target }}
           path: |
+            src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
+            src-tauri/target/${{ matrix.target }}/release/bundle/msi/*.msi
             src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
             src-tauri/target/${{ matrix.target }}/release/bundle/appimage/*.AppImage
             src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
