@@ -46,3 +46,7 @@ keyring = { version = "3", features = ["windows-native", "apple-native", "linux-
 whisper-rs = { version = "0.16", features = ["raw-api", "vulkan"] }
 # Speaker embeddings on the GPU through DirectML (DirectML.dll ships next to the app).
 speakrs = { path = "vendor/speakrs", features = ["directml"] }
+
+# Transcription on Apple GPUs through Metal.
+[target.'cfg(target_os = "macos")'.dependencies]
+whisper-rs = { version = "0.16", features = ["raw-api", "metal"] }

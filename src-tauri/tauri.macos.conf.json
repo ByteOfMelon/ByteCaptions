@@ -1,0 +1,13 @@
+{
+	"$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+	"bundle": {
+		"resources": {
+			"licenses/FFMPEG-MACOS.txt": "licenses/FFMPEG-MACOS.txt",
+			"licenses/SPEAKER-MODELS.txt": "licenses/SPEAKER-MODELS.txt"
+		},
+		"macOS": {
+			"signingIdentity": "-",
+			"minimumSystemVersion": "12.0"
+		}
+	}
+}

@@ -1,0 +1,73 @@
+# Builds ByteCaptions for macOS and Linux (Windows is built locally for now: it needs the
+# Vulkan SDK). Run it from the Actions tab; the installers are attached to the run.
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS (Apple Silicon)
+            os: macos-latest
+            target: aarch64-apple-darwin
+            ffmpeg: darwin-arm64
+          - name: macOS (Intel)
+            os: macos-latest
+            target: x86_64-apple-darwin
+            ffmpeg: darwin-x64
+          - name: Linux
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            ffmpeg: linux-x64
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libdbus-1-dev cmake clang
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: ${{ matrix.target }}
+
+      - run: npm ci
+      - run: npm run fetch:ffmpeg -- ${{ matrix.ffmpeg }}
+
+      - name: Build
+        uses: tauri-apps/tauri-action@v0
+        env:
+          # YouTube upload; the build turns it off when these secrets aren't set.
+          BC_GOOGLE_CLIENT_ID: ${{ secrets.BC_GOOGLE_CLIENT_ID }}
+          BC_GOOGLE_CLIENT_SECRET: ${{ secrets.BC_GOOGLE_CLIENT_SECRET }}
+        with:
+          args: --target ${{ matrix.target }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ByteCaptions-${{ matrix.target }}
+          path: |
+            src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+            src-tauri/target/${{ matrix.target }}/release/bundle/appimage/*.AppImage
+            src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
+            src-tauri/target/${{ matrix.target }}/release/bundle/rpm/*.rpm
+          if-no-files-found: error

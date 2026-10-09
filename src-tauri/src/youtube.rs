@@ -111,7 +111,8 @@ fn client() -> Result<(&'static str, &'static str), YtError> {
 		option_env!("BC_GOOGLE_CLIENT_ID"),
 		option_env!("BC_GOOGLE_CLIENT_SECRET"),
 	) {
-		(Some(id), Some(secret)) => Ok((id, secret)),
+		// CI sets both empty when the repository has no Google secrets.
+		(Some(id), Some(secret)) if !id.is_empty() && !secret.is_empty() => Ok((id, secret)),
 		_ => Err(err(
 			"not-configured",
 			"This build of ByteCaptions can't upload to YouTube.",
