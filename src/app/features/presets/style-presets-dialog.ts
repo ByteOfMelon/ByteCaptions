@@ -10,11 +10,11 @@ import {
 import { CaptionStyle, PosId, Position, StyleId } from '../../core/model/types';
 import { ProjectStore } from '../../state/project-store';
 import { Button } from '../../ui/button/button';
+import { count } from '../../ui/count/count';
 import { Dialog, DialogRef } from '../../ui/dialog/dialog';
 import { Field } from '../../ui/field/field';
 import { Select } from '../../ui/select/select';
 import { Tabs } from '../../ui/tabs/tabs';
-import { count } from '../../ui/count/count';
 import { Tooltip } from '../../ui/tooltip/tooltip';
 import { AnchorPicker } from '../inspector/anchor-picker';
 import { StyleChange, StyleFields } from '../inspector/style-fields';
