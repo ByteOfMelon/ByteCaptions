@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import {
 	LucideArrowDown,
+	LucideArrowLeftToLine,
+	LucideArrowRightToLine,
 	LucideArrowUp,
 	LucideClipboardPaste,
 	LucideClock,
@@ -10,11 +12,13 @@ import {
 	LucideMove,
 	LucidePencil,
 	LucidePlus,
+	LucideRepeat,
 	LucideScissors,
 	LucideSquareDashedMousePointer,
 	LucideTrash2,
 	LucideType,
 	LucideUpload,
+	LucideX,
 } from '@lucide/angular';
 import { CueId, Ms, StyleId, Track, TrackId } from '../../core/model/types';
 import { EditorUi } from '../../state/editor-ui';
@@ -23,12 +27,13 @@ import { ProjectStore } from '../../state/project-store';
 import { ContextMenu, MenuEntry } from '../../ui/menu/menu';
 import { EditorCommands } from '../editor/editor-commands';
 import { EditorDialogs } from '../editor/editor-dialogs';
+import { Playback } from '../player/playback';
 
 type At = { x: number; y: number } | MouseEvent;
 
 /**
  * Right-click menus for the timeline (Timeline Menus board): a cue, several selected cues,
- * empty lane space and a track header. Keys shown are the editor's current bindings.
+ * empty lane space, a track header and the ruler. Keys shown are the editor's current bindings.
  */
 @Injectable({ providedIn: 'root' })
 export class TimelineMenus {
@@ -37,6 +42,7 @@ export class TimelineMenus {
 	private readonly dialogs = inject(EditorDialogs);
 	private readonly ui = inject(EditorUi);
 	private readonly menu = inject(ContextMenu);
+	private readonly playback = inject(Playback);
 
 	/** "Style preset" submenu: presets with a check on `current`, then "Edit presets…". */
 	private presetMenu(current: StyleId | null): MenuEntry[] {
@@ -283,6 +289,33 @@ export class TimelineMenus {
 		if (id === 'new') this.commands.newCueAt(atMs, track.id);
 		else if (id === 'paste') this.commands.paste(atMs, track.id);
 		else if (id === 'select-all') this.commands.selectAllOnTrack(track.id);
+	}
+
+	/** Ruler: set the in/out points where it was clicked, or clear them. */
+	async ruler(at: At, atMs: Ms): Promise<void> {
+		const id = await this.menu.open(at, [
+			{ id: 'in', label: 'Mark in here', icon: LucideArrowRightToLine.icon },
+			{ id: 'out', label: 'Mark out here', icon: LucideArrowLeftToLine.icon },
+			{
+				id: 'clear',
+				label: 'Clear in and out',
+				icon: LucideX.icon,
+				keys: 'Alt+X',
+				disabled: !this.playback.range(),
+			},
+			{ kind: 'separator' },
+			{
+				id: 'loop',
+				label: 'Loop playback',
+				icon: LucideRepeat.icon,
+				keys: 'Ctrl+L',
+				checked: this.playback.loop(),
+			},
+		]);
+		if (id === 'in') this.playback.setIn(atMs);
+		else if (id === 'out') this.playback.setOut(atMs);
+		else if (id === 'clear') this.playback.clearRange();
+		else if (id === 'loop') this.playback.loop.update((on) => !on);
 	}
 
 	async header(at: At, track: Track): Promise<void> {

@@ -161,6 +161,16 @@ export class AppMenu {
 					await this.themeMenu(),
 					{ text: 'Reset layout…', run: () => void this.resetLayout() },
 				]),
+				await this.submenu('Pla&yback', [
+					{ command: 'play' },
+					{ command: 'loop' },
+					'separator',
+					{ command: 'mark-in' },
+					{ command: 'mark-out' },
+					{ command: 'go-in' },
+					{ command: 'go-out' },
+					{ command: 'clear-range' },
+				]),
 				await this.submenu('&Help', [
 					{ command: 'shortcuts' },
 					{ text: 'ByteCaptions GitHub page', run: () => openExternal(WEBSITE) },

@@ -1,4 +1,5 @@
-import { Injectable, effect, inject, signal, untracked } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Ms } from '../../core/model/types';
 import { snapToFrame } from '../../core/time/timecode';
 import { MediaSource } from '../../state/media-source';
 import { ProjectStore } from '../../state/project-store';
@@ -24,6 +25,18 @@ export class Playback {
 	 * repeated L presses, negative for playing backwards with J. Pausing resets it.
 	 */
 	readonly shuttle = signal(1);
+	/** In / out points (I / O); either may be unset. View state, not saved with the project. */
+	readonly inPoint = signal<Ms | null>(null);
+	readonly outPoint = signal<Ms | null>(null);
+	/** The in/out range once either point is set; a missing point means the start / end. */
+	readonly range = computed(() => {
+		const a = this.inPoint();
+		const b = this.outPoint();
+		if (a === null && b === null) return null;
+		return { start: a ?? 0, end: b ?? this.store.duration() };
+	});
+	/** Loop playback (Ctrl+L). */
+	readonly loop = signal(false);
 
 	constructor() {
 		effect(() => {
@@ -34,6 +47,12 @@ export class Playback {
 		effect(() => {
 			this.mediaUrl();
 			untracked(() => this.pause());
+		});
+		// A different project starts without an in/out range.
+		const projectId = computed(() => this.store.project().id);
+		effect(() => {
+			projectId();
+			untracked(() => this.clearRange());
 		});
 	}
 
@@ -47,7 +66,7 @@ export class Playback {
 			untracked(() => {
 				video.playbackRate = this.store.rate();
 				video.currentTime = this.store.playhead() / 1000;
-				video.onended = () => this.pause();
+				video.onended = () => this.onEnded();
 			});
 	}
 
@@ -58,7 +77,11 @@ export class Playback {
 
 	/** Play at `speed` × the playback rate; negative plays backwards. */
 	play(speed = 1): void {
-		if (speed > 0 && this.store.playhead() >= this.store.duration()) this.store.seek(0);
+		const t = this.store.playhead();
+		const span = this.loop() ? this.loopSpan() : null;
+		// Looping starts inside the loop; otherwise playing from the very end starts over.
+		if (span && (t < span.start || t >= span.end)) this.seek(speed > 0 ? span.start : span.end);
+		else if (speed > 0 && t >= this.store.duration()) this.seek(0);
 		this.shuttle.set(speed);
 		this.store.playing.set(true);
 		this.lastTick = performance.now();
@@ -103,6 +126,44 @@ export class Playback {
 		this.seek(snapToFrame(this.store.playhead() + n * 1000, fps));
 	}
 
+	/** Mark in (I). An out point before it is dropped, like Premiere. */
+	setIn(ms: Ms = this.store.playhead()): void {
+		const out = this.outPoint();
+		if (out !== null && out <= ms) this.outPoint.set(null);
+		this.inPoint.set(ms);
+	}
+
+	/** Mark out (O). An in point after it is dropped. */
+	setOut(ms: Ms = this.store.playhead()): void {
+		const at = this.inPoint();
+		if (at !== null && at >= ms) this.inPoint.set(null);
+		this.outPoint.set(ms);
+	}
+
+	clearRange(): void {
+		this.inPoint.set(null);
+		this.outPoint.set(null);
+	}
+
+	/** Shift+I / Shift+O. */
+	goTo(edge: 'in' | 'out'): void {
+		const r = this.range();
+		if (r) this.seek(edge === 'in' ? r.start : r.end);
+	}
+
+	/** What looping plays: the in/out range, else the selected cues, else the whole video. */
+	loopSpan(): { start: Ms; end: Ms } {
+		const r = this.range();
+		if (r) return r;
+		const cues = this.store.selectedCues().map((c) => c.cue);
+		if (cues.length)
+			return {
+				start: Math.min(...cues.map((c) => c.start)),
+				end: Math.max(...cues.map((c) => c.end)),
+			};
+		return { start: 0, end: this.store.duration() };
+	}
+
 	/** Jump to the previous / next cue start across all tracks. */
 	jumpCue(dir: 1 | -1): void {
 		const t = this.store.playhead();
@@ -110,6 +171,13 @@ export class Playback {
 		const target =
 			dir > 0 ? starts.find((s) => s > t + 1) : [...starts].reverse().find((s) => s < t - 1);
 		if (target !== undefined) this.seek(target);
+	}
+
+	/** The video reached its end: start the loop over, or stop. */
+	private onEnded(): void {
+		if (!this.loop() || !this.store.playing() || this.shuttle() < 0) return this.pause();
+		this.seek(this.loopSpan().start);
+		void this.video?.play();
 	}
 
 	private readonly tick = (now: number) => {
@@ -124,9 +192,13 @@ export class Playback {
 			// Backwards: scrub the video along, skipping frames while a seek is still loading.
 			if (this.video && !this.video.seeking)
 				this.video.currentTime = this.store.playhead() / 1000;
-			const t = this.store.playhead();
-			if (speed < 0 ? t <= 0 : t >= this.store.duration()) return this.pause();
 		}
+		const t = this.store.playhead();
+		const span = this.loop() ? this.loopSpan() : null;
+		if (span && (speed > 0 ? t >= span.end : t <= span.start))
+			this.seek(speed > 0 ? span.start : span.end);
+		else if (!(this.video && speed > 0) && (speed < 0 ? t <= 0 : t >= this.store.duration()))
+			return this.pause();
 		this.lastTick = now;
 		this.raf = requestAnimationFrame(this.tick);
 	};

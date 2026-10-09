@@ -224,8 +224,10 @@ export class Editor implements OnDestroy {
 			case 'ctrl+shift+z':
 			case 'ctrl+y':
 				return run(() => this.commands.redo());
+			// Space plays even with a toolbar button focused (it would otherwise press it,
+			// e.g. turning loop off); open menus and dropdowns keep it.
 			case ' ':
-				if (!t.closest('button, [role="menu"], [role="listbox"]'))
+				if (!t.closest('[role="menu"], [role="listbox"], [aria-expanded="true"]'))
 					run(() => this.commands.togglePlay());
 				return;
 			case 'j':
@@ -234,6 +236,18 @@ export class Editor implements OnDestroy {
 				return run(() => this.playback.pause());
 			case 'l':
 				return run(() => this.playback.shuttleBy(1));
+			case 'i':
+				return run(() => this.playback.setIn());
+			case 'o':
+				return run(() => this.playback.setOut());
+			case 'shift+i':
+				return run(() => this.playback.goTo('in'));
+			case 'shift+o':
+				return run(() => this.playback.goTo('out'));
+			case 'alt+x':
+				return run(() => this.playback.clearRange());
+			case 'ctrl+l':
+				return run(() => this.playback.loop.update((on) => !on));
 			case 's':
 			case 'ctrl+b':
 				return run(() => this.commands.splitAtPlayhead());

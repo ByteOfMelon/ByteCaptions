@@ -20,6 +20,7 @@ import {
 	LucideLock,
 	LucideLockOpen,
 	LucideMagnet,
+	LucideRepeat,
 	LucideScissors,
 	LucideZoomIn,
 	LucideZoomOut,
@@ -27,7 +28,7 @@ import {
 import { createCue } from '../../core/model/defaults';
 import { addCue, setTiming, moveCues, updateTrack } from '../../core/commands/edits';
 import { CueId, Ms, Track, TrackId } from '../../core/model/types';
-import { formatClock, formatTimecode } from '../../core/time/timecode';
+import { formatClock, formatTimecode, snapToFrame } from '../../core/time/timecode';
 import { EditorUi, TimelineZoom } from '../../state/editor-ui';
 import { ProjectStore } from '../../state/project-store';
 import { AudioPeaks } from '../../state/audio-peaks';
@@ -68,6 +69,8 @@ const AUTOSCROLL_MAX_SPEED = 60;
 
 type Hit =
 	| { kind: 'ruler' }
+	/** In/out range in the ruler: an edge, or the whole range on Alt+drag (edge null). */
+	| { kind: 'range'; edge: 'start' | 'end' | null }
 	| { kind: 'cue'; track: Track; trackIndex: number; cueId: CueId; edge: 'start' | 'end' | null }
 	| { kind: 'lane'; track: Track; trackIndex: number }
 	| { kind: 'none' };
@@ -86,6 +89,7 @@ type Drag =
 			clickSelect: CueId | null;
 	  }
 	| { mode: 'trim'; cueId: CueId; edge: 'start' | 'end'; start: Ms; end: Ms; original: Ms }
+	| { mode: 'range'; edge: 'start' | 'end' | null; downMs: Ms; start: Ms; end: Ms }
 	/** Alt+drag on empty lane space draws a new cue; it's added once the drag moves. */
 	| {
 			mode: 'create';
@@ -132,6 +136,7 @@ interface Hud {
 		StyleChip,
 		LucideScissors,
 		LucideMagnet,
+		LucideRepeat,
 		LucideZoomIn,
 		LucideZoomOut,
 		LucideEye,
@@ -147,7 +152,7 @@ interface Hud {
 export class Timeline {
 	protected readonly store = inject(ProjectStore);
 	protected readonly commands = inject(EditorCommands);
-	private readonly playback = inject(Playback);
+	protected readonly playback = inject(Playback);
 	private readonly theme = inject(ThemeService);
 	private readonly audio = inject(AudioPeaks);
 	private readonly menus = inject(TimelineMenus);
@@ -180,6 +185,16 @@ export class Timeline {
 			? formatClock(this.store.playhead())
 			: formatTimecode(this.store.playhead(), this.store.project().fps),
 	);
+	/** "In … → Out … • 4.73 s" while an in/out range is set. */
+	protected readonly rangeLabel = computed(() => {
+		const r = this.playback.range();
+		if (!r) return null;
+		const fmt = (ms: Ms) =>
+			this.ui.timeUnits() === 'ms'
+				? formatClock(ms)
+				: formatTimecode(ms, this.store.project().fps);
+		return `In ${fmt(r.start)} → Out ${fmt(r.end)} • ${((r.end - r.start) / 1000).toFixed(2)} s`;
+	});
 	/** Fully zoomed out shows the whole video, however long it is. */
 	private readonly minPxPerS = computed(() => {
 		const seconds = this.store.duration() / 1000;
@@ -275,6 +290,7 @@ export class Timeline {
 				box: this.box(),
 				trim: this.trim(),
 				audio: this.audio.waveform(),
+				range: this.playback.range(),
 			});
 		});
 
@@ -359,6 +375,11 @@ export class Timeline {
 		const h = this.hit(x, e.clientY - r.top);
 		if (h.kind === 'cue') void this.menus.cue(e, h.track, h.cueId);
 		else if (h.kind === 'lane') void this.menus.lane(e, h.track, xToMs(this.view(), x));
+		else if (h.kind === 'ruler' || h.kind === 'range') {
+			// Snap the clicked time to a frame so marks line up with the timecodes.
+			const fps = this.store.project().fps;
+			void this.menus.ruler(e, snapToFrame(xToMs(this.view(), x), fps));
+		}
 	}
 
 	protected onHeaderMenu(e: MouseEvent, track: Track): void {
@@ -373,8 +394,8 @@ export class Timeline {
 		return { x: e.clientX - r.left, y: e.clientY - r.top };
 	}
 
-	private hit(x: number, y: number): Hit {
-		if (y < RULER_H) return { kind: 'ruler' };
+	private hit(x: number, y: number, alt = false): Hit {
+		if (y < RULER_H) return this.rulerHit(x, alt);
 		if (y < LANES_TOP) return { kind: 'none' };
 		y += this.scrollY();
 		const tracks = this.store.project().tracks;
@@ -399,6 +420,22 @@ export class Timeline {
 				return { kind: 'cue', track, trackIndex: i, cueId: c.id, edge };
 		}
 		return { kind: 'lane', track, trackIndex: i };
+	}
+
+	/**
+	 * Dragging the ruler scrubs. The in/out edges are grabbed only away from the playhead
+	 * (which often sits on one after I / O); Alt+drag inside the range moves the whole range.
+	 */
+	private rulerHit(x: number, alt: boolean): Hit {
+		const r = this.playback.range();
+		const v = this.view();
+		if (!r || Math.abs(x - msToX(v, this.store.playhead())) <= 6) return { kind: 'ruler' };
+		const x0 = msToX(v, r.start);
+		const x1 = msToX(v, r.end);
+		if (Math.abs(x - x0) <= EDGE_PX) return { kind: 'range', edge: 'start' };
+		if (Math.abs(x - x1) <= EDGE_PX) return { kind: 'range', edge: 'end' };
+		if (alt && x > x0 && x < x1) return { kind: 'range', edge: null };
+		return { kind: 'ruler' };
 	}
 
 	/**
@@ -450,13 +487,22 @@ export class Timeline {
 	protected onPointerDown(e: PointerEvent): void {
 		if (e.button !== 0) return;
 		const { x, y } = this.local(e);
-		const h = this.hit(x, y);
+		const h = this.hit(x, y, e.altKey);
 		(e.target as Element).setPointerCapture(e.pointerId);
 		const additive = e.ctrlKey || e.metaKey;
 
 		if (h.kind === 'ruler') {
 			this.drag = { mode: 'scrub' };
 			this.playback.seek(xToMs(this.view(), x));
+		} else if (h.kind === 'range') {
+			const r = this.playback.range()!;
+			this.drag = {
+				mode: 'range',
+				edge: h.edge,
+				downMs: xToMs(this.view(), x),
+				start: r.start,
+				end: r.end,
+			};
 		} else if (h.kind === 'cue') {
 			const cue = h.track.cues.find((c) => c.id === h.cueId)!;
 			if (h.edge && !h.track.locked && !additive && !e.shiftKey) {
@@ -514,15 +560,19 @@ export class Timeline {
 	protected onPointerMove(e: PointerEvent): void {
 		const { x, y } = this.local(e);
 		if (!this.drag) {
-			const h = this.hit(x, y);
+			const h = this.hit(x, y, e.altKey);
 			this.cursor.set(
 				h.kind === 'cue' && h.edge && !h.track.locked
 					? 'ew-resize'
-					: h.kind === 'ruler'
-						? 'col-resize'
-						: h.kind === 'lane' && e.altKey && !h.track.locked
-							? 'crosshair'
-							: 'default',
+					: h.kind === 'range'
+						? h.edge
+							? 'ew-resize'
+							: 'grab'
+						: h.kind === 'ruler'
+							? 'col-resize'
+							: h.kind === 'lane' && e.altKey && !h.track.locked
+								? 'crosshair'
+								: 'default',
 			);
 			return;
 		}
@@ -541,7 +591,8 @@ export class Timeline {
 			this.edgeFrame = 0;
 			const d = this.drag;
 			const p = this.pointer;
-			if (!d || !p || (d.mode !== 'scrub' && d.mode !== 'trim' && !d.moved)) return;
+			const always = d?.mode === 'scrub' || d?.mode === 'trim' || d?.mode === 'range';
+			if (!d || !p || (!always && !d.moved)) return;
 			const width = this.size().width;
 			const over =
 				p.x < AUTOSCROLL_PX
@@ -592,6 +643,37 @@ export class Timeline {
 					const sign = diff < 0 ? '−' : '+';
 					const edge = d.edge === 'start' ? 'Start' : 'End';
 					return `${edge} ${tc(d.original)} → ${tc(now)}  ${sign}${Math.abs(diff).toFixed(2)} s`;
+				});
+				break;
+			}
+			case 'range': {
+				const minLen = 1000 / this.store.project().fps;
+				const duration = this.store.duration();
+				const fmt = (ms: Ms) => formatTimecode(ms, this.store.project().fps);
+				if (d.edge) {
+					const t = Math.round(ms + this.snapDelta([ms], new Set()));
+					if (d.edge === 'start')
+						this.playback.inPoint.set(Math.max(0, Math.min(t, d.end - minLen)));
+					else
+						this.playback.outPoint.set(
+							Math.min(duration, Math.max(t, d.start + minLen)),
+						);
+					const now = this.playback.range()![d.edge];
+					// Labels sit inside the range so the In label isn't hidden behind the track headers.
+					this.showHud(now, RULER_H + 48, d.edge === 'start' ? 'right' : 'left', () =>
+						d.edge === 'start' ? `In ${fmt(now)}` : `Out ${fmt(now)}`,
+					);
+					break;
+				}
+				let delta = ms - d.downMs;
+				delta += this.snapDelta([d.start + delta, d.end + delta], new Set());
+				delta = Math.round(Math.max(-d.start, Math.min(duration - d.end, delta)));
+				this.playback.inPoint.set(d.start + delta);
+				this.playback.outPoint.set(d.end + delta);
+				this.cursor.set('grabbing');
+				this.showHud(d.end + delta, RULER_H + 48, 'right', () => {
+					const [a, b] = [d.start + delta, d.end + delta];
+					return `${fmt(a)} → ${fmt(b)}  ${((b - a) / 1000).toFixed(2)} s`;
 				});
 				break;
 			}

@@ -1,7 +1,13 @@
 import { Injectable, computed, inject } from '@angular/core';
 import {
 	LucideArrowDown,
+	LucideArrowLeftToLine,
+	LucideArrowRightToLine,
 	LucideArrowUp,
+	LucideChevronFirst,
+	LucideChevronLast,
+	LucideRepeat,
+	LucideX,
 	LucideClipboardPaste,
 	LucideClock,
 	LucideCopy,
@@ -42,6 +48,7 @@ import { ProjectStore } from '../../state/project-store';
 import { ThemePreference, ThemeService } from '../../theme/theme.service';
 import { EditorCommands } from './editor-commands';
 import { EditorDialogs } from './editor-dialogs';
+import { Playback } from '../player/playback';
 import { PanelLayout } from '../../state/panel-layout';
 import { confirmResetLayout } from '../settings/settings-dialog';
 
@@ -74,10 +81,12 @@ export class CommandRegistry {
 	private readonly ui = inject(EditorUi);
 	private readonly theme = inject(ThemeService);
 	private readonly layout = inject(PanelLayout);
+	private readonly playback = inject(Playback);
 
 	readonly all = computed<Command[]>(() => {
 		const hasCue = () => !!this.store.primary();
 		const playing = this.store.playing();
+		const hasRange = () => !!this.playback.range();
 		return [
 			{
 				id: 'split',
@@ -201,6 +210,51 @@ export class CommandRegistry {
 				icon: playing ? LucidePause.icon : LucidePlay.icon,
 				keys: 'Space',
 				run: () => this.cmd.togglePlay(),
+			},
+			{
+				id: 'loop',
+				label: this.playback.loop() ? 'Turn loop playback off' : 'Turn loop playback on',
+				icon: LucideRepeat.icon,
+				keys: 'Ctrl+L',
+				run: () => this.playback.loop.update((on) => !on),
+			},
+			{
+				id: 'mark-in',
+				label: 'Mark in',
+				icon: LucideArrowRightToLine.icon,
+				keys: 'I',
+				run: () => this.playback.setIn(),
+			},
+			{
+				id: 'mark-out',
+				label: 'Mark out',
+				icon: LucideArrowLeftToLine.icon,
+				keys: 'O',
+				run: () => this.playback.setOut(),
+			},
+			{
+				id: 'go-in',
+				label: 'Go to in',
+				icon: LucideChevronFirst.icon,
+				keys: 'Shift+I',
+				enabled: hasRange,
+				run: () => this.playback.goTo('in'),
+			},
+			{
+				id: 'go-out',
+				label: 'Go to out',
+				icon: LucideChevronLast.icon,
+				keys: 'Shift+O',
+				enabled: hasRange,
+				run: () => this.playback.goTo('out'),
+			},
+			{
+				id: 'clear-range',
+				label: 'Clear in and out',
+				icon: LucideX.icon,
+				keys: 'Alt+X',
+				enabled: hasRange,
+				run: () => this.playback.clearRange(),
 			},
 			{
 				id: 'snapping',

@@ -34,6 +34,10 @@ export class ShortcutsDialog {
 					{ label: 'Step one frame', keys: '←+→' },
 					{ label: 'Step one second', keys: 'Shift+←+→' },
 					{ label: 'Previous or next cue', keys: '↑+↓' },
+					{ label: 'Mark in or out', keys: 'I+O' },
+					{ label: 'Go to in or out', keys: 'Shift+I+O' },
+					{ label: 'Clear in and out', keys: 'Alt+X' },
+					{ label: 'Loop playback on or off', keys: 'Ctrl+L' },
 				],
 			},
 			{
@@ -63,6 +67,7 @@ export class ShortcutsDialog {
 					{ label: 'Zoom out', keys: 'Ctrl+-' },
 					{ label: 'Zoom to fit', keys: 'Ctrl+0' },
 					{ label: 'Draw a new cue', keys: 'Alt+Drag' },
+					{ label: 'Move the in/out range', keys: 'Alt+Drag ruler' },
 					{ label: 'Snapping on or off', keys: 'N' },
 					{ label: 'Clear selection', keys: 'Esc' },
 				],

@@ -9,6 +9,9 @@
 		>
 			{{ timecode() }}
 		</button>
+		@if (rangeLabel(); as label) {
+			<span class="range text-mono-small" bcTooltip="Clear with Alt+X">{{ label }}</span>
+		}
 	</div>
 	<div class="tools">
 		<button
@@ -31,6 +34,17 @@
 			(click)="ui.snapping.set(!ui.snapping())"
 		>
 			<svg lucideMagnet></svg>
+		</button>
+		<button
+			bcIconButton
+			variant="ghost"
+			aria-label="Loop playback"
+			bcTooltip="Loop playback"
+			tooltipKeys="Ctrl+L"
+			[pressed]="playback.loop()"
+			(click)="playback.loop.set(!playback.loop())"
+		>
+			<svg lucideRepeat></svg>
 		</button>
 	</div>
 	<div class="side end">

@@ -77,6 +77,8 @@ export interface PaintInput {
 	/** Edge being trimmed, with its time before the drag. */
 	trim: { cueId: CueId; edge: 'start' | 'end'; original: Ms } | null;
 	audio: AudioWaveform;
+	/** In/out range (I / O). */
+	range: { start: Ms; end: Ms } | null;
 }
 
 /** Ruler steps (ms); the major step is the smallest one leaving room for a timecode label. */
@@ -126,6 +128,18 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 	ctx.clearRect(0, 0, v.width, v.height);
 	const t0 = v.start;
 	const t1 = xToMs(v, v.width);
+	const range = input.range && {
+		x0: Math.round(msToX(v, input.range.start)),
+		x1: Math.round(msToX(v, input.range.end)),
+	};
+
+	// In/out range band behind the ruler ticks.
+	if (range) {
+		ctx.fillStyle = c.brand;
+		ctx.globalAlpha = 0.28;
+		ctx.fillRect(range.x0, 0, range.x1 - range.x0, RULER_H);
+		ctx.globalAlpha = 1;
+	}
 
 	// Ruler
 	const major = STEPS.find((s) => s * v.pxPerMs >= MIN_LABEL_PX) ?? STEPS.at(-1)!;
@@ -151,25 +165,42 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 	ctx.rect(0, LANES_TOP, v.width, v.height - LANES_TOP);
 	ctx.clip();
 
-	// Lanes and cues
+	// Lanes, then the in/out tint over them, then cues and the waveform on top.
+	const ay = laneY(tracks.length) - v.scrollY;
+	ctx.fillStyle = c.panel;
+	tracks.forEach((_, i) => ctx.fillRect(0, laneY(i) - v.scrollY, v.width, LANE_H));
+	ctx.fillRect(0, ay, v.width, AUDIO_H);
+	if (range) {
+		ctx.fillStyle = c.brand;
+		ctx.globalAlpha = 0.08;
+		ctx.fillRect(range.x0, LANES_TOP, range.x1 - range.x0, v.height - LANES_TOP);
+		ctx.globalAlpha = 1;
+	}
 	ctx.font = '500 12px "Inter Variable", Inter, sans-serif';
 	ctx.textBaseline = 'middle';
 	tracks.forEach((track, i) => {
 		const y = laneY(i) - v.scrollY;
-		ctx.fillStyle = c.panel;
-		ctx.fillRect(0, y, v.width, LANE_H);
 		for (const cue of track.cues) {
 			if (cue.end < t0 || cue.start > t1) continue;
 			paintCue(ctx, input, track, cue, y + CUE_INSET);
 		}
 	});
-
 	// Audio lane: the video's waveform, mirrored around the middle.
-	const ay = laneY(tracks.length) - v.scrollY;
-	ctx.fillStyle = c.panel;
-	ctx.fillRect(0, ay, v.width, AUDIO_H);
 	paintWaveform(ctx, input, ay + AUDIO_H / 2);
 	ctx.restore();
+
+	// In/out edges down the lanes, with a grip for each in the ruler.
+	if (range) {
+		ctx.fillStyle = c.brand;
+		ctx.globalAlpha = 0.7;
+		ctx.fillRect(range.x0, 0, 1, v.height);
+		ctx.fillRect(range.x1 - 1, 0, 1, v.height);
+		ctx.globalAlpha = 1;
+		ctx.beginPath();
+		ctx.roundRect(range.x0, 0, 4, RULER_H, [2, 0, 0, 2]);
+		ctx.roundRect(range.x1 - 4, 0, 4, RULER_H, [0, 2, 2, 0]);
+		ctx.fill();
+	}
 
 	// Snap guide: dashed brand line at what the edge snapped to.
 	if (input.snapAt !== null) {
@@ -288,5 +319,6 @@ function roundRect(
 	r: number,
 ): void {
 	ctx.beginPath();
-	ctx.roundRect(x, y, w, h, Math.min(r, w / 2, h / 2));
+	// A zero-size box (box select before it moves) would give a negative radius, which throws.
+	ctx.roundRect(x, y, w, h, Math.max(0, Math.min(r, w / 2, h / 2)));
 }

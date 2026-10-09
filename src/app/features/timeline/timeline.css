@@ -259,3 +259,14 @@ canvas {
 	outline: none;
 	box-shadow: var(--focus-ring);
 }
+
+/* In/out range readout; brand green, darker on light for contrast. */
+.range {
+	overflow: hidden;
+	color: var(--color-brand);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+:host-context([data-theme='light']) .range {
+	color: var(--color-brand-dark);
+}
