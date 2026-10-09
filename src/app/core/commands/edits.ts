@@ -316,12 +316,6 @@ function splitIndex(text: string, idx: number): number {
 	return best < 0 ? idx : best;
 }
 
-/** Split text near `idx`, preferring the closest whitespace. */
-export function splitTextAt(text: string, idx: number): [string, string] {
-	const best = splitIndex(text, idx);
-	return [text.slice(0, best).trim(), text.slice(best).trim()];
-}
-
 /** Merge cues (must be on the same track) into the earliest one. */
 export function mergeCues(ids: CueId[]) {
 	return (p: P) => {
