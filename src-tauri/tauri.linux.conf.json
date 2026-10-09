@@ -1,0 +1,16 @@
+{
+	"$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+	"bundle": {
+		"linux": {
+			"appimage": {
+				"bundleMediaFramework": true
+			},
+			"deb": {
+				"depends": ["gstreamer1.0-plugins-base", "gstreamer1.0-plugins-good", "gstreamer1.0-libav"]
+			},
+			"rpm": {
+				"depends": ["gstreamer1-plugins-base", "gstreamer1-plugins-good", "gstreamer1-plugin-libav"]
+			}
+		}
+	}
+}
