@@ -151,7 +151,7 @@ export class Recovery {
 				await this.files.open(s.path);
 			} else if (s?.project) {
 				await this.files.restore(parseProject(s.project), null);
-				this.store.dirty.set(false);
+				this.store.markSaved();
 			}
 		} catch (e) {
 			console.warn('Could not reopen the project after reloading', e);

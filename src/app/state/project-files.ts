@@ -104,7 +104,7 @@ export class ProjectFiles {
 				file.path,
 			);
 			this.loadProject(p, file.path, !relinked);
-			if (relinked) this.store.dirty.set(true);
+			if (relinked) this.store.markUnsaved();
 			this.recent.record(p, file.name, file.path);
 			await this.media.loadForProject(p);
 			return true;
@@ -122,7 +122,7 @@ export class ProjectFiles {
 		if (!(await this.confirmDiscard())) return false;
 		({ project: p } = await this.findMovedVideo(p, path));
 		this.loadProject(p, path, false);
-		this.store.dirty.set(true);
+		this.store.markUnsaved();
 		await this.media.loadForProject(p);
 		return true;
 	}
@@ -174,7 +174,7 @@ export class ProjectFiles {
 		}
 		this.currentPath.set(path);
 		this.saved.set(true);
-		this.store.dirty.set(false);
+		this.store.markSaved(p);
 		this.recent.record(p, name, path);
 		return true;
 	}

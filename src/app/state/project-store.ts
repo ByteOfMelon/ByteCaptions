@@ -29,7 +29,10 @@ export class ProjectStore {
 	readonly canRedo = computed(() => (this.version(), this.history.canRedo));
 	readonly undoLabel = computed(() => (this.version(), this.history.undoLabel));
 	readonly redoLabel = computed(() => (this.version(), this.history.redoLabel));
+	/** Whether the project differs from what was last saved or opened. */
 	readonly dirty = signal(false);
+	/** The project as last saved or opened; null when that copy is unknown (always unsaved). */
+	private saved: Project | null = null;
 
 	readonly selection = signal<ReadonlySet<CueId>>(new Set(['d13']));
 	readonly playhead = signal<Ms>(39_233);
@@ -78,8 +81,7 @@ export class ProjectStore {
 			console.warn(e);
 			return;
 		}
-		this.dirty.set(true);
-		this.version.update((v) => v + 1);
+		this.changed();
 	}
 
 	begin(label: string): void {
@@ -88,27 +90,46 @@ export class ProjectStore {
 
 	end(): void {
 		this.history.end();
-		this.version.update((v) => v + 1);
+		this.changed();
 	}
 
 	undo(): void {
 		this.history.undo();
-		this.dirty.set(true);
-		this.version.update((v) => v + 1);
+		this.changed();
 	}
 
 	redo(): void {
 		this.history.redo();
-		this.dirty.set(true);
-		this.version.update((v) => v + 1);
+		this.changed();
 	}
 
 	load(project: Project): void {
 		this.history.reset(project);
 		this.selection.set(new Set());
 		this.playhead.set(0);
-		this.dirty.set(false);
 		this.version.update((v) => v + 1);
+		this.markSaved();
+	}
+
+	/** The file now holds `project` (just saved or opened); edits since then stay unsaved. */
+	markSaved(project = this.history.current): void {
+		this.saved = project;
+		this.dirty.set(this.history.current !== project);
+	}
+
+	/** The project differs from its file in a way edits can't tell (e.g. recovered work). */
+	markUnsaved(): void {
+		this.saved = null;
+		this.dirty.set(true);
+	}
+
+	/**
+	 * Edits that change nothing (a click on a cue, Undo with nothing to undo) leave the project
+	 * as it was, so they don't count as unsaved changes.
+	 */
+	private changed(): void {
+		this.version.update((v) => v + 1);
+		this.dirty.set(this.history.current !== this.saved);
 	}
 
 	track(id: TrackId): Track | undefined {
