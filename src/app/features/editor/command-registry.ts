@@ -409,14 +409,13 @@ export class CommandRegistry {
 				keys: 'Ctrl+E',
 				run: () => this.dialogs.export(),
 			},
-			// Desktop only: sign-in and upload run in the backend.
-			...(isDesktop
+			// Only in builds with a Google sign-in client (see BUILDING.md); never in the browser.
+			...(this.youtube.available()
 				? [
 						{
 							id: 'youtube',
 							label: 'Upload to YouTube…',
 							icon: LucideCloudUpload.icon,
-							enabled: () => this.youtube.available(),
 							run: () => this.dialogs.youtube(),
 						},
 					]

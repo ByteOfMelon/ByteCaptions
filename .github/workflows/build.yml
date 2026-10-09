@@ -57,11 +57,8 @@ jobs:
       - run: npm run fetch:ffmpeg -- ${{ matrix.ffmpeg }}
 
       - name: Build
+        # Public builds have no Google sign-in client, so YouTube upload is off (BUILDING.md).
         uses: tauri-apps/tauri-action@v0
-        env:
-          # YouTube upload; the build turns it off when these secrets aren't set.
-          BC_GOOGLE_CLIENT_ID: ${{ secrets.BC_GOOGLE_CLIENT_ID }}
-          BC_GOOGLE_CLIENT_SECRET: ${{ secrets.BC_GOOGLE_CLIENT_SECRET }}
         with:
           args: --target ${{ matrix.target }}
 

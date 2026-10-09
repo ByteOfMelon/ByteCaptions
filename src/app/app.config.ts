@@ -11,6 +11,7 @@ import { routes } from './app.routes';
 import { ErrorReporter } from './state/error-reporter';
 import { initMediaUrls } from './state/file-io';
 import { Recovery } from './state/recovery';
+import { YouTube } from './state/youtube';
 
 export const appConfig: ApplicationConfig = {
 	providers: [
@@ -20,7 +21,8 @@ export const appConfig: ApplicationConfig = {
 		// come first: the reopened project's video needs them.
 		provideAppInitializer(() => {
 			const recovery = inject(Recovery);
-			return initMediaUrls().then(() => recovery.resume());
+			const youtube = inject(YouTube);
+			return Promise.all([initMediaUrls(), youtube.init()]).then(() => recovery.resume());
 		}),
 		provideRouter(routes),
 		provideLucideConfig({ size: 16, strokeWidth: 2 }),

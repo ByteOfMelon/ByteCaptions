@@ -148,12 +148,12 @@ export class YouTube {
 	readonly job = signal<UploadOptions | null>(null);
 	readonly running = computed(() => this.phase() === 'running');
 
-	constructor() {
+	/** Run at start-up, so menus know whether to offer YouTube before they're built. */
+	async init(): Promise<void> {
 		if (!isDesktop) return;
-		void invoke<boolean>('youtube_available').then((ok) => {
-			this.available.set(ok);
-			if (ok) void this.refreshAccount();
-		});
+		const ok = await invoke<boolean>('youtube_available').catch(() => false);
+		this.available.set(ok);
+		if (ok) void this.refreshAccount();
 	}
 
 	async refreshAccount(): Promise<void> {
