@@ -1,13 +1,13 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Channel, invoke } from '@tauri-apps/api/core';
 import { Draft } from 'immer';
+import { CueId, Ms, Project, Track, TrackId } from '../core/model/types';
 import {
 	SpeakerSplit,
 	SpeakerTurn,
 	assignSpeakers,
 	splitBySpeaker,
 } from '../core/speakers/speakers';
-import { CueId, Ms, Project, Track, TrackId } from '../core/model/types';
 import { isDesktop } from './file-io';
 import { MediaSource } from './media-source';
 import { TRACK_COLORS } from './project-files';
@@ -113,8 +113,10 @@ export class SpeakerSeparation {
 		}
 	}
 
-	/** Split `track` by speaker, with track colours following on from the project's. */
-	/** `detected`: the speaker count was Auto, so tiny stray speakers are folded in. */
+	/**
+	 * Split `track` by speaker, with track colours following on from the project's.
+	 * `detected`: the speaker count was Auto, so tiny stray speakers are folded in.
+	 */
 	split(
 		track: Track,
 		turns: SpeakerTurn[],

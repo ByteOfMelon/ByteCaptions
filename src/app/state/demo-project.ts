@@ -67,7 +67,7 @@ const SFX: [string, string, string][] = [
 	['00:01:16:00', '00:01:17:10', '[crowd cheering]'],
 ];
 
-/** Sample project mirroring the Penpot editor mockups. Used until media import is wired up. */
+/** Sample project mirroring the Penpot editor mockups; the editor starts with it. */
 export function demoProject(): Project {
 	const p = createProject('legacy-of-cyberpunk-2077');
 	p.fps = 60;

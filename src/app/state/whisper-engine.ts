@@ -1,6 +1,6 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
-import { segmentWords } from '../core/segment/segment';
 import { Cue, Ms, ProjectSettings, WordTiming } from '../core/model/types';
+import { segmentWords } from '../core/segment/segment';
 import {
 	EngineEvent,
 	LANGUAGE_CODES,

@@ -1,8 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { addTrack } from '../core/commands/edits';
-import { SpeakerTurn } from '../core/speakers/speakers';
 import { createTrack } from '../core/model/defaults';
 import { Cue, Ms, TrackId } from '../core/model/types';
+import { SpeakerTurn } from '../core/speakers/speakers';
 import { isDesktop } from './file-io';
 import { MediaSource } from './media-source';
 import { ProjectFiles } from './project-files';

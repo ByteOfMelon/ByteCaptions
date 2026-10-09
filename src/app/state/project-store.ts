@@ -1,8 +1,8 @@
 import { Injectable, computed, effect, signal, untracked } from '@angular/core';
 import { History, Recipe } from '../core/commands/history';
+import { lintProject } from '../core/lint/rules';
 import { cueText } from '../core/model/cue';
 import { Cue, CueId, Ms, Project, Track, TrackId } from '../core/model/types';
-import { lintProject } from '../core/lint/rules';
 import { demoProject } from './demo-project';
 
 export interface CueRef {
