@@ -2,9 +2,10 @@
 // it, and puts it where tauri.conf.json's externalBin expects it. Skips the download when the
 // right binary is already in place. Run with: npm run fetch:ffmpeg
 //
-// FFmpeg is LGPL-licensed (src-tauri/licenses/FFMPEG-LICENSE.txt). BtbN deletes old
-// autobuilds after a while, so for releases consider re-hosting the zip as an asset on
-// ByteCaptions' own GitHub release and pointing `url` there (the checksums stay the same).
+// The Windows and Linux builds are LGPL (src-tauri/licenses/FFMPEG-LICENSE.txt), the macOS
+// ones GPLv3 (FFMPEG-MACOS.txt). Old builds get deleted after a while, so for releases
+// consider re-hosting the zips as assets on ByteCaptions' own GitHub release and pointing
+// `url` there (the checksums stay the same).
 
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -38,6 +39,14 @@ const BUILDS = {
 		zipSha256: 'c8ed4c4e6978a03c485edbfe4e0a5dc2380f8a30bba5150531b31b094492d924',
 		member: 'ffmpeg',
 		exeSha256: '2e11c6f90993cdb79fff84d3f90044d28316b310e75b3e030cfc9a54f2c9d384',
+		ext: '',
+	},
+	'darwin-x64': {
+		triple: 'x86_64-apple-darwin',
+		url: 'https://ffmpeg.martin-riedl.de/download/macos/amd64/1789931006_9.0.2/ffmpeg.zip',
+		zipSha256: '7c6b4125b191cbf773832dc51f424cf2b6bb7da43007d1e066f95909e47cacd4',
+		member: 'ffmpeg',
+		exeSha256: 'b25689cf2211c0582d317e849912769a1f1c93904fe102c485b5364a425633d1',
 		ext: '',
 	},
 	'linux-x64': {
