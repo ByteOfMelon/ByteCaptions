@@ -9,12 +9,10 @@ import {
 	splitBySpeaker,
 } from '../core/speakers/speakers';
 import { isDesktop } from './file-io';
+import { stopped, wasCancelled } from './jobs';
 import { MediaSource } from './media-source';
 import { TRACK_COLORS } from './project-files';
 import { ProjectStore } from './project-store';
-
-/** Error text the backend uses for a job stopped with `job_cancel` (src-tauri/src/jobs.rs). */
-const CANCELLED = 'Cancelled';
 
 /** Size of the speaker models (src-tauri/src/speakers.rs), for messages before they download. */
 export const SPEAKER_MODELS_SIZE = '60 MB';
@@ -41,8 +39,6 @@ export interface SpeakerResult {
 	/** Lines flagged as an unsure speaker (in the Problems tab). */
 	unsure: number;
 }
-
-const stopped = () => new DOMException('Stopped', 'AbortError');
 
 /**
  * Speaker separation (desktop only): runs the backend's speaker model over the video and
@@ -89,7 +85,7 @@ export class SpeakerSeparation {
 				try {
 					await invoke('speakers_download', { onProgress: progress });
 				} catch (e) {
-					if (e === CANCELLED || signal.aborted) throw stopped();
+					if (wasCancelled(e, signal)) throw stopped();
 					throw new Error(`Speaker model download failed|${e}`);
 				}
 				this.installed.set(true);
@@ -105,7 +101,7 @@ export class SpeakerSeparation {
 					onEvent: events,
 				});
 			} catch (e) {
-				if (e === CANCELLED || signal.aborted) throw stopped();
+				if (wasCancelled(e, signal)) throw stopped();
 				throw new Error(`Speaker separation failed|${e}`);
 			}
 		} finally {

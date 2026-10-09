@@ -2,6 +2,7 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { LucideLoaderCircle } from '@lucide/angular';
 import { TrackId } from '../../core/model/types';
 import { EditorUi } from '../../state/editor-ui';
+import { isStopped, jobErrorText } from '../../state/jobs';
 import { ProjectStore } from '../../state/project-store';
 import {
 	SPEAKER_COUNTS,
@@ -277,12 +278,11 @@ export class SeparateSpeakersDialog {
 			this.took.set(seconds(performance.now() - started));
 			this.phase.set('done');
 		} catch (err) {
-			if ((err as Error).name === 'AbortError') {
+			if (isStopped(err)) {
 				this.phase.set('setup');
 				return;
 			}
-			const [title, detail = ''] = String((err as Error).message ?? err).split('|');
-			this.error.set({ title, detail });
+			this.error.set(jobErrorText(err));
 			this.phase.set('error');
 		} finally {
 			this.abort = null;

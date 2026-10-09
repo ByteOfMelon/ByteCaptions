@@ -4,6 +4,7 @@ import { createTrack } from '../core/model/defaults';
 import { Cue, Ms, TrackId } from '../core/model/types';
 import { SpeakerTurn } from '../core/speakers/speakers';
 import { isDesktop } from './file-io';
+import { isStopped, jobErrorText } from './jobs';
 import { MediaSource } from './media-source';
 import { ProjectFiles } from './project-files';
 import { ProjectStore } from './project-store';
@@ -455,19 +456,18 @@ export class Transcription {
 						}
 					});
 				} catch (err) {
-					if ((err as Error).name !== 'AbortError') setStep('speakers', 'error', '');
+					if (!isStopped(err)) setStep('speakers', 'error', '');
 					throw err;
 				}
 				setStep('speakers', 'done', formatDuration(performance.now() - started));
 			}
 			this.finish(cues, turns);
 		} catch (err) {
-			if ((err as Error).name === 'AbortError') {
+			if (isStopped(err)) {
 				this.phase.set('setup');
 				return;
 			}
-			const [title, detail = ''] = String((err as Error).message ?? err).split('|');
-			this.error.set({ title, detail });
+			this.error.set(jobErrorText(err));
 			this.phase.set('error');
 		} finally {
 			this.abort = null;

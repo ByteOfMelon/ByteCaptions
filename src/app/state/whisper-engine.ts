@@ -1,6 +1,7 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
 import { Cue, Ms, ProjectSettings, WordTiming } from '../core/model/types';
 import { segmentWords } from '../core/segment/segment';
+import { stopped, wasCancelled } from './jobs';
 import {
 	EngineEvent,
 	LANGUAGE_CODES,
@@ -18,11 +19,6 @@ type AsrEvent =
 
 /** Voice activity detection model; keep in sync with VAD_MODEL in src-tauri/src/models.rs. */
 const VAD_MODEL = 'silero-v6.2.0';
-
-/** Error text the backend uses for a job stopped with `job_cancel` (src-tauri/src/jobs.rs). */
-const CANCELLED = 'Cancelled';
-
-const stopped = () => new DOMException('Stopped', 'AbortError');
 
 function clock(ms: Ms): string {
 	const s = Math.round(ms / 1000);
@@ -113,7 +109,7 @@ export class WhisperEngine implements TranscriptionEngine {
 				try {
 					await invoke('model_download', { name, onProgress: progress });
 				} catch (e) {
-					if (e === CANCELLED || signal.aborted) throw stopped();
+					if (wasCancelled(e, signal)) throw stopped();
 					emit({ type: 'step', step: 'download', status: 'error', detail: last });
 					throw new Error(`Model download failed|${e}`);
 				}
@@ -165,7 +161,7 @@ export class WhisperEngine implements TranscriptionEngine {
 					onEvent: events,
 				}));
 			} catch (e) {
-				if (e === CANCELLED || signal.aborted) throw stopped();
+				if (wasCancelled(e, signal)) throw stopped();
 				throw new Error(`Transcription failed|${e}`);
 			}
 			if (signal.aborted) throw stopped();
