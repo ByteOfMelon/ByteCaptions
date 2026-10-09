@@ -41,6 +41,7 @@ fn ffmpeg_path() -> Result<PathBuf, String> {
 }
 
 fn ffmpeg() -> Result<Command, String> {
+	#[cfg_attr(not(windows), allow(unused_mut))]
 	let mut cmd = Command::new(ffmpeg_path()?);
 	#[cfg(windows)]
 	{
