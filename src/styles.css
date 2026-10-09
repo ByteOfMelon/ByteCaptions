@@ -112,3 +112,13 @@ svg.lucide {
 	color: var(--color-text-faded);
 	font-size: 12px;
 }
+
+/* Text kept selected in the caption editor while the Inspector formats it. */
+::highlight(bc-kept-selection) {
+	background-color: Highlight;
+	color: HighlightText;
+}
+
+bc-inspector:focus {
+	outline: none;
+}

@@ -4,8 +4,19 @@
  */
 import { Draft } from 'immer';
 import { createCue, newId } from '../model/defaults';
-import { cueText, joinWords, sortCues } from '../model/cue';
-import { Cue, CueId, Marker, MarkerId, Ms, Project, Track, TrackId } from '../model/types';
+import { cueText, joinWords, sortCues, wordGap } from '../model/cue';
+import { normalizeRuns, replaceText, splitRuns, styleRange, trimRuns } from '../model/runs';
+import {
+	CaptionStyle,
+	Cue,
+	CueId,
+	Marker,
+	MarkerId,
+	Ms,
+	Project,
+	Track,
+	TrackId,
+} from '../model/types';
 
 type P = Draft<Project>;
 
@@ -89,12 +100,30 @@ export function setText(cueId: CueId, text: string) {
 	return (p: P) => {
 		const { track, cue } = findCue(p, cueId);
 		assertUnlocked(track);
-		cue.runs = [{ text }];
+		// Formatting stays on the text that didn't change.
+		cue.runs = replaceText(cue.runs, text);
 		// Word timings no longer match edited text.
 		if (cue.words && joinWords(cue.words) !== text.replace(/\s+/g, ' ').trim()) {
 			delete cue.words;
 			delete cue.karaoke;
 		}
+	};
+}
+
+/**
+ * Format characters [from, to) of a cue: merge `change` into their style overrides (undefined
+ * removes one), or 'clear' to remove all formatting there.
+ */
+export function styleText(
+	cueId: CueId,
+	from: number,
+	to: number,
+	change: Partial<CaptionStyle> | 'clear',
+) {
+	return (p: P) => {
+		const { track, cue } = findCue(p, cueId);
+		assertUnlocked(track);
+		cue.runs = styleRange(cue.runs, from, to, change);
 	};
 }
 
@@ -190,21 +219,25 @@ export function splitCue(cueId: CueId, atMs: Ms, out?: { rightId?: CueId }) {
 		assertUnlocked(track);
 		if (atMs <= cue.start || atMs >= cue.end) return;
 
-		let leftText: string;
-		let rightText: string;
+		const text = cueText(cue);
+		let leftRuns, rightRuns;
 		let leftWords, rightWords;
 		if (cue.words?.length) {
 			leftWords = cue.words.filter((w) => (w.start + w.end) / 2 < atMs);
 			rightWords = cue.words.filter((w) => (w.start + w.end) / 2 >= atMs);
-			leftText = joinWords(leftWords);
-			rightText = joinWords(rightWords);
+			const leftText = joinWords(leftWords);
+			// Keep formatting while the text is still exactly what the words say.
+			if (text === joinWords(cue.words))
+				[leftRuns, rightRuns] = splitRuns(cue.runs, leftText.length);
+			else [leftRuns, rightRuns] = [[{ text: leftText }], [{ text: joinWords(rightWords) }]];
 		} else {
-			const text = cueText(cue);
 			const ratio = (atMs - cue.start) / (cue.end - cue.start);
-			[leftText, rightText] = splitTextAt(text, Math.round(text.length * ratio));
+			const at = splitIndex(text, Math.round(text.length * ratio));
+			[leftRuns, rightRuns] = splitRuns(cue.runs, at);
 		}
 
-		const right = createCue(atMs, cue.end, rightText);
+		const right = createCue(atMs, cue.end, '');
+		right.runs = rightRuns;
 		right.id = out?.rightId ?? newId('cue');
 		if (cue.styleId) right.styleId = cue.styleId;
 		if (cue.positionId) right.positionId = cue.positionId;
@@ -213,19 +246,24 @@ export function splitCue(cueId: CueId, atMs: Ms, out?: { rightId?: CueId }) {
 		if (out) out.rightId = right.id;
 
 		cue.end = atMs;
-		cue.runs = [{ text: leftText }];
+		cue.runs = leftRuns;
 		if (leftWords) cue.words = leftWords;
 		track.cues.splice(index + 1, 0, right);
 	};
 }
 
-/** Split text near `idx`, preferring the closest whitespace. */
-export function splitTextAt(text: string, idx: number): [string, string] {
+/** Where to split text near `idx`: the closest whitespace, else `idx` itself. */
+function splitIndex(text: string, idx: number): number {
 	let best = -1;
 	for (let i = 0; i < text.length; i++) {
 		if (/\s/.test(text[i]) && (best < 0 || Math.abs(i - idx) < Math.abs(best - idx))) best = i;
 	}
-	if (best < 0) best = idx;
+	return best < 0 ? idx : best;
+}
+
+/** Split text near `idx`, preferring the closest whitespace. */
+export function splitTextAt(text: string, idx: number): [string, string] {
+	const best = splitIndex(text, idx);
 	return [text.slice(0, best).trim(), text.slice(best).trim()];
 }
 
@@ -241,13 +279,17 @@ export function mergeCues(ids: CueId[]) {
 		const cues = found.map((f) => f.cue).sort((a, b) => a.start - b.start);
 		const [first, ...rest] = cues;
 		first.end = Math.max(...cues.map((c) => c.end));
-		first.runs = [
-			{
-				text: joinWords(cues.map((c) => ({ text: cueText(c).trim() })))
-					.replace(/\s+/g, ' ')
-					.trim(),
-			},
-		];
+		// Join with formatting kept: a space between cues (none for Chinese or Japanese), and
+		// line breaks and runs of spaces become single spaces.
+		const parts = cues.map((c) => trimRuns(c.runs));
+		first.runs = normalizeRuns(
+			parts.flatMap((runs, i) => {
+				const flat = runs.map((r) => ({ ...r, text: r.text.replace(/\s+/g, ' ') }));
+				const prev = i ? parts[i - 1].map((r) => r.text).join('') : '';
+				const gap = i ? wordGap(prev, flat.map((r) => r.text).join('')) : '';
+				return gap ? [{ text: gap }, ...flat] : flat;
+			}),
+		);
 		first.words = cues.every((c) => c.words) ? cues.flatMap((c) => c.words!) : undefined;
 		if (!first.words) delete first.words;
 		const drop = new Set(rest.map((c) => c.id));

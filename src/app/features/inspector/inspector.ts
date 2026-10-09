@@ -3,6 +3,7 @@ import { resolvePosition, resolveStyle } from '../../core/model/cue';
 import { newId } from '../../core/model/defaults';
 import { Position, StyleId } from '../../core/model/types';
 import { ProjectStore } from '../../state/project-store';
+import { TextFormat } from '../../state/text-format';
 import { Select } from '../../ui/select/select';
 import { AnchorPicker } from './anchor-picker';
 import { StyleChange, StyleFields } from './style-fields';
@@ -16,9 +17,14 @@ import { StyleChange, StyleFields } from './style-fields';
 	imports: [Select, StyleFields, AnchorPicker],
 	templateUrl: './inspector.html',
 	styleUrl: './inspector.css',
+	// Using the Inspector keeps the text selected in the caption editor.
+	host: { 'data-keeps-text-selection': '', tabindex: '-1' },
 })
 export class Inspector {
 	protected readonly store = inject(ProjectStore);
+	/** Text selected in the caption being edited: then the style fields format just that. */
+	protected readonly text = inject(TextFormat).active;
+	private readonly format = inject(TextFormat);
 
 	protected readonly subject = computed(() => {
 		const sel = this.store.selectedCues();
@@ -55,6 +61,7 @@ export class Inspector {
 	}
 
 	protected setStyle({ key, value }: StyleChange): void {
+		if (this.text()) return this.format.apply({ [key]: value });
 		const s = this.subject();
 		if (!s) return;
 		this.store.apply(`Change ${s.style.name} ${String(key)}`, (p) => {

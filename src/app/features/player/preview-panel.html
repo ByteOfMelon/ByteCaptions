@@ -37,15 +37,13 @@
 							contenteditable="plaintext-only"
 							spellcheck="true"
 							aria-label="Caption text"
-							bcTooltip="Save"
-							tooltipKeys="Enter"
 							bcAutofocus
 							[style]="c.text"
 							(click)="$event.stopPropagation()"
-							(blur)="commit(c.id, editor.innerText)"
+							(focus)="keptRange.set(null)"
+							(blur)="onEditorBlur(c.id)"
 							(keydown)="onEditKey($event, c.id)"
-							>{{ c.source }}</span
-						>
+						></span>
 					</div>
 				} @else {
 					<div
@@ -56,7 +54,11 @@
 						(dblclick)="edit(c.id, c.locked)"
 					>
 						@for (line of c.lines; track $index) {
-							<span class="caption-line" [style]="c.text">{{ line }}</span>
+							<span class="caption-line" [style]="c.text">
+								@for (seg of line; track $index) {
+									<span [style]="seg.style">{{ seg.text }}</span>
+								}
+							</span>
 							@if (!$last) {
 								<br />
 							}
@@ -64,6 +66,69 @@
 					</div>
 				}
 			}
+		}
+		@if (formatBar(); as bar) {
+			<div
+				class="format-bar"
+				role="toolbar"
+				aria-label="Format selected text"
+				data-keeps-text-selection
+				[style.left.px]="bar.x"
+				[style.top.px]="bar.y"
+				(click)="$event.stopPropagation()"
+				(mousedown)="keepFocus($event)"
+			>
+				<button
+					type="button"
+					aria-label="Bold"
+					bcTooltip="Bold"
+					tooltipKeys="Ctrl B"
+					[attr.aria-pressed]="bar.style.bold"
+					(click)="format.toggle('bold')"
+				>
+					<svg lucideBold></svg>
+				</button>
+				<button
+					type="button"
+					aria-label="Italic"
+					bcTooltip="Italic"
+					tooltipKeys="Ctrl I"
+					[attr.aria-pressed]="bar.style.italic"
+					(click)="format.toggle('italic')"
+				>
+					<svg lucideItalic></svg>
+				</button>
+				<button
+					type="button"
+					aria-label="Underline"
+					bcTooltip="Underline"
+					tooltipKeys="Ctrl U"
+					[attr.aria-pressed]="bar.style.underline"
+					(click)="format.toggle('underline')"
+				>
+					<svg lucideUnderline></svg>
+				</button>
+				<label class="swatch" bcTooltip="Text color">
+					<span [style.background]="bar.style.textColor"></span>
+					<input
+						type="color"
+						aria-label="Text color"
+						[value]="bar.style.textColor.toLowerCase()"
+						(change)="
+							format.apply({ textColor: $any($event.target).value.toUpperCase() })
+						"
+					/>
+				</label>
+				<span class="divider"></span>
+				<button
+					type="button"
+					class="clear"
+					bcTooltip="Clear formatting"
+					(click)="format.apply('clear')"
+				>
+					Clear
+				</button>
+			</div>
 		}
 	</div>
 </div>

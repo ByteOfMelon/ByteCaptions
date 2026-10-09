@@ -120,3 +120,70 @@ video {
 	justify-content: flex-end;
 	gap: var(--spacing-sm);
 }
+
+/* Floating bar over a text selection in the caption being edited. */
+.format-bar {
+	position: absolute;
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	padding: 4px;
+	border-radius: var(--radius-control);
+	background: var(--color-card);
+	box-shadow:
+		inset 0 0 0 var(--outline-width) var(--color-control-border),
+		0 4px 12px rgb(0 0 0 / 0.4);
+	transform: translate(-50%, calc(-100% - 8px));
+	white-space: nowrap;
+}
+.format-bar button {
+	display: grid;
+	place-items: center;
+	min-width: 28px;
+	height: 28px;
+	padding: 0 6px;
+	border: none;
+	border-radius: var(--radius-small);
+	background: transparent;
+	color: var(--color-text);
+	font: inherit;
+	cursor: pointer;
+}
+.format-bar button:hover {
+	background: var(--color-selected);
+}
+.format-bar button[aria-pressed='true'] {
+	background: var(--color-selected);
+	color: var(--color-brand);
+}
+.format-bar svg {
+	width: 16px;
+	height: 16px;
+}
+.swatch {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 28px;
+	height: 28px;
+	cursor: pointer;
+}
+.swatch span {
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.4);
+}
+.swatch input {
+	position: absolute;
+	inset: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+.divider {
+	width: 1px;
+	height: 18px;
+	margin: 0 2px;
+	background: var(--color-control-border);
+}
