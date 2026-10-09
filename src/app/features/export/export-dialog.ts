@@ -29,8 +29,8 @@ const sep = (p: string) => (p.includes('\\') ? '\\' : '/');
 
 const CARDS: { id: FormatId; name: string; description: string }[] = [
 	{ id: 'srv3', name: 'SRV3', description: 'Best for YouTube. Keeps all styling and positions.' },
+	{ id: 'vtt', name: 'VTT', description: 'Other web players. Keeps most styling.' },
 	{ id: 'srt', name: 'SRT', description: 'Most video players. Text only.' },
-	{ id: 'vtt', name: 'VTT', description: 'Other web players. Basic styling will be kept.' },
 	{ id: 'sbv', name: 'SBV', description: 'Older YouTube format. Text only.' },
 ];
 

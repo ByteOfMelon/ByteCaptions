@@ -1,6 +1,8 @@
 import { sampleProject } from '../testing/fixtures';
-import { createProject } from '../model/defaults';
-import { exportSbv, exportSrt, exportVtt, importSbv, importSrt, importVtt } from './plain';
+import { createCue, createProject } from '../model/defaults';
+import { exportSbv, exportSrt, importSbv, importSrt, importVtt } from './plain';
+import { exportVtt } from './vtt';
+import { styleRange } from '../model/runs';
 import { sniffFormat } from './index';
 
 describe('SRT', () => {
@@ -48,9 +50,36 @@ describe('WebVTT', () => {
 		const vtt = exportVtt(sampleProject());
 		expect(vtt.startsWith('WEBVTT\n\n')).toBe(true);
 		expect(vtt).toContain('Hello &amp; welcome');
-		expect(vtt).toContain(
-			'00:00:01.000 --> 00:00:03.000 line:5% position:10% align:start\n<b>ON SCREEN</b>',
+		expect(vtt).toMatch(
+			/00:00:01\.000 --> 00:00:03\.000 line:5% position:10% align:start\n<v Signs><c\.s\d+><b>ON SCREEN<\/b><\/c>/,
 		);
+	});
+
+	it('keeps formatting on part of a line, with a class per look', () => {
+		const p = sampleProject();
+		const cue = createCue(0, 1000, 'big red dog');
+		cue.runs = styleRange(cue.runs, 4, 7, { bold: true, textColor: '#FF0000' });
+		p.tracks = [{ ...p.tracks[0], cues: [cue] }];
+		const vtt = exportVtt(p);
+		expect(vtt).toMatch(/<c\.s1>big <\/c><c\.s2><b>red<\/b><\/c><c\.s1> dog<\/c>/);
+		expect(vtt).toContain('::cue(.s2) { color: rgba(255, 0, 0, 1)');
+		expect(vtt).not.toContain('<v ');
+	});
+
+	it('writes karaoke as timestamp tags', () => {
+		const p = sampleProject();
+		const cue = {
+			...createCue(1000, 2000, 'big red'),
+			karaoke: true,
+			words: [
+				{ text: 'big', start: 1000, end: 1300 },
+				{ text: 'red', start: 1300, end: 2000 },
+			],
+		};
+		p.tracks = [{ ...p.tracks[0], cues: [cue] }];
+		const vtt = exportVtt(p, { styles: false });
+		expect(vtt).toContain('\n<c>big</c><00:00:01.300><c> red</c>\n');
+		expect(vtt).not.toContain('STYLE');
 	});
 
 	it('imports and ignores NOTE/STYLE blocks', () => {

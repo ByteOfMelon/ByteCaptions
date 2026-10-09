@@ -1,7 +1,8 @@
 import { Project } from '../model/types';
 import { ImportResult } from './flatten';
-import { exportSbv, exportSrt, exportVtt, importSbv, importSrt, importVtt } from './plain';
+import { exportSbv, exportSrt, importSbv, importSrt, importVtt } from './plain';
 import { exportSrv3, importSrv3 } from './srv3';
+import { exportVtt } from './vtt';
 
 export type FormatId = 'srv3' | 'srt' | 'vtt' | 'sbv';
 
@@ -28,7 +29,11 @@ export const FORMATS: Record<FormatId, FormatInfo> = {
 		id: 'vtt',
 		label: 'WebVTT',
 		extensions: ['vtt'],
-		loses: ['Colors, fonts, size, backgrounds and edges', 'Karaoke', 'Vertical text'],
+		loses: [
+			'Colors, fonts and backgrounds only show in players that support WebVTT styling (most web players)',
+			'Karaoke colors: one per file',
+			'Subscript and superscript',
+		],
 		export: (p) => exportVtt(p),
 		import: importVtt,
 	},

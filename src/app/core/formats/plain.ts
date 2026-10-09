@@ -19,10 +19,6 @@ function tagged(fc: FlatCue, opts: PlainExportOptions): string {
 	return t;
 }
 
-function escapeVtt(t: string): string {
-	return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
 export function exportSrt(project: Project, opts: PlainExportOptions = {}): string {
 	return flatten(project)
 		.map(
@@ -30,26 +26,6 @@ export function exportSrt(project: Project, opts: PlainExportOptions = {}): stri
 				`${i + 1}\n${formatClock(fc.cue.start, ',')} --> ${formatClock(fc.cue.end, ',')}\n${tagged(fc, opts)}\n`,
 		)
 		.join('\n');
-}
-
-export function exportVtt(project: Project, opts: PlainExportOptions = {}): string {
-	const body = flatten(project).map((fc) => {
-		const p = fc.position;
-		const settings: string[] = [];
-		// Only emit positioning when it differs from the default bottom-center.
-		if (!(p.anchor === 7 && p.x === 50 && p.y === 100)) {
-			settings.push(`line:${Math.round(p.y)}%`, `position:${Math.round(p.x)}%`);
-			if (p.align !== 'center')
-				settings.push(`align:${p.align === 'left' ? 'start' : 'end'}`);
-		}
-		const text =
-			opts.basicTags === false
-				? escapeVtt(fc.text)
-				: tagged({ ...fc, text: escapeVtt(fc.text) }, opts);
-		const head = `${formatClock(fc.cue.start)} --> ${formatClock(fc.cue.end)}${settings.length ? ' ' + settings.join(' ') : ''}`;
-		return `${head}\n${text}\n`;
-	});
-	return `WEBVTT\n\n${body.join('\n')}`;
 }
 
 export function exportSbv(project: Project): string {
