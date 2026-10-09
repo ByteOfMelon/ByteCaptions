@@ -59,6 +59,11 @@ const MIN_PX_PER_S = 2;
 const MAX_PX_PER_S = 800;
 /** Chrome stops laying out elements wider than ~33M px. */
 const MAX_SCROLL_PX = 10_000_000;
+/** Dragging within this many px of the left/right edge (or past it) scrolls the view. */
+const AUTOSCROLL_PX = 24;
+/** Auto-scroll speed in px per frame: grows with how far past AUTOSCROLL_PX the pointer is. */
+const AUTOSCROLL_MIN_SPEED = 2;
+const AUTOSCROLL_MAX_SPEED = 60;
 
 type Hit =
 	| { kind: 'ruler' }
@@ -80,7 +85,8 @@ type Drag =
 			clickSelect: CueId | null;
 	  }
 	| { mode: 'trim'; cueId: CueId; edge: 'start' | 'end'; start: Ms; end: Ms; original: Ms }
-	| { mode: 'box'; x0: number; y0: number; base: ReadonlySet<CueId>; moved: boolean };
+	/** The box's start is kept in time so it stays put while the view auto-scrolls. */
+	| { mode: 'box'; ms0: Ms; y0: number; base: ReadonlySet<CueId>; moved: boolean };
 
 /** Focuses and selects an input when it appears (inline rename). */
 @Directive({ selector: 'input[bcAutoselect]' })
@@ -155,6 +161,9 @@ export class Timeline {
 	private readonly box = signal<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
 	protected readonly cursor = signal('default');
 	private drag: Drag | null = null;
+	/** Last pointer position during a drag (canvas px), for auto-scroll at the edges. */
+	private pointer: { x: number; y: number } | null = null;
+	private edgeFrame = 0;
 
 	protected readonly timecode = computed(() =>
 		this.ui.timeUnits() === 'ms'
@@ -478,14 +487,13 @@ export class Timeline {
 			};
 		} else if (h.kind === 'lane' || h.kind === 'none') {
 			const base = additive || e.shiftKey ? this.store.selection() : new Set<CueId>();
-			this.drag = { mode: 'box', x0: x, y0: y, base, moved: false };
+			this.drag = { mode: 'box', ms0: xToMs(this.view(), x), y0: y, base, moved: false };
 		}
 	}
 
 	protected onPointerMove(e: PointerEvent): void {
 		const { x, y } = this.local(e);
-		const d = this.drag;
-		if (!d) {
+		if (!this.drag) {
 			const h = this.hit(x, y);
 			this.cursor.set(
 				h.kind === 'cue' && h.edge && !h.track.locked
@@ -496,6 +504,50 @@ export class Timeline {
 			);
 			return;
 		}
+		this.pointer = { x, y };
+		this.dragTo(x, y);
+		this.edgeScroll();
+	}
+
+	/**
+	 * Like Premiere and Resolve: while dragging near or past the left/right edge, scroll the
+	 * view each frame and re-apply the drag at the new time under the pointer.
+	 */
+	private edgeScroll(): void {
+		if (this.edgeFrame) return;
+		this.edgeFrame = requestAnimationFrame(() => {
+			this.edgeFrame = 0;
+			const d = this.drag;
+			const p = this.pointer;
+			if (!d || !p || (d.mode !== 'scrub' && d.mode !== 'trim' && !d.moved)) return;
+			const width = this.size().width;
+			const over =
+				p.x < AUTOSCROLL_PX
+					? p.x - AUTOSCROLL_PX
+					: p.x > width - AUTOSCROLL_PX
+						? p.x - width + AUTOSCROLL_PX
+						: 0;
+			if (!over) return;
+			const speed = Math.min(
+				AUTOSCROLL_MAX_SPEED,
+				AUTOSCROLL_MIN_SPEED + Math.abs(over) * 0.4,
+			);
+			const start = this.viewStart();
+			const next = Math.max(
+				0,
+				Math.min(this.maxStart(), start + (Math.sign(over) * speed) / this.pxPerMs()),
+			);
+			if (next === start) return;
+			this.viewStart.set(next);
+			this.dragTo(p.x, p.y);
+			this.edgeScroll();
+		});
+	}
+
+	/** Applies the current drag with the pointer at canvas (x, y). */
+	private dragTo(x: number, y: number): void {
+		const d = this.drag;
+		if (!d) return;
 		const ms = xToMs(this.view(), x);
 		switch (d.mode) {
 			case 'scrub':
@@ -557,9 +609,10 @@ export class Timeline {
 			}
 			case 'box': {
 				d.moved = true;
-				this.box.set({ x0: d.x0, y0: d.y0, x1: x, y1: y });
 				const v = this.view();
-				const [t0, t1] = [xToMs(v, Math.min(d.x0, x)), xToMs(v, Math.max(d.x0, x))];
+				const x0 = msToX(v, d.ms0);
+				this.box.set({ x0, y0: d.y0, x1: x, y1: y });
+				const [t0, t1] = [Math.min(d.ms0, ms), Math.max(d.ms0, ms)];
 				const [y0, y1] = [Math.min(d.y0, y), Math.max(d.y0, y)];
 				const next = new Set(d.base);
 				const hitTracks = new Set<TrackId>();
@@ -580,7 +633,7 @@ export class Timeline {
 					n
 						? {
 								text: `${n} cue${n === 1 ? '' : 's'} on ${k} track${k === 1 ? '' : 's'}`,
-								x: Math.max(d.x0, x) + 8,
+								x: Math.max(x0, x) + 8,
 								y: Math.max(d.y0, y) + 8,
 								align: 'right',
 							}
@@ -594,6 +647,9 @@ export class Timeline {
 	protected onPointerUp(e: PointerEvent): void {
 		const d = this.drag;
 		this.drag = null;
+		this.pointer = null;
+		cancelAnimationFrame(this.edgeFrame);
+		this.edgeFrame = 0;
 		this.snapAt.set(null);
 		this.box.set(null);
 		this.trim.set(null);
