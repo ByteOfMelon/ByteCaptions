@@ -120,6 +120,11 @@ export class AppMenu {
 					},
 					{ command: 'delete' },
 					'separator',
+					{ command: 'select-range' },
+					{ command: 'shift-range' },
+					{ command: 'delete-range' },
+					{ command: 'ripple-range' },
+					'separator',
 					{ command: 'replace' },
 					{
 						text: 'Go to timecode…',

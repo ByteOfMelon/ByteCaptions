@@ -9,13 +9,14 @@ import {
 	reorderTrack,
 	rippleDeleteCues,
 	setTiming,
+	shiftAfter,
 	splitCue,
 	updateTrack,
 } from '../../core/commands/edits';
 import { createCue, createTrack, newId } from '../../core/model/defaults';
 import { Cue, CueId, Ms, StyleId, TrackId } from '../../core/model/types';
 import { TRACK_COLORS } from '../../state/project-files';
-import { ProjectStore } from '../../state/project-store';
+import { CueRef, ProjectStore } from '../../state/project-store';
 import { Playback } from '../player/playback';
 
 /** Edit actions shared by the toolbar, timeline, menus and keyboard shortcuts. */
@@ -239,6 +240,47 @@ export class EditorCommands {
 	}
 
 	/** Shift cues by `deltaMs` keeping their spacing (clamped at 0). */
+	// ---- In/out range operations ------------------------------------------
+
+	/**
+	 * Cues in the in/out range: those whose middle falls inside it, so a cue that only
+	 * pokes in or out by a little still counts the way it looks. Locked tracks are left out.
+	 */
+	rangeCues(): CueRef[] {
+		const r = this.playback.range();
+		if (!r) return [];
+		return this.store.allCues().filter((x) => {
+			const mid = (x.cue.start + x.cue.end) / 2;
+			return !x.track.locked && mid >= r.start && mid < r.end;
+		});
+	}
+
+	selectRange(): void {
+		this.store.selection.set(new Set(this.rangeCues().map((r) => r.cue.id)));
+	}
+
+	/**
+	 * Delete the cues in the range. Ripple also closes the range's time: later cues on
+	 * unlocked tracks move earlier by its length, and the range is cleared.
+	 */
+	deleteRange(ripple: boolean): void {
+		const r = this.playback.range();
+		if (!r) return;
+		const ids = this.rangeCues().map((x) => x.cue.id);
+		if (!ripple && !ids.length) return;
+		const n = ids.length;
+		const what = n === 1 ? '1 cue' : `${n} cues`;
+		this.store.apply(ripple ? 'Ripple delete range' : `Delete ${what} in range`, (p) => {
+			deleteCues(ids)(p);
+			if (ripple) shiftAfter(r.end, r.start - r.end)(p);
+		});
+		this.store.clearSelection();
+		if (ripple) {
+			this.playback.clearRange();
+			this.playback.seek(r.start);
+		}
+	}
+
 	shiftTiming(ids: CueId[], deltaMs: Ms): void {
 		if (!deltaMs) return;
 		const rows = this.store.allCues().filter((r) => ids.includes(r.cue.id));

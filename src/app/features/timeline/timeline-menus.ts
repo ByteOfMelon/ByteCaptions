@@ -297,7 +297,42 @@ export class TimelineMenus {
 
 	/** Ruler: add a marker or set the in/out points where it was clicked, or clear them. */
 	async ruler(at: At, atMs: Ms): Promise<void> {
+		const r = this.playback.range();
+		// Right-clicking inside the range offers what can be done with the cues in it.
+		const inRange = !!r && atMs >= r.start && atMs <= r.end;
+		const n = inRange ? this.commands.rangeCues().length : 0;
+		const rangeItems: MenuEntry[] = inRange
+			? [
+					{ kind: 'header', label: `In/out range • ${n === 1 ? '1 cue' : `${n} cues`}` },
+					{
+						id: 'select-range',
+						label: 'Select cues in range',
+						icon: LucideSquareDashedMousePointer.icon,
+						disabled: !n,
+					},
+					{
+						id: 'shift-range',
+						label: 'Shift cues in range…',
+						icon: LucideMove.icon,
+						disabled: !n,
+					},
+					{
+						id: 'delete-range',
+						label: 'Delete cues in range',
+						icon: LucideTrash2.icon,
+						disabled: !n,
+					},
+					{
+						id: 'ripple-range',
+						label: 'Ripple delete range',
+						icon: LucideDelete.icon,
+						danger: true,
+					},
+					{ kind: 'separator' },
+				]
+			: [];
 		const id = await this.menu.open(at, [
+			...rangeItems,
 			{ id: 'marker', label: 'Add marker here', icon: LucideBookmarkPlus.icon },
 			{ kind: 'separator' },
 			{ id: 'in', label: 'Mark in here', icon: LucideArrowRightToLine.icon },
@@ -318,7 +353,12 @@ export class TimelineMenus {
 				checked: this.playback.loop(),
 			},
 		]);
-		if (id === 'marker') this.markers.addAt(atMs);
+		if (id === 'select-range') this.commands.selectRange();
+		else if (id === 'shift-range')
+			void this.dialogs.shiftTiming(this.commands.rangeCues().map((x) => x.cue.id));
+		else if (id === 'delete-range') this.commands.deleteRange(false);
+		else if (id === 'ripple-range') this.commands.deleteRange(true);
+		else if (id === 'marker') this.markers.addAt(atMs);
 		else if (id === 'in') this.playback.setIn(atMs);
 		else if (id === 'out') this.playback.setOut(atMs);
 		else if (id === 'clear') this.playback.clearRange();
