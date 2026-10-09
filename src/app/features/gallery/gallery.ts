@@ -1,30 +1,29 @@
 import { Component, inject, signal } from '@angular/core';
 import {
+	LucideCopy,
 	LucideFolder,
+	LucideMerge,
 	LucideMoon,
 	LucidePlus,
+	LucideRepeat,
 	LucideScissors,
 	LucideSearch,
 	LucideSun,
-} from '@lucide/angular';
-import { ThemeService } from '../../theme/theme.service';
-import { Button, IconButton } from '../../ui/button/button';
-import { Field, NumberField } from '../../ui/field/field';
-import { Checkbox, ColorField, Radio, Slider, Toggle } from '../../ui/controls/controls';
-import { Select } from '../../ui/select/select';
-import { Kbd } from '../../ui/kbd/kbd';
-import { Tabs } from '../../ui/tabs/tabs';
-import { Tooltip } from '../../ui/tooltip/tooltip';
-import { ContextMenu, MenuEntry } from '../../ui/menu/menu';
-import {
-	LucideCopy,
-	LucideMerge,
-	LucideRepeat,
 	LucideTimer,
 	LucideTrash2,
 	LucideType,
 } from '@lucide/angular';
+import { ThemeService } from '../../theme/theme.service';
+import { Button, IconButton } from '../../ui/button/button';
+import { Checkbox, ColorField, Radio, Slider, Toggle } from '../../ui/controls/controls';
+import { Field, NumberField } from '../../ui/field/field';
+import { Kbd } from '../../ui/kbd/kbd';
+import { ContextMenu, MenuEntry } from '../../ui/menu/menu';
+import { Select } from '../../ui/select/select';
+import { Tabs } from '../../ui/tabs/tabs';
+import { Tooltip } from '../../ui/tooltip/tooltip';
 
+/** Dev-only component gallery (/gallery). */
 @Component({
 	imports: [
 		Button,
@@ -53,7 +52,6 @@ import {
 })
 export class Gallery {
 	protected readonly theme = inject(ThemeService);
-	// Dev-only component gallery (/gallery).
 	protected readonly fonts = [
 		{ value: 'prop-sans', label: 'Proportional Sans' },
 		{ value: 'mono-serif', label: 'Monospaced Serif' },
