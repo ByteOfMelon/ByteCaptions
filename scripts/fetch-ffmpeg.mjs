@@ -40,14 +40,6 @@ const BUILDS = {
 		exeSha256: '2e11c6f90993cdb79fff84d3f90044d28316b310e75b3e030cfc9a54f2c9d384',
 		ext: '',
 	},
-	'darwin-x64': {
-		triple: 'x86_64-apple-darwin',
-		url: 'https://ffmpeg.martin-riedl.de/download/macos/amd64/1789931006_9.0.2/ffmpeg.zip',
-		zipSha256: '7c6b4125b191cbf773832dc51f424cf2b6bb7da43007d1e066f95909e47cacd4',
-		member: 'ffmpeg',
-		exeSha256: 'b25689cf2211c0582d317e849912769a1f1c93904fe102c485b5364a425633d1',
-		ext: '',
-	},
 	'linux-x64': {
 		triple: 'x86_64-unknown-linux-gnu',
 		url: 'https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-08-13-05/ffmpeg-n8.1.3-14-g330caae0c1-linux64-lgpl-8.1.tar.xz',
@@ -58,8 +50,7 @@ const BUILDS = {
 	},
 };
 
-// A build for another target than the machine's (e.g. Intel Mac on an Apple Silicon runner):
-// npm run fetch:ffmpeg -- darwin-x64
+// A build for another target than the machine's: npm run fetch:ffmpeg -- linux-x64
 
 // Windows' own bsdtar reads zips; a GNU tar earlier on PATH (Git Bash) doesn't.
 const tar =
