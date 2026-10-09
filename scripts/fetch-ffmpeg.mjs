@@ -14,7 +14,7 @@ import {
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
-	renameSync,
+	copyFileSync,
 	rmSync,
 	writeFileSync,
 } from 'node:fs';
@@ -89,7 +89,8 @@ try {
 	if (sha256(readFileSync(exe)) !== build.exeSha256)
 		throw new Error('Extracted ffmpeg has the wrong checksum.');
 	mkdirSync(dirname(target), { recursive: true });
-	renameSync(exe, target);
+	// Copy, not rename: the temp folder can be on another drive (as on CI).
+	copyFileSync(exe, target);
 	if (process.platform !== 'win32') chmodSync(target, 0o755);
 	console.log(`ffmpeg ready: ${target}`);
 } finally {

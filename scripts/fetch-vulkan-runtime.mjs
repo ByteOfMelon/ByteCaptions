@@ -14,7 +14,7 @@ import {
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
-	renameSync,
+	copyFileSync,
 	rmSync,
 	writeFileSync,
 } from 'node:fs';
@@ -62,7 +62,8 @@ try {
 	if (sha256(readFileSync(dll)) !== DLL_SHA256)
 		throw new Error('Extracted vulkan-1.dll has the wrong checksum.');
 	mkdirSync(dirname(target), { recursive: true });
-	renameSync(dll, target);
+	// Copy, not rename: the temp folder can be on another drive (as on CI).
+	copyFileSync(dll, target);
 	console.log(`Vulkan loader ready: ${target}`);
 } finally {
 	rmSync(work, { recursive: true, force: true });
