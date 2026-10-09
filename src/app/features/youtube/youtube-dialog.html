@@ -173,6 +173,8 @@
 					/>
 				} @else if (found() === 'none') {
 					<p class="text-small text-faded empty">No video with that ID.</p>
+				} @else if (findError(); as e) {
+					<bc-notice tone="danger" [heading]="errorText(e).title" [detail]="e.message" />
 				}
 				@for (v of listed(); track v.id) {
 					<ng-container

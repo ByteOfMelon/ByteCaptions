@@ -24,6 +24,8 @@ export class Playback {
 	private recoveries: number[] = [];
 	/** Where `playSpan` stops. */
 	private stopAt: Ms | null = null;
+	/** Why the video can't play, shown over the preview; null while it's fine. */
+	readonly videoError = signal<string | null>(null);
 	/** URL of the loaded video, if any. */
 	readonly mediaUrl = inject(MediaSource).url;
 	/**
@@ -68,12 +70,16 @@ export class Playback {
 	 */
 	attach(video: HTMLVideoElement | null): void {
 		this.video = video;
+		this.videoError.set(null);
 		if (video)
 			untracked(() => {
+				let loaded = false;
+				video.onloadeddata = () => (loaded = true);
 				video.playbackRate = this.store.rate();
 				video.currentTime = this.store.playhead() / 1000;
 				video.onended = () => this.onEnded();
-				video.onerror = () => this.recover(video);
+				// A video that never loaded won't load on a retry either.
+				video.onerror = () => (loaded ? this.recover(video) : this.fail(video));
 			});
 	}
 
@@ -205,6 +211,7 @@ export class Playback {
 			if (e.name === 'AbortError' || video !== this.video || video.error) return;
 			console.warn('The video would not play', e);
 			this.pause();
+			this.videoError.set(`The video won't play. ${e.message}`);
 		});
 	}
 
@@ -218,7 +225,7 @@ export class Playback {
 		const now = performance.now();
 		this.recoveries = this.recoveries.filter((t) => now - t < RECOVER_WINDOW_MS);
 		console.warn('Video error; reloading it', video.error?.code, video.error?.message);
-		if (this.recoveries.length >= MAX_RECOVERIES) return this.pause();
+		if (this.recoveries.length >= MAX_RECOVERIES) return this.fail(video);
 		this.recoveries.push(now);
 		video.addEventListener(
 			'loadedmetadata',
@@ -230,6 +237,12 @@ export class Playback {
 			{ once: true },
 		);
 		video.load();
+	}
+
+	private fail(video: HTMLVideoElement): void {
+		if (video !== this.video) return;
+		this.pause();
+		this.videoError.set(mediaErrorText(video.error));
 	}
 
 	private readonly tick = (now: number) => {
@@ -255,4 +268,18 @@ export class Playback {
 		this.lastTick = now;
 		this.raf = requestAnimationFrame(this.tick);
 	};
+}
+
+/** A plain explanation of why a <video> failed. */
+export function mediaErrorText(error: MediaError | null): string {
+	switch (error?.code) {
+		case MediaError.MEDIA_ERR_NETWORK:
+			return 'The video stopped loading. Check that the file is still there.';
+		case MediaError.MEDIA_ERR_DECODE:
+			return "The video couldn't be decoded. The file may be damaged.";
+		case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+			return "This video's format can't be played here. Converting it to MP4 (H.264) usually helps.";
+		default:
+			return `The video couldn't be played.${error?.message ? ' ' + error.message : ''}`;
+	}
 }

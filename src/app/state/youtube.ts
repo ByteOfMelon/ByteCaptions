@@ -227,8 +227,8 @@ export class YouTube {
 	async findVideo(id: string): Promise<YtVideo | null> {
 		try {
 			return await invoke<YtVideo | null>('youtube_video', { id });
-		} catch {
-			return null;
+		} catch (e) {
+			throw asError(e);
 		}
 	}
 

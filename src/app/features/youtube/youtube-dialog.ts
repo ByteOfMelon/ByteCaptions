@@ -108,6 +108,8 @@ export class YouTubeDialog {
 	protected readonly video = signal<YtVideo | null>(null);
 	/** The chosen video's caption tracks; null while loading. */
 	protected readonly captions = signal<YtCaption[] | null>(null);
+	/** Set when the video's existing captions couldn't be listed. */
+	protected readonly captionsFailed = signal(false);
 	protected readonly included = signal<ReadonlySet<TrackId>>(
 		new Set(
 			this.project()
@@ -137,6 +139,8 @@ export class YouTubeDialog {
 	protected readonly languageNote = computed(() => {
 		const lang = languageName(this.language());
 		const blank = `Leave the name blank to show just "${lang}".`;
+		if (this.captionsFailed())
+			return `Couldn't check the captions this video already has, so this may add a second ${lang} track. ${blank}`;
 		if (this.captions() === null) return blank;
 		const r = this.replace();
 		if (!r) return blank;
@@ -170,6 +174,8 @@ export class YouTubeDialog {
 	protected readonly picked = signal<YtVideo | null>(null);
 	/** A video found by a pasted ID or link that isn't in the loaded list. */
 	protected readonly found = signal<YtVideo | null | 'searching' | 'none'>(null);
+	/** Why looking up a pasted ID failed. */
+	protected readonly findError = signal<YtError | null>(null);
 	protected readonly filtered = computed(() => {
 		const q = this.query().trim().toLowerCase();
 		const list = this.yt.videos();
@@ -224,6 +230,7 @@ export class YouTubeDialog {
 		effect(() => {
 			const v = this.video();
 			this.captions.set(null);
+			this.captionsFailed.set(false);
 			if (!v) return;
 			this.yt
 				.captions(v.id)
@@ -231,17 +238,25 @@ export class YouTubeDialog {
 					if (this.video()?.id === v.id) this.captions.set(c);
 				})
 				.catch(() => {
-					if (this.video()?.id === v.id) this.captions.set([]);
+					if (this.video()?.id === v.id) this.captionsFailed.set(true);
 				});
 		});
 		// A pasted ID or link that isn't loaded is looked up on YouTube.
 		effect(() => {
 			const id = videoIdFrom(this.query());
+			this.findError.set(null);
 			if (!id || this.yt.videos().some((v) => v.id === id)) return this.found.set(null);
 			this.found.set('searching');
-			void this.yt.findVideo(id).then((v) => {
-				if (videoIdFrom(this.query()) === id) this.found.set(v ?? 'none');
-			});
+			this.yt.findVideo(id).then(
+				(v) => {
+					if (videoIdFrom(this.query()) === id) this.found.set(v ?? 'none');
+				},
+				(e: YtError) => {
+					if (videoIdFrom(this.query()) !== id) return;
+					this.found.set(null);
+					this.findError.set(e);
+				},
+			);
 		});
 	}
 

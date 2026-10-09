@@ -1,5 +1,6 @@
 import {
 	ApplicationConfig,
+	ErrorHandler,
 	inject,
 	provideAppInitializer,
 	provideBrowserGlobalErrorListeners,
@@ -7,12 +8,14 @@ import {
 import { provideRouter } from '@angular/router';
 import { provideLucideConfig } from '@lucide/angular';
 import { routes } from './app.routes';
+import { ErrorReporter } from './state/error-reporter';
 import { initMediaUrls } from './state/file-io';
 import { Recovery } from './state/recovery';
 
 export const appConfig: ApplicationConfig = {
 	providers: [
 		provideBrowserGlobalErrorListeners(),
+		{ provide: ErrorHandler, useClass: ErrorReporter },
 		// After a reload, reopen the project before anything shows the sample one. Media URLs
 		// come first: the reopened project's video needs them.
 		provideAppInitializer(() => {

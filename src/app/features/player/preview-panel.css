@@ -69,6 +69,9 @@ video {
 	gap: var(--spacing-xs);
 	overflow-wrap: anywhere;
 }
+.empty.failed {
+	background: #000;
+}
 .missing .text-body-bold {
 	color: #fcfcfc;
 }

@@ -7,6 +7,15 @@
 	<div #frame class="stage">
 		@if (playback.mediaUrl(); as url) {
 			<video #video [src]="url" preload="auto"></video>
+			@if (playback.videoError(); as problem) {
+				<div class="empty missing failed" role="alert">
+					<span class="text-body-bold">Video can't play</span>
+					<span class="text-small">{{ problem }}</span>
+					<button bcButton (click)="$event.stopPropagation(); locateVideo()">
+						<svg lucideFolder></svg>Choose another video
+					</button>
+				</div>
+			}
 		} @else if (missingVideo(); as video) {
 			<div class="empty missing">
 				@if (isDesktop) {
