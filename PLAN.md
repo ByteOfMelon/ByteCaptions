@@ -317,7 +317,7 @@ Performance target: 60fps scroll/zoom with 5,000 cues on a 2-hour video.
 - P1 Per-run (partial text) styling: select words in the text editor → style them.
 - P1 Karaoke toggle per cue: choose highlight style; uses word timings.
 - P1 Ruby text.
-- P1 Vertical text.
+- P2 Vertical text (moved after v1.0: v1.0 is English only).
 - P1 Global preset library (shared across projects).
 - P2 Simple animated effects that SRV3 can express (fade in, typewriter), each showing a weight cost.
 
