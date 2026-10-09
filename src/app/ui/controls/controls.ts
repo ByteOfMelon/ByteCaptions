@@ -165,9 +165,11 @@ export class ColorField {
 	readonly disabled = input(false, { transform: booleanAttribute });
 
 	protected setOpacity(el: HTMLInputElement): void {
-		const n = Number.parseFloat(el.value);
-		const v = Number.isFinite(n) ? Math.round(Math.min(100, Math.max(0, n))) : this.opacity();
-		el.value = String(v);
-		this.opacity.set(v);
+		const typed = Number.parseFloat(el.value);
+		const opacity = Number.isFinite(typed)
+			? Math.round(Math.min(100, Math.max(0, typed)))
+			: this.opacity();
+		el.value = String(opacity);
+		this.opacity.set(opacity);
 	}
 }

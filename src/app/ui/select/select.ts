@@ -1,7 +1,7 @@
 import {
 	Component,
-	booleanAttribute,
 	ElementRef,
+	booleanAttribute,
 	computed,
 	effect,
 	inject,
@@ -96,10 +96,6 @@ export class Select<T = string> {
 	}>({ left: 0, width: 0, top: 0, bottom: null });
 	private readonly trigger = viewChild.required<ElementRef<HTMLElement>>('trigger');
 	private readonly list = viewChild<ElementRef<HTMLElement>>('list');
-
-	constructor() {
-		effect(() => this.list()?.nativeElement.showPopover());
-	}
 	protected readonly active = signal(0);
 	protected readonly selectedIndex = computed(() =>
 		this.options().findIndex((o) => o.value === this.value()),
@@ -107,6 +103,10 @@ export class Select<T = string> {
 	protected readonly selectedLabel = computed(
 		() => this.options()[this.selectedIndex()]?.label ?? '',
 	);
+
+	constructor() {
+		effect(() => this.list()?.nativeElement.showPopover());
+	}
 
 	protected toggle(): void {
 		this.active.set(Math.max(0, this.selectedIndex()));
