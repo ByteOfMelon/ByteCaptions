@@ -267,6 +267,13 @@ export class EditorCommands {
 	}
 
 	/** Shift cues by `deltaMs` keeping their spacing (clamped at 0). */
+	shiftTiming(ids: CueId[], deltaMs: Ms): void {
+		if (!deltaMs) return;
+		const rows = this.store.allCues().filter((r) => ids.includes(r.cue.id));
+		const minStart = Math.min(...rows.map((r) => r.cue.start));
+		this.store.apply('Shift timing', moveCues(ids, Math.max(-minStart, deltaMs)));
+	}
+
 	// ---- In/out range operations ------------------------------------------
 
 	/**
@@ -306,13 +313,6 @@ export class EditorCommands {
 			this.playback.clearRange();
 			this.playback.seek(r.start);
 		}
-	}
-
-	shiftTiming(ids: CueId[], deltaMs: Ms): void {
-		if (!deltaMs) return;
-		const rows = this.store.allCues().filter((r) => ids.includes(r.cue.id));
-		const minStart = Math.min(...rows.map((r) => r.cue.start));
-		this.store.apply('Shift timing', moveCues(ids, Math.max(-minStart, deltaMs)));
 	}
 
 	/** Add an empty track ("Track 3"…) below `afterId`, or at the bottom. Returns its id. */

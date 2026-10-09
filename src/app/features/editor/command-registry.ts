@@ -78,7 +78,10 @@ const THEMES: { id: ThemePreference; label: string; icon: LucideIconData }[] = [
 	{ id: 'dark', label: 'Dark', icon: LucideMoon.icon },
 ];
 
-/** Every command the palette can run. Keys shown here are placeholders (handoff §4). */
+/**
+ * Every command the palette and menu bar can run. `keys` is only the shortcut shown;
+ * Editor.onKey handles the keys themselves.
+ */
 @Injectable({ providedIn: 'root' })
 export class CommandRegistry {
 	private readonly store = inject(ProjectStore);
