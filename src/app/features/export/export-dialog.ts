@@ -18,12 +18,12 @@ import {
 import { ProjectFiles } from '../../state/project-files';
 import { ProjectStore } from '../../state/project-store';
 import { Button } from '../../ui/button/button';
-import { Checkbox } from '../../ui/controls/controls';
-import { CountPipe } from '../../ui/count/count';
 import { Dialog, DialogRef } from '../../ui/dialog/dialog';
 import { Field } from '../../ui/field/field';
 import { Notice } from '../../ui/notice/notice';
 import { ShowEnd } from '../../ui/show-end/show-end';
+import { TrackChecklist } from './track-checklist';
+import { TrackProblems } from './track-problems';
 
 const isAbsolute = (p: string) => /^([a-zA-Z]:[\\/]|[\\/])/.test(p);
 const sep = (p: string) => (p.includes('\\') ? '\\' : '/');
@@ -38,7 +38,7 @@ const CARDS: { id: FormatId; name: string; description: string }[] = [
 /** Export captions (PLAN §5.9): format, tracks to combine, destination, and lint warnings. */
 @Component({
 	selector: 'bc-export-dialog',
-	imports: [CountPipe, Dialog, Button, Checkbox, Field, Notice, ShowEnd, LucideFolder],
+	imports: [Dialog, Button, Field, Notice, ShowEnd, TrackChecklist, TrackProblems, LucideFolder],
 	templateUrl: './export-dialog.html',
 	styleUrl: './export-dialog.css',
 })
@@ -124,23 +124,6 @@ export class ExportDialog implements OnInit {
 		};
 	});
 
-	protected readonly problems = computed(() => {
-		const ids = this.included();
-		const list = this.store.problems().filter((p) => ids.has(p.trackId));
-		return {
-			errors: list.filter((p) => p.severity === 'error').length,
-			warnings: list.filter((p) => p.severity !== 'error').length,
-		};
-	});
-	protected readonly problemTitle = computed(() => {
-		const { errors, warnings } = this.problems();
-		const parts = [
-			errors && `${errors} error${errors > 1 ? 's' : ''}`,
-			warnings && `${warnings} warning${warnings > 1 ? 's' : ''}`,
-		].filter(Boolean);
-		return `${parts.join(' and ')} in these tracks`;
-	});
-
 	protected setFormat(id: FormatId): void {
 		this.format.set(id);
 		// Keep a chosen file name but swap its extension.
@@ -148,13 +131,6 @@ export class ExportDialog implements OnInit {
 		if (name)
 			this.fileName.set(name.replace(/\.[^.]+$/, '') + '.' + FORMATS[id].extensions.at(-1));
 		this.handle = undefined;
-	}
-
-	protected toggleTrack(id: TrackId, on: boolean): void {
-		const next = new Set(this.included());
-		if (on) next.add(id);
-		else next.delete(id);
-		this.included.set(next);
 	}
 
 	protected async browse(): Promise<void> {

@@ -15,12 +15,13 @@ import {
 } from '../../state/youtube';
 import { Autofocus } from '../../ui/autofocus/autofocus';
 import { Button } from '../../ui/button/button';
-import { Checkbox, Toggle } from '../../ui/controls/controls';
-import { CountPipe } from '../../ui/count/count';
+import { Toggle } from '../../ui/controls/controls';
 import { Dialog, DialogRef } from '../../ui/dialog/dialog';
 import { Field } from '../../ui/field/field';
 import { Notice } from '../../ui/notice/notice';
 import { Select } from '../../ui/select/select';
+import { TrackChecklist } from '../export/track-checklist';
+import { TrackProblems } from '../export/track-problems';
 
 /** The video last uploaded to, per project, so the dialog picks it again. */
 const LAST_VIDEO_KEY = 'bc.youtube.lastVideo';
@@ -74,13 +75,13 @@ const ERRORS: Record<YtError['kind'], { title: string; detail?: string }> = {
 		NgTemplateOutlet,
 		Autofocus,
 		Button,
-		Checkbox,
-		CountPipe,
 		Dialog,
 		Field,
 		Notice,
 		Select,
 		Toggle,
+		TrackChecklist,
+		TrackProblems,
 		LucideCheck,
 		LucideCircle,
 		LucideLoaderCircle,
@@ -145,23 +146,6 @@ export class YouTubeDialog {
 		const r = this.replace();
 		if (!r) return blank;
 		return `Replaces the ${r.name ? `"${r.name}"` : lang} captions this video already has. ${blank}`;
-	});
-
-	protected readonly problems = computed(() => {
-		const ids = this.included();
-		const list = this.store.problems().filter((p) => ids.has(p.trackId));
-		return {
-			errors: list.filter((p) => p.severity === 'error').length,
-			warnings: list.filter((p) => p.severity !== 'error').length,
-		};
-	});
-	protected readonly problemTitle = computed(() => {
-		const { errors, warnings } = this.problems();
-		const parts = [
-			errors && `${errors} error${errors > 1 ? 's' : ''}`,
-			warnings && `${warnings} warning${warnings > 1 ? 's' : ''}`,
-		].filter(Boolean);
-		return `${parts.join(' and ')} in these tracks`;
 	});
 
 	protected readonly canUpload = computed(
@@ -271,13 +255,6 @@ export class YouTubeDialog {
 
 	protected sameLength(v: YtVideo): boolean {
 		return this.yt.sameLength(v, this.lengthMs());
-	}
-
-	protected toggleTrack(id: TrackId, on: boolean): void {
-		const next = new Set(this.included());
-		if (on) next.add(id);
-		else next.delete(id);
-		this.included.set(next);
 	}
 
 	protected choose(): void {

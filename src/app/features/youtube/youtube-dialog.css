@@ -87,40 +87,6 @@ button.video-card:focus-visible {
 }
 
 /* Tracks, as in Export. */
-.tracks {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-xs);
-	padding: var(--spacing-xs);
-	border-radius: var(--radius-control);
-	background: var(--color-bg);
-}
-.track {
-	display: flex;
-	align-items: center;
-	gap: var(--spacing-sm);
-	height: 36px;
-	padding: 0 var(--spacing-sm);
-	border-radius: var(--radius-small);
-	cursor: pointer;
-}
-.track:hover {
-	background: var(--color-card);
-}
-.color {
-	flex-shrink: 0;
-	width: 4px;
-	height: 20px;
-	border-radius: var(--radius-small);
-}
-.name {
-	flex: 1;
-	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
 .option-text,
 .intro {
 	display: flex;

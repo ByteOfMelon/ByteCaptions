@@ -225,27 +225,11 @@
 			}
 		</section>
 
-		<section class="group">
-			<span class="text-small" id="yt-tracks">Tracks</span>
-			<div class="tracks" role="group" aria-labelledby="yt-tracks">
-				@for (t of project().tracks; track t.id) {
-					<label class="track">
-						<bc-checkbox
-							[checked]="included().has(t.id)"
-							(checkedChange)="toggleTrack(t.id, $event)"
-						/>
-						<span class="color" [style.background]="t.color"></span>
-						<span class="name">{{ t.name }}</span>
-						<span class="text-mono-small text-faded">{{
-							t.cues.length | count: 'cue'
-						}}</span>
-					</label>
-				}
-			</div>
-			<span class="text-small text-faded"
-				>Selected tracks are combined into one caption track.</span
-			>
-		</section>
+		<bc-track-checklist
+			class="group"
+			[(selected)]="included"
+			hint="Selected tracks are combined into one caption track."
+		/>
 
 		<section class="group">
 			<div class="row">
@@ -278,15 +262,11 @@
 			</bc-toggle>
 		}
 
-		@if (problems().errors + problems().warnings) {
-			<bc-notice
-				[tone]="problems().errors ? 'danger' : 'warning'"
-				[heading]="problemTitle()"
-				detail="It's recommended to review these before uploading."
-			>
-				<button bcButton noticeAction variant="ghost" (click)="review()">Review</button>
-			</bc-notice>
-		}
+		<bc-track-problems
+			[tracks]="included()"
+			detail="It's recommended to review these before uploading."
+			(review)="review()"
+		/>
 		@if (yt.accountError(); as e) {
 			<bc-notice tone="danger" [heading]="errorText(e).title" [detail]="e.message" />
 		}
