@@ -36,7 +36,6 @@ pub fn run() {
 			youtube::youtube_video,
 			youtube::youtube_captions,
 			youtube::youtube_upload,
-			youtube::youtube_delete_caption,
 		])
 		.setup(|app| {
 			if cfg!(debug_assertions) {

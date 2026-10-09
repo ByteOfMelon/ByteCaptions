@@ -602,14 +602,6 @@ pub async fn youtube_captions(
 		.unwrap_or_default())
 }
 
-/// Delete a caption track. Not used by the UI yet; handy from the dev tools console.
-#[tauri::command]
-pub async fn youtube_delete_caption(yt: State<'_, YouTube>, id: String) -> Result<(), YtError> {
-	yt.call(Method::DELETE, &format!("{API}/captions?id={id}"), None)
-		.await
-		.map(|_| ())
-}
-
 /// A multipart/related body: the caption's metadata, then its file.
 fn multipart(metadata: &Value, content: &str) -> (String, Vec<u8>) {
 	let boundary = format!("bytecaptions-{}", random_code(12));
