@@ -1,4 +1,5 @@
 import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
+import { keyCaps } from '../kbd/keys';
 
 /**
  * Hover/focus tooltip: `<button bcIconButton bcTooltip="Split at playhead" tooltipKeys="Ctrl+B">`.
@@ -43,9 +44,9 @@ export class Tooltip implements OnDestroy {
 		el.className = 'bc-tooltip';
 		el.role = 'tooltip';
 		el.textContent = this.text();
-		for (const k of this.keys()?.split('+') ?? []) {
+		for (const k of keyCaps(this.keys() ?? '')) {
 			const kbd = document.createElement('kbd');
-			kbd.textContent = k.trim();
+			kbd.textContent = k;
 			el.append(kbd);
 		}
 		document.body.append(el);

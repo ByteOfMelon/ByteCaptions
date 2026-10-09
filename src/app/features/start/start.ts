@@ -1,5 +1,6 @@
 import { Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { keyCaps } from '../../ui/kbd/keys';
 import { LucideCaptions, LucideFilm, LucideFolderOpen, LucideUpload } from '@lucide/angular';
 import { version } from '../../../../package.json';
 import { FileDrop, dropKind } from '../../state/file-drop';
@@ -33,6 +34,8 @@ import { Notice } from '../../ui/notice/notice';
 	host: { '(window:keydown)': 'onKey($event)' },
 })
 export class Start implements OnDestroy {
+	/** Shortcut text for this computer (⌘ on the Mac). */
+	protected readonly keys = (k: string) => keyCaps(k, ' ').join(' ');
 	private readonly files = inject(ProjectFiles);
 	private readonly router = inject(Router);
 	private readonly recentProjects = inject(RecentProjects);

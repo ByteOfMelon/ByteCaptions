@@ -47,13 +47,15 @@ svg.lucide {
 	flex-shrink: 0;
 }
 
+/* A popover in the top layer, placed by the component, so dialogs and scrolling panels
+   don't clip it. */
 .menu {
-	position: absolute;
-	top: 100%;
-	left: 0;
-	right: 0;
-	z-index: 100;
-	margin: var(--spacing-sm) 0 0;
+	position: fixed;
+	inset: auto;
+	max-height: 280px;
+	overflow-y: auto;
+	margin: 0;
+	border: none;
 	padding: var(--spacing-xs);
 	list-style: none;
 	border-radius: var(--radius-control);

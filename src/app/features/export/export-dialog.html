@@ -50,6 +50,7 @@
 			<input
 				[id]="f.fieldId"
 				[value]="path()"
+				bcShowEnd
 				(change)="fileName.set($any($event.target).value)"
 				spellcheck="false"
 			/>

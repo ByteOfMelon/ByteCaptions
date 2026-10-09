@@ -50,7 +50,7 @@
 						>Drop a video here, or click to choose one. MP4, MOV, MKV, WebM.</span
 					>
 				</span>
-				<span class="text-mono-small text-faded keys">Ctrl N</span>
+				<span class="text-mono-small text-faded keys">{{ keys('Ctrl N') }}</span>
 			</button>
 		}
 		<button type="button" class="card" (click)="openProject()">
@@ -59,7 +59,7 @@
 				<span class="text-body-bold">Open project</span>
 				<span class="text-small text-faded">Continue a saved .bcproj file.</span>
 			</span>
-			<span class="text-mono-small text-faded keys">Ctrl O</span>
+			<span class="text-mono-small text-faded keys">{{ keys('Ctrl O') }}</span>
 		</button>
 		<button type="button" class="card" (click)="importCaptions()">
 			<span class="tile"><svg lucideCaptions></svg></span>
@@ -69,7 +69,7 @@
 					>Start from an existing SRV3, SRT, VTT or SBV file.</span
 				>
 			</span>
-			<span class="text-mono-small text-faded keys">Ctrl I</span>
+			<span class="text-mono-small text-faded keys">{{ keys('Ctrl I') }}</span>
 		</button>
 	</div>
 

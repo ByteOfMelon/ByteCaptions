@@ -1,4 +1,5 @@
 import { Component, computed, input } from '@angular/core';
+import { keyCaps } from './keys';
 
 /** Shortcut keys, e.g. `<bc-kbd keys="Ctrl+Shift+Z" />`. Each key renders as its own cap. */
 @Component({
@@ -24,9 +25,5 @@ import { Component, computed, input } from '@angular/core';
 })
 export class Kbd {
 	readonly keys = input.required<string>();
-	protected readonly parts = computed(() =>
-		this.keys()
-			.split('+')
-			.map((k) => k.trim()),
-	);
+	protected readonly parts = computed(() => keyCaps(this.keys()));
 }

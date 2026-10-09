@@ -1,6 +1,13 @@
 import { Injectable, effect, inject, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
-import { CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu } from '@tauri-apps/api/menu';
+import {
+	CheckMenuItem,
+	Menu,
+	MenuItem,
+	PredefinedMenuItem,
+	PredefinedMenuItemOptions,
+	Submenu,
+} from '@tauri-apps/api/menu';
 import { getTauriVersion } from '@tauri-apps/api/app';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { message } from '@tauri-apps/plugin-dialog';
@@ -16,6 +23,7 @@ import { EditorCommands } from '../editor/editor-commands';
 import { EditorDialogs } from '../editor/editor-dialogs';
 import { CommandPalette } from '../palette/command-palette';
 import { SettingsDialog, confirmResetLayout } from '../settings/settings-dialog';
+import { IS_MAC } from '../../ui/kbd/keys';
 
 /** A menu entry: its own action, or a palette command (label, keys and enabled come from it). */
 type Entry =
@@ -81,8 +89,28 @@ export class AppMenu {
 	}
 
 	private async build(): Promise<void> {
+		const predefined = (item: PredefinedMenuItemOptions['item']) =>
+			PredefinedMenuItem.new({ item });
 		const menu = await Menu.new({
 			items: [
+				// The Mac's first menu is the app's own, named after it.
+				...(IS_MAC
+					? [
+							await this.submenu('ByteCaptions', [
+								{ text: 'About ByteCaptions…', run: () => void this.about() },
+								'separator',
+								{ text: 'Settings…', keys: 'Ctrl+,', run: () => this.settings() },
+								'separator',
+								await predefined('Services'),
+								'separator',
+								await predefined('Hide'),
+								await predefined('HideOthers'),
+								await predefined('ShowAll'),
+								'separator',
+								await predefined('Quit'),
+							]),
+						]
+					: []),
 				await this.submenu('&File', [
 					{
 						text: 'New project from video…',
@@ -97,28 +125,53 @@ export class AppMenu {
 					{ text: 'Import captions…', keys: 'Ctrl+I', run: () => void this.import() },
 					{ command: 'export' },
 					...(this.registry.get('youtube') ? [{ command: 'youtube' }] : []),
-					'separator',
-					{ text: 'Settings…', keys: 'Ctrl+,', run: () => this.settings() },
-					'separator',
-					{ text: 'Exit', keys: 'Alt+F4', run: () => void getCurrentWindow().close() },
+					// On the Mac, Settings and Quit are in the app menu.
+					...(IS_MAC
+						? []
+						: ([
+								'separator',
+								{ text: 'Settings…', keys: 'Ctrl+,', run: () => this.settings() },
+								'separator',
+								{
+									text: 'Exit',
+									keys: 'Alt+F4',
+									run: () => void getCurrentWindow().close(),
+								},
+							] as Entry[])),
 				]),
 				await this.submenu('&Edit', [
 					{ command: 'undo' },
 					{ command: 'redo' },
 					'separator',
-					{ text: 'Cut', keys: 'Ctrl+X', editor: true, run: () => this.clipboard('cut') },
-					{
-						text: 'Copy',
-						keys: 'Ctrl+C',
-						editor: true,
-						run: () => this.clipboard('copy'),
-					},
-					{
-						text: 'Paste',
-						keys: 'Ctrl+V',
-						editor: true,
-						run: () => this.clipboard('paste'),
-					},
+					// The Mac's text fields only get ⌘X / ⌘C / ⌘V / ⌘A through its own Edit items;
+					// with no text selected they pass the keys on, so cue copy and paste still work.
+					...(IS_MAC
+						? [
+								await predefined('Cut'),
+								await predefined('Copy'),
+								await predefined('Paste'),
+								await predefined('SelectAll'),
+							]
+						: ([
+								{
+									text: 'Cut',
+									keys: 'Ctrl+X',
+									editor: true,
+									run: () => this.clipboard('cut'),
+								},
+								{
+									text: 'Copy',
+									keys: 'Ctrl+C',
+									editor: true,
+									run: () => this.clipboard('copy'),
+								},
+								{
+									text: 'Paste',
+									keys: 'Ctrl+V',
+									editor: true,
+									run: () => this.clipboard('paste'),
+								},
+							] as Entry[])),
 					{ command: 'delete' },
 					'separator',
 					{ command: 'select-range' },
@@ -181,21 +234,44 @@ export class AppMenu {
 					{ command: 'next-marker' },
 					{ command: 'prev-marker' },
 				]),
+				...(IS_MAC
+					? [
+							await this.submenu('Window', [
+								await predefined('Minimize'),
+								await predefined('Maximize'),
+								await predefined('Fullscreen'),
+								'separator',
+								await predefined('CloseWindow'),
+							]),
+						]
+					: []),
 				await this.submenu('&Help', [
 					{ command: 'shortcuts' },
 					{ text: 'ByteCaptions GitHub page', run: () => openExternal(WEBSITE) },
-					'separator',
-					{ text: 'About ByteCaptions…', run: () => void this.about() },
+					...(IS_MAC
+						? []
+						: ([
+								'separator',
+								{ text: 'About ByteCaptions…', run: () => void this.about() },
+							] as Entry[])),
 				]),
 			],
 		});
-		await menu.setAsWindowMenu();
+		// The Mac has one menu bar for the whole app; Windows and Linux put it on the window.
+		if (IS_MAC) await menu.setAsAppMenu();
+		else await menu.setAsWindowMenu();
 		this.ready.set(true);
 	}
 
-	private async submenu(text: string, entries: (Entry | Submenu)[]): Promise<Submenu> {
+	private async submenu(
+		text: string,
+		entries: (Entry | Submenu | PredefinedMenuItem)[],
+	): Promise<Submenu> {
 		const items = [];
-		for (const e of entries) items.push(e instanceof Submenu ? e : await this.item(e));
+		for (const e of entries)
+			items.push(
+				e instanceof Submenu || e instanceof PredefinedMenuItem ? e : await this.item(e),
+			);
 		return Submenu.new({ text, items });
 	}
 

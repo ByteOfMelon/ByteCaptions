@@ -35,9 +35,10 @@ const CARDS: { id: FormatId; name: string; description: string }[] = [
 ];
 
 /** Export captions (PLAN §5.9): format, tracks to combine, destination, and lint warnings. */
+import { ShowEnd } from '../../ui/show-end/show-end';
 @Component({
 	selector: 'bc-export-dialog',
-	imports: [CountPipe, Dialog, Button, Checkbox, Field, Notice, LucideFolder],
+	imports: [CountPipe, Dialog, Button, Checkbox, Field, Notice, ShowEnd, LucideFolder],
 	templateUrl: './export-dialog.html',
 	styleUrl: './export-dialog.css',
 })

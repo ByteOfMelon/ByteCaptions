@@ -3,10 +3,12 @@ import {
 	booleanAttribute,
 	ElementRef,
 	computed,
+	effect,
 	inject,
 	input,
 	model,
 	signal,
+	viewChild,
 } from '@angular/core';
 import { LucideCheck, LucideChevronDown } from '@lucide/angular';
 
@@ -35,6 +37,7 @@ let nextId = 0;
 			[attr.aria-labelledby]="label() ? id + '-label' : null"
 			[attr.aria-activedescendant]="open() ? id + '-opt-' + active() : null"
 			[disabled]="disabled()"
+			#trigger
 			(click)="toggle()"
 			(keydown)="onKey($event)"
 			(blur)="open.set(false)"
@@ -43,7 +46,17 @@ let nextId = 0;
 			<svg lucideChevronDown aria-hidden="true"></svg>
 		</button>
 		@if (open()) {
-			<ul class="menu" role="listbox" [id]="id + '-list'">
+			<ul
+				#list
+				class="menu"
+				popover="manual"
+				role="listbox"
+				[id]="id + '-list'"
+				[style.left.px]="place().left"
+				[style.width.px]="place().width"
+				[style.top.px]="place().top"
+				[style.bottom.px]="place().bottom"
+			>
 				@for (opt of options(); track $index) {
 					<li
 						role="option"
@@ -74,6 +87,19 @@ export class Select<T = string> {
 
 	protected readonly id = `bc-select-${nextId++}`;
 	protected readonly open = signal(false);
+	/** Where the open list sits: below the field, or above it when there's no room below. */
+	protected readonly place = signal<{
+		left: number;
+		width: number;
+		top: number | null;
+		bottom: number | null;
+	}>({ left: 0, width: 0, top: 0, bottom: null });
+	private readonly trigger = viewChild.required<ElementRef<HTMLElement>>('trigger');
+	private readonly list = viewChild<ElementRef<HTMLElement>>('list');
+
+	constructor() {
+		effect(() => this.list()?.nativeElement.showPopover());
+	}
 	protected readonly active = signal(0);
 	protected readonly selectedIndex = computed(() =>
 		this.options().findIndex((o) => o.value === this.value()),
@@ -84,6 +110,18 @@ export class Select<T = string> {
 
 	protected toggle(): void {
 		this.active.set(Math.max(0, this.selectedIndex()));
+		if (!this.open()) {
+			const r = this.trigger().nativeElement.getBoundingClientRect();
+			const gap = 4;
+			const height = Math.min(280, this.options().length * 32 + 8);
+			const up = innerHeight - r.bottom < height + gap && r.top > innerHeight - r.bottom;
+			this.place.set({
+				left: r.left,
+				width: r.width,
+				top: up ? null : r.bottom + gap,
+				bottom: up ? innerHeight - r.top + gap : null,
+			});
+		}
 		this.open.update((o) => !o);
 	}
 

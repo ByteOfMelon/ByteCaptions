@@ -16,9 +16,10 @@ export type SettingsTab = 'general' | 'rules';
 const FRAME_RATES = [23.976, 24, 25, 29.97, 30, 48, 50, 59.94, 60];
 
 /** Project settings: name, frame rate and video (General), and the caption rules Problems checks. */
+import { ShowEnd } from '../../ui/show-end/show-end';
 @Component({
 	selector: 'bc-project-settings-dialog',
-	imports: [Dialog, Button, Field, NumberField, Select, Tabs, LucideFolder],
+	imports: [Dialog, Button, Field, NumberField, Select, ShowEnd, Tabs, LucideFolder],
 	templateUrl: './project-settings-dialog.html',
 	styleUrl: './project-settings-dialog.css',
 })

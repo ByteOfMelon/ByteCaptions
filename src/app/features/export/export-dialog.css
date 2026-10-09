@@ -80,8 +80,3 @@
 	flex: 1;
 	min-width: 0;
 }
-/* Long paths keep their end (the file name) visible. */
-.save-to input:not(:focus) {
-	direction: rtl;
-	text-align: left;
-}
