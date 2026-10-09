@@ -15,6 +15,7 @@ import { Tooltip } from '../../ui/tooltip/tooltip';
 import { SidePanel } from '../cuelist/side-panel';
 import { Inspector } from '../inspector/inspector';
 import { Playback } from '../player/playback';
+import { Markers } from '../markers/markers';
 import { PreviewPanel } from '../player/preview-panel';
 import { Timeline } from '../timeline/timeline';
 import { Dialogs } from '../../ui/dialog/dialog';
@@ -84,6 +85,7 @@ export class Editor implements OnDestroy {
 	protected readonly transcription = inject(Transcription);
 	protected readonly Math = Math;
 	private readonly playback = inject(Playback);
+	private readonly markers = inject(Markers);
 	private readonly dialogs = inject(Dialogs);
 	protected readonly files = inject(ProjectFiles);
 	private readonly drop = inject(FileDrop);
@@ -227,7 +229,11 @@ export class Editor implements OnDestroy {
 			// Space plays even with a toolbar button focused (it would otherwise press it,
 			// e.g. turning loop off); open menus and dropdowns keep it.
 			case ' ':
-				if (!t.closest('[role="menu"], [role="listbox"], [aria-expanded="true"]'))
+				if (
+					!t.closest(
+						'[role="menu"], [role="listbox"], [role="radiogroup"], [aria-expanded="true"]',
+					)
+				)
 					run(() => this.commands.togglePlay());
 				return;
 			case 'j':
@@ -246,6 +252,8 @@ export class Editor implements OnDestroy {
 				return run(() => this.playback.goTo('out'));
 			case 'alt+x':
 				return run(() => this.playback.clearRange());
+			case 'shift+m':
+				return run(() => this.markers.addAtPlayhead());
 			case 'ctrl+l':
 				return run(() => this.playback.loop.update((on) => !on));
 			case 's':
@@ -274,7 +282,10 @@ export class Editor implements OnDestroy {
 			case 'ctrl+0':
 				return run(() => this.ui.zoomTimeline?.('fit'));
 			case 'escape':
-				return run(() => this.store.clearSelection());
+				return run(() => {
+					this.store.clearSelection();
+					this.markers.selected.set(null);
+				});
 			case 'ctrl+c':
 				if (!this.store.selection().size || getSelection()?.toString()) return;
 				return run(() => this.commands.copy());

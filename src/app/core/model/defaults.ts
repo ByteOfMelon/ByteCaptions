@@ -1,6 +1,9 @@
 import {
 	CaptionStyle,
 	Cue,
+	Marker,
+	MarkerColor,
+	Ms,
 	Position,
 	Project,
 	ProjectSettings,
@@ -81,6 +84,19 @@ export function createCue(start: number, end: number, text: string): Cue {
 	return { id: newId('cue'), start, end, runs: [{ text }] };
 }
 
+/** Marker flag colors; fixed across themes, like track colors. */
+export const MARKER_COLORS: Record<MarkerColor, string> = {
+	yellow: '#c89a08',
+	red: '#f06464',
+	blue: '#6b9bea',
+	purple: '#9b7fd1',
+	green: '#3dba5c',
+};
+
+export function createMarker(at: Ms, note = '', color: MarkerColor = 'yellow'): Marker {
+	return { id: newId('mrk'), at, note, color };
+}
+
 export function createProject(name = 'Untitled'): Project {
 	return {
 		schemaVersion: SCHEMA_VERSION,
@@ -92,5 +108,6 @@ export function createProject(name = 'Untitled'): Project {
 		styles: { [DEFAULT_STYLE_ID]: defaultStyle() },
 		positions: { [DEFAULT_POSITION_ID]: defaultPosition() },
 		settings: defaultSettings(),
+		markers: [],
 	};
 }

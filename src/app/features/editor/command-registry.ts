@@ -4,6 +4,8 @@ import {
 	LucideArrowLeftToLine,
 	LucideArrowRightToLine,
 	LucideArrowUp,
+	LucideBookmark,
+	LucideBookmarkPlus,
 	LucideChevronFirst,
 	LucideChevronLast,
 	LucideRepeat,
@@ -49,6 +51,7 @@ import { ThemePreference, ThemeService } from '../../theme/theme.service';
 import { EditorCommands } from './editor-commands';
 import { EditorDialogs } from './editor-dialogs';
 import { Playback } from '../player/playback';
+import { Markers } from '../markers/markers';
 import { PanelLayout } from '../../state/panel-layout';
 import { confirmResetLayout } from '../settings/settings-dialog';
 
@@ -82,6 +85,7 @@ export class CommandRegistry {
 	private readonly theme = inject(ThemeService);
 	private readonly layout = inject(PanelLayout);
 	private readonly playback = inject(Playback);
+	private readonly markers = inject(Markers);
 
 	readonly all = computed<Command[]>(() => {
 		const hasCue = () => !!this.store.primary();
@@ -255,6 +259,33 @@ export class CommandRegistry {
 				keys: 'Alt+X',
 				enabled: hasRange,
 				run: () => this.playback.clearRange(),
+			},
+			{
+				id: 'add-marker',
+				label: 'Add marker',
+				icon: LucideBookmarkPlus.icon,
+				keys: 'Shift+M',
+				run: () => this.markers.addAtPlayhead(),
+			},
+			{
+				id: 'next-marker',
+				label: 'Go to next marker',
+				icon: LucideBookmark.icon,
+				enabled: () => this.markers.list().length > 0,
+				run: () => this.markers.goTo(1),
+			},
+			{
+				id: 'prev-marker',
+				label: 'Go to previous marker',
+				icon: LucideBookmark.icon,
+				enabled: () => this.markers.list().length > 0,
+				run: () => this.markers.goTo(-1),
+			},
+			{
+				id: 'show-markers',
+				label: 'Show markers',
+				icon: LucideBookmark.icon,
+				run: () => this.markers.showTab(),
 			},
 			{
 				id: 'snapping',

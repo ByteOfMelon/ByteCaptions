@@ -68,6 +68,7 @@ export class ShortcutsDialog {
 					{ label: 'Zoom to fit', keys: 'Ctrl+0' },
 					{ label: 'Draw a new cue', keys: 'Alt+Drag' },
 					{ label: 'Move the in/out range', keys: 'Alt+Drag ruler' },
+					{ label: 'Add a marker', keys: 'Shift+M' },
 					{ label: 'Snapping on or off', keys: 'N' },
 					{ label: 'Clear selection', keys: 'Esc' },
 				],

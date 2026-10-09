@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { TrackId } from '../core/model/types';
 
-export type SideTab = 'cues' | 'transcript' | 'problems';
+export type SideTab = 'cues' | 'transcript' | 'problems' | 'markers';
 export type TimelineZoom = 'in' | 'out' | 'fit';
 
 /** Editor view state shared between panels and dialogs (not part of the document). */

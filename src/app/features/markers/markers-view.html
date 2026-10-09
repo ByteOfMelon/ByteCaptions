@@ -1,0 +1,47 @@
+<bc-field #find>
+	<input
+		[id]="find.fieldId"
+		aria-label="Search markers"
+		placeholder="Search markers…"
+		[value]="query()"
+		(input)="query.set($any($event.target).value)"
+	/>
+	<svg lucideSearch aria-hidden="true"></svg>
+</bc-field>
+
+<div class="meta text-small text-faded">
+	<span>{{ markers.list().length | count: 'marker' }}</span>
+	<span>Shift+M adds one at the playhead</span>
+</div>
+
+<div class="rows" role="listbox" aria-label="Markers">
+	@for (row of rows(); track row.marker.id) {
+		<div
+			class="row"
+			role="option"
+			tabindex="-1"
+			[attr.aria-selected]="markers.selected() === row.marker.id"
+			[class.selected]="markers.selected() === row.marker.id"
+			(click)="markers.select(row.marker.id)"
+			(dblclick)="markers.edit(row.marker.id)"
+		>
+			<span class="color" [style.background]="row.color"></span>
+			<div class="content">
+				<span class="time text-mono-small">{{ row.number }} {{ row.time }}</span>
+				@if (row.marker.note) {
+					<p class="note">{{ row.marker.note }}</p>
+				} @else {
+					<p class="note text-faded">No note</p>
+				}
+			</div>
+		</div>
+	} @empty {
+		<p class="empty text-small text-faded">
+			@if (query()) {
+				No markers match “{{ query() }}”.
+			} @else {
+				No markers yet. Press Shift+M to add one at the playhead, then type a note for it.
+			}
+		</p>
+	}
+</div>

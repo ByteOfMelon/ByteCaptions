@@ -12,6 +12,7 @@ export type TrackId = string;
 export type CueId = string;
 export type StyleId = string;
 export type PosId = string;
+export type MarkerId = string;
 
 export const SCHEMA_VERSION = 1;
 
@@ -28,6 +29,17 @@ export interface Project {
 	positions: Record<PosId, Position>;
 	settings: ProjectSettings;
 	transcript?: TranscriptMeta;
+	/** Editor notes pinned to times (Shift+M). Saved with the project, never exported. Kept sorted. */
+	markers: Marker[];
+}
+
+export type MarkerColor = 'yellow' | 'red' | 'blue' | 'purple' | 'green';
+
+export interface Marker {
+	id: MarkerId;
+	at: Ms;
+	note: string;
+	color: MarkerColor;
 }
 
 export interface MediaRef {

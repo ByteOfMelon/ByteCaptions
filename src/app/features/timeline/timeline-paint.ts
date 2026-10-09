@@ -79,6 +79,8 @@ export interface PaintInput {
 	audio: AudioWaveform;
 	/** In/out range (I / O). */
 	range: { start: Ms; end: Ms } | null;
+	/** Markers in time order, with their flag colors. */
+	markers: { at: Ms; color: string; selected: boolean }[];
 }
 
 /** Ruler steps (ms); the major step is the smallest one leaving room for a timecode label. */
@@ -202,6 +204,8 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 		ctx.fill();
 	}
 
+	paintMarkers(ctx, input);
+
 	// Snap guide: dashed brand line at what the edge snapped to.
 	if (input.snapAt !== null) {
 		const x = Math.round(msToX(v, input.snapAt)) + 0.5;
@@ -243,6 +247,33 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 		ctx.fillRect(px - 1, 6, 2, v.height - 6);
 		roundRect(ctx, px - 6, 6, 12, 12, 2);
 		ctx.fill();
+	}
+}
+
+/** Markers: a flag on the ruler and a faint line down the lanes; the selected one brighter. */
+function paintMarkers(ctx: CanvasRenderingContext2D, input: PaintInput): void {
+	const { view: v, palette: c } = input;
+	for (const m of input.markers) {
+		const x = Math.round(msToX(v, m.at));
+		if (x < -6 || x > v.width + 6) continue;
+		ctx.fillStyle = m.color;
+		ctx.globalAlpha = m.selected ? 0.8 : 0.35;
+		ctx.fillRect(x, RULER_H, 1, v.height - RULER_H);
+		ctx.globalAlpha = 1;
+		// 11 × 13 flag pointing down at the time, its tip on the ruler's bottom edge.
+		ctx.beginPath();
+		ctx.moveTo(x - 5, 11);
+		ctx.lineTo(x + 6, 11);
+		ctx.lineTo(x + 6, 19);
+		ctx.lineTo(x + 0.5, RULER_H);
+		ctx.lineTo(x - 5, 19);
+		ctx.closePath();
+		ctx.fill();
+		if (m.selected) {
+			ctx.strokeStyle = c.text;
+			ctx.lineWidth = 1.5;
+			ctx.stroke();
+		}
 	}
 }
 

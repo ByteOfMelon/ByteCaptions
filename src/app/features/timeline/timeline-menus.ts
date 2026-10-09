@@ -4,6 +4,7 @@ import {
 	LucideArrowLeftToLine,
 	LucideArrowRightToLine,
 	LucideArrowUp,
+	LucideBookmarkPlus,
 	LucideClipboardPaste,
 	LucideClock,
 	LucideCopy,
@@ -20,7 +21,8 @@ import {
 	LucideUpload,
 	LucideX,
 } from '@lucide/angular';
-import { CueId, Ms, StyleId, Track, TrackId } from '../../core/model/types';
+import { MARKER_COLORS } from '../../core/model/defaults';
+import { CueId, MarkerColor, MarkerId, Ms, StyleId, Track, TrackId } from '../../core/model/types';
 import { EditorUi } from '../../state/editor-ui';
 import { TRACK_COLORS } from '../../state/project-files';
 import { ProjectStore } from '../../state/project-store';
@@ -28,12 +30,13 @@ import { ContextMenu, MenuEntry } from '../../ui/menu/menu';
 import { EditorCommands } from '../editor/editor-commands';
 import { EditorDialogs } from '../editor/editor-dialogs';
 import { Playback } from '../player/playback';
+import { Markers } from '../markers/markers';
 
 type At = { x: number; y: number } | MouseEvent;
 
 /**
  * Right-click menus for the timeline (Timeline Menus board): a cue, several selected cues,
- * empty lane space, a track header and the ruler. Keys shown are the editor's current bindings.
+ * empty lane space, a track header, the ruler and a marker. Keys shown are the editor's current bindings.
  */
 @Injectable({ providedIn: 'root' })
 export class TimelineMenus {
@@ -43,6 +46,7 @@ export class TimelineMenus {
 	private readonly ui = inject(EditorUi);
 	private readonly menu = inject(ContextMenu);
 	private readonly playback = inject(Playback);
+	private readonly markers = inject(Markers);
 
 	/** "Style preset" submenu: presets with a check on `current`, then "Edit presets…". */
 	private presetMenu(current: StyleId | null): MenuEntry[] {
@@ -291,9 +295,11 @@ export class TimelineMenus {
 		else if (id === 'select-all') this.commands.selectAllOnTrack(track.id);
 	}
 
-	/** Ruler: set the in/out points where it was clicked, or clear them. */
+	/** Ruler: add a marker or set the in/out points where it was clicked, or clear them. */
 	async ruler(at: At, atMs: Ms): Promise<void> {
 		const id = await this.menu.open(at, [
+			{ id: 'marker', label: 'Add marker here', icon: LucideBookmarkPlus.icon },
+			{ kind: 'separator' },
 			{ id: 'in', label: 'Mark in here', icon: LucideArrowRightToLine.icon },
 			{ id: 'out', label: 'Mark out here', icon: LucideArrowLeftToLine.icon },
 			{
@@ -312,10 +318,38 @@ export class TimelineMenus {
 				checked: this.playback.loop(),
 			},
 		]);
-		if (id === 'in') this.playback.setIn(atMs);
+		if (id === 'marker') this.markers.addAt(atMs);
+		else if (id === 'in') this.playback.setIn(atMs);
 		else if (id === 'out') this.playback.setOut(atMs);
 		else if (id === 'clear') this.playback.clearRange();
 		else if (id === 'loop') this.playback.loop.update((on) => !on);
+	}
+
+	async marker(at: At, id: MarkerId): Promise<void> {
+		const m = this.markers.find(id);
+		if (!m) return;
+		const colors: MarkerColor[] = ['yellow', 'red', 'blue', 'purple', 'green'];
+		const choice = await this.menu.open(at, [
+			{ kind: 'header', label: `Marker ${this.markers.number(id)}` },
+			{ id: 'edit', label: 'Edit note…', icon: LucidePencil.icon },
+			{
+				id: 'color',
+				label: 'Color',
+				swatch: MARKER_COLORS[m.color],
+				submenu: colors.map((c) => ({
+					id: `color:${c}`,
+					label: c[0].toUpperCase() + c.slice(1),
+					swatch: MARKER_COLORS[c],
+					checked: c === m.color,
+				})),
+			},
+			{ kind: 'separator' },
+			{ id: 'delete', label: 'Delete marker', icon: LucideTrash2.icon, danger: true },
+		]);
+		if (choice === 'edit') this.markers.edit(id);
+		else if (choice === 'delete') this.markers.remove(id);
+		else if (choice?.startsWith('color:'))
+			this.markers.setColor(id, choice.slice(6) as MarkerColor);
 	}
 
 	async header(at: At, track: Track): Promise<void> {

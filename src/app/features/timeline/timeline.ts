@@ -27,7 +27,8 @@ import {
 } from '@lucide/angular';
 import { createCue } from '../../core/model/defaults';
 import { addCue, setTiming, moveCues, updateTrack } from '../../core/commands/edits';
-import { CueId, Ms, Track, TrackId } from '../../core/model/types';
+import { CueId, MarkerId, Ms, Track, TrackId } from '../../core/model/types';
+import { MARKER_COLORS } from '../../core/model/defaults';
 import { formatClock, formatTimecode, snapToFrame } from '../../core/time/timecode';
 import { EditorUi, TimelineZoom } from '../../state/editor-ui';
 import { ProjectStore } from '../../state/project-store';
@@ -53,6 +54,8 @@ import {
 	xToMs,
 } from './timeline-paint';
 import { TimelineMenus } from './timeline-menus';
+import { MarkerPopover } from '../markers/marker-popover';
+import { Markers } from '../markers/markers';
 
 const EDGE_PX = 6;
 const SNAP_PX = 8;
@@ -71,6 +74,7 @@ type Hit =
 	| { kind: 'ruler' }
 	/** In/out range in the ruler: an edge, or the whole range on Alt+drag (edge null). */
 	| { kind: 'range'; edge: 'start' | 'end' | null }
+	| { kind: 'marker'; id: MarkerId }
 	| { kind: 'cue'; track: Track; trackIndex: number; cueId: CueId; edge: 'start' | 'end' | null }
 	| { kind: 'lane'; track: Track; trackIndex: number }
 	| { kind: 'none' };
@@ -90,6 +94,7 @@ type Drag =
 	  }
 	| { mode: 'trim'; cueId: CueId; edge: 'start' | 'end'; start: Ms; end: Ms; original: Ms }
 	| { mode: 'range'; edge: 'start' | 'end' | null; downMs: Ms; start: Ms; end: Ms }
+	| { mode: 'marker'; id: MarkerId; downX: number; moved: boolean }
 	/** Alt+drag on empty lane space draws a new cue; it's added once the drag moves. */
 	| {
 			mode: 'create';
@@ -131,6 +136,7 @@ interface Hud {
 	imports: [
 		AutoSelect,
 		ErrorTip,
+		MarkerPopover,
 		IconButton,
 		Tooltip,
 		StyleChip,
@@ -156,6 +162,7 @@ export class Timeline {
 	private readonly theme = inject(ThemeService);
 	private readonly audio = inject(AudioPeaks);
 	private readonly menus = inject(TimelineMenus);
+	protected readonly markers = inject(Markers);
 	protected readonly ui = inject(EditorUi);
 	private readonly host = inject(ElementRef<HTMLElement>);
 	private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
@@ -172,6 +179,8 @@ export class Timeline {
 		null,
 	);
 	protected readonly hud = signal<Hud | null>(null);
+	/** Note of the marker under the pointer. */
+	protected readonly markerTip = signal<Hud | null>(null);
 	private readonly scrollTarget = signal(0);
 	private readonly box = signal<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
 	protected readonly cursor = signal('default');
@@ -291,6 +300,11 @@ export class Timeline {
 				trim: this.trim(),
 				audio: this.audio.waveform(),
 				range: this.playback.range(),
+				markers: this.store.project().markers.map((m) => ({
+					at: m.at,
+					color: MARKER_COLORS[m.color],
+					selected: m.id === this.markers.selected(),
+				})),
 			});
 		});
 
@@ -302,6 +316,20 @@ export class Timeline {
 			const max = this.maxStart();
 			const left = max && range > 0 ? (this.viewStart() / max) * range : 0;
 			if (Math.abs(el.scrollLeft - left) > 1) el.scrollLeft = left;
+		});
+
+		// Opening a marker that's off-screen (Markers tab, Shift+M) scrolls it into view.
+		effect(() => {
+			const m = this.markers.find(this.markers.editing());
+			if (!m) return;
+			untracked(() => {
+				const v = this.view();
+				const x = msToX(v, m.at);
+				if (v.width && (x < 0 || x > v.width))
+					this.viewStart.set(
+						Math.max(0, Math.min(this.maxStart(), m.at - v.width / 3 / v.pxPerMs)),
+					);
+			});
 		});
 
 		this.ui.zoomTimeline = (step) => this.zoomStep(step);
@@ -372,14 +400,28 @@ export class Timeline {
 		if (this.drag) return;
 		const r = this.canvas().nativeElement.getBoundingClientRect();
 		const x = e.clientX - r.left;
-		const h = this.hit(x, e.clientY - r.top);
+		const y = e.clientY - r.top;
+		const marker = y < RULER_H ? this.markerAt(x) : null;
+		if (marker) {
+			this.markers.selected.set(marker);
+			void this.menus.marker(e, marker);
+			return;
+		}
+		const h = this.hit(x, y);
 		if (h.kind === 'cue') void this.menus.cue(e, h.track, h.cueId);
 		else if (h.kind === 'lane') void this.menus.lane(e, h.track, xToMs(this.view(), x));
-		else if (h.kind === 'ruler' || h.kind === 'range') {
+		else if (h.kind === 'ruler' || h.kind === 'range' || h.kind === 'marker') {
 			// Snap the clicked time to a frame so marks line up with the timecodes.
 			const fps = this.store.project().fps;
 			void this.menus.ruler(e, snapToFrame(xToMs(this.view(), x), fps));
 		}
+	}
+
+	/** Double-clicking a marker opens its popover. */
+	protected onDoubleClick(e: MouseEvent): void {
+		const r = this.canvas().nativeElement.getBoundingClientRect();
+		const marker = e.clientY - r.top < RULER_H ? this.markerAt(e.clientX - r.left) : null;
+		if (marker) this.markers.edit(marker);
 	}
 
 	protected onHeaderMenu(e: MouseEvent, track: Track): void {
@@ -422,14 +464,29 @@ export class Timeline {
 		return { kind: 'lane', track, trackIndex: i };
 	}
 
+	/** The marker whose flag is at x on the ruler (the selected one wins), if any. */
+	private markerAt(x: number): MarkerId | null {
+		const v = this.view();
+		let best: { id: MarkerId; d: number } | null = null;
+		for (const m of this.markers.list()) {
+			const d = Math.abs(x - msToX(v, m.at)) - (m.id === this.markers.selected() ? 1 : 0);
+			if (d <= 6 && (!best || d < best.d)) best = { id: m.id, d };
+		}
+		return best?.id ?? null;
+	}
+
 	/**
-	 * Dragging the ruler scrubs. The in/out edges are grabbed only away from the playhead
-	 * (which often sits on one after I / O); Alt+drag inside the range moves the whole range.
+	 * Dragging the ruler scrubs. Markers and the in/out edges are grabbed only away from the
+	 * playhead (which often sits on one after Shift+M or I / O); Alt+drag inside the range
+	 * moves the whole range.
 	 */
 	private rulerHit(x: number, alt: boolean): Hit {
 		const r = this.playback.range();
 		const v = this.view();
-		if (!r || Math.abs(x - msToX(v, this.store.playhead())) <= 6) return { kind: 'ruler' };
+		if (Math.abs(x - msToX(v, this.store.playhead())) <= 6) return { kind: 'ruler' };
+		const marker = this.markerAt(x);
+		if (marker) return { kind: 'marker', id: marker };
+		if (!r) return { kind: 'ruler' };
 		const x0 = msToX(v, r.start);
 		const x1 = msToX(v, r.end);
 		if (Math.abs(x - x0) <= EDGE_PX) return { kind: 'range', edge: 'start' };
@@ -491,9 +548,15 @@ export class Timeline {
 		(e.target as Element).setPointerCapture(e.pointerId);
 		const additive = e.ctrlKey || e.metaKey;
 
+		this.markerTip.set(null);
 		if (h.kind === 'ruler') {
 			this.drag = { mode: 'scrub' };
-			this.playback.seek(xToMs(this.view(), x));
+			// Grabbing the playhead's own handle doesn't nudge it to the pointer.
+			if (Math.abs(x - msToX(this.view(), this.store.playhead())) > 6)
+				this.playback.seek(xToMs(this.view(), x));
+		} else if (h.kind === 'marker') {
+			this.markers.selected.set(h.id);
+			this.drag = { mode: 'marker', id: h.id, downX: x, moved: false };
 		} else if (h.kind === 'range') {
 			const r = this.playback.range()!;
 			this.drag = {
@@ -561,18 +624,21 @@ export class Timeline {
 		const { x, y } = this.local(e);
 		if (!this.drag) {
 			const h = this.hit(x, y, e.altKey);
+			this.showMarkerTip(h.kind === 'marker' ? h.id : null);
 			this.cursor.set(
 				h.kind === 'cue' && h.edge && !h.track.locked
 					? 'ew-resize'
-					: h.kind === 'range'
-						? h.edge
-							? 'ew-resize'
-							: 'grab'
-						: h.kind === 'ruler'
-							? 'col-resize'
-							: h.kind === 'lane' && e.altKey && !h.track.locked
-								? 'crosshair'
-								: 'default',
+					: h.kind === 'marker'
+						? 'pointer'
+						: h.kind === 'range'
+							? h.edge
+								? 'ew-resize'
+								: 'grab'
+							: h.kind === 'ruler'
+								? 'col-resize'
+								: h.kind === 'lane' && e.altKey && !h.track.locked
+									? 'crosshair'
+									: 'default',
 			);
 			return;
 		}
@@ -643,6 +709,27 @@ export class Timeline {
 					const sign = diff < 0 ? '−' : '+';
 					const edge = d.edge === 'start' ? 'Start' : 'End';
 					return `${edge} ${tc(d.original)} → ${tc(now)}  ${sign}${Math.abs(diff).toFixed(2)} s`;
+				});
+				break;
+			}
+			case 'marker': {
+				if (!d.moved && Math.abs(x - d.downX) < 3) return;
+				if (!d.moved) {
+					d.moved = true;
+					this.markerTip.set(null);
+					this.store.begin('Move marker');
+				}
+				const at = Math.max(
+					0,
+					Math.min(
+						this.store.duration(),
+						Math.round(ms + this.snapDelta([ms], new Set())),
+					),
+				);
+				this.markers.move(d.id, at);
+				this.showHud(at, RULER_H + 48, 'right', () => {
+					const tc = formatTimecode(at, this.store.project().fps);
+					return `Marker ${this.markers.number(d.id)} • ${tc}`;
 				});
 				break;
 			}
@@ -783,8 +870,13 @@ export class Timeline {
 		this.trim.set(null);
 		this.hud.set(null);
 		if (!d) return;
-		if (d.mode === 'trim' || ((d.mode === 'move' || d.mode === 'create') && d.moved))
+		if (
+			d.mode === 'trim' ||
+			((d.mode === 'move' || d.mode === 'create' || d.mode === 'marker') && d.moved)
+		)
 			this.store.end();
+		// Clicking a marker selects it and jumps there.
+		if (d.mode === 'marker' && !d.moved) this.markers.select(d.id);
 		// Alt+click without dragging just moves the playhead, like a plain click.
 		if (d.mode === 'create' && !d.moved)
 			this.playback.seek(xToMs(this.view(), this.local(e).x));
@@ -794,6 +886,35 @@ export class Timeline {
 			this.playback.seek(xToMs(this.view(), this.local(e).x));
 		}
 	}
+
+	/** Hovering a marker shows its note (or its number) under the flag. */
+	private showMarkerTip(id: MarkerId | null): void {
+		const m = this.markers.find(id);
+		if (!m || this.markers.editing() === m.id) return this.markerTip.set(null);
+		const text = m.note || `Marker ${this.markers.number(m.id)}`;
+		this.markerTip.set({
+			text,
+			x: msToX(this.view(), m.at) - 8,
+			y: RULER_H + 4,
+			align: 'right',
+		});
+	}
+
+	protected onPointerLeave(): void {
+		this.markerTip.set(null);
+	}
+
+	/** Where the edit popover sits: under the marker, kept inside the window. */
+	protected readonly popover = computed(() => {
+		const m = this.markers.find(this.markers.editing());
+		const v = this.view();
+		if (!m || !v.width) return null;
+		const r = this.canvas().nativeElement.getBoundingClientRect();
+		const x = r.left + msToX(v, m.at) - 140;
+		const below = r.top + RULER_H + 4;
+		const top = below + 220 > window.innerHeight ? Math.max(8, r.top - 224) : below;
+		return { marker: m, left: Math.max(8, Math.min(window.innerWidth - 288, x)), top };
+	});
 
 	/**
 	 * Shows the snap label at the snap point when snapped, otherwise `fallback` (if given)

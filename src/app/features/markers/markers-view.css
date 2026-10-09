@@ -1,0 +1,65 @@
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-md);
+	flex: 1;
+	min-height: 0;
+}
+
+.meta {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--spacing-sm);
+}
+
+/* Rows match the cue list's. */
+.rows {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	margin-right: calc(-1 * var(--spacing-sm));
+	padding-right: var(--spacing-sm);
+}
+.row {
+	display: flex;
+	gap: var(--spacing-md);
+	padding: var(--spacing-sm);
+	border-radius: var(--radius-control);
+	cursor: pointer;
+	outline: none;
+}
+.row:hover {
+	background: var(--color-card);
+}
+.row.selected {
+	background: var(--color-selected);
+}
+.color {
+	width: 4px;
+	flex-shrink: 0;
+	border-radius: var(--radius-small);
+}
+.content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+	flex: 1;
+	min-width: 0;
+}
+.time {
+	color: var(--color-text-faded);
+	white-space: nowrap;
+}
+.note {
+	margin: 0;
+	white-space: pre-line;
+	overflow-wrap: anywhere;
+}
+
+.empty {
+	margin: 0;
+	padding: var(--spacing-sm);
+}

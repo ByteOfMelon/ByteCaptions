@@ -4,13 +4,14 @@ import { Tabs } from '../../ui/tabs/tabs';
 import { CueList } from './cue-list';
 import { ProblemsView } from './problems-view';
 import { TranscriptView } from './transcript-view';
+import { MarkersView } from '../markers/markers-view';
 
-/** Left panel: Cues / Transcript / Problems. */
+/** Left panel: Cues / Transcript / Problems / Markers. */
 @Component({
 	selector: 'bc-side-panel',
-	imports: [Tabs, CueList, TranscriptView, ProblemsView],
+	imports: [Tabs, CueList, TranscriptView, ProblemsView, MarkersView],
 	template: `
-		<bc-tabs class="on-panel" idPrefix="side" [tabs]="tabs" [(value)]="tab" />
+		<bc-tabs class="on-panel compact" idPrefix="side" [tabs]="tabs" [(value)]="tab" />
 		<div
 			class="body"
 			role="tabpanel"
@@ -26,6 +27,9 @@ import { TranscriptView } from './transcript-view';
 				}
 				@case ('problems') {
 					<bc-problems-view />
+				}
+				@case ('markers') {
+					<bc-markers-view />
 				}
 			}
 		</div>
@@ -53,6 +57,7 @@ export class SidePanel {
 		{ value: 'cues' as SideTab, label: 'Cues' },
 		{ value: 'transcript' as SideTab, label: 'Transcript' },
 		{ value: 'problems' as SideTab, label: 'Problems' },
+		{ value: 'markers' as SideTab, label: 'Markers' },
 	];
 	readonly tab = inject(EditorUi).sideTab;
 }

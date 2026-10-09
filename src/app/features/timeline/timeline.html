@@ -185,11 +185,25 @@
 				(pointercancel)="onPointerUp($event)"
 				(wheel)="onWheel($event)"
 				(contextmenu)="onContextMenu($event)"
+				(dblclick)="onDoubleClick($event)"
+				(pointerleave)="onPointerLeave()"
 			></canvas>
 		</div>
 		<div #hscroll class="hscroll" tabindex="-1" (scroll)="onHScroll()">
 			<div class="hscroll-content" [style.width.px]="scrollWidth()"></div>
 		</div>
+		@if (markerTip(); as t) {
+			<div class="hud text-small" [style.left.px]="t.x" [style.top.px]="t.y" role="tooltip">
+				{{ t.text }}
+			</div>
+		}
+		@if (popover(); as p) {
+			<bc-marker-popover
+				[marker]="p.marker"
+				[style.left.px]="p.left"
+				[style.top.px]="p.top"
+			/>
+		}
 		@if (hud(); as h) {
 			<div
 				class="hud text-small"

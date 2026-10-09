@@ -49,8 +49,9 @@ export function parseProject(json: string): Project {
 	) {
 		throw new ProjectFileError('Project file is missing tracks, styles or positions');
 	}
-	// Fill settings added later without needing a migration.
+	// Fill settings and markers added later without needing a migration.
 	p.settings = { ...defaultSettings(), ...(p.settings ?? {}) };
+	p.markers = Array.isArray(p.markers) ? p.markers.sort((a, b) => a.at - b.at) : [];
 	for (const t of p.tracks) {
 		if (!Array.isArray(t.cues))
 			throw new ProjectFileError(`Track "${t.name}" has no cues array`);

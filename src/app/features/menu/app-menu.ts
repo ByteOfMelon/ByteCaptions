@@ -170,6 +170,10 @@ export class AppMenu {
 					{ command: 'go-in' },
 					{ command: 'go-out' },
 					{ command: 'clear-range' },
+					'separator',
+					{ command: 'add-marker' },
+					{ command: 'next-marker' },
+					{ command: 'prev-marker' },
 				]),
 				await this.submenu('&Help', [
 					{ command: 'shortcuts' },

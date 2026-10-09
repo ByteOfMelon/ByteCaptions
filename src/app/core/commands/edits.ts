@@ -5,7 +5,7 @@
 import { Draft } from 'immer';
 import { createCue, newId } from '../model/defaults';
 import { cueText, joinWords, sortCues } from '../model/cue';
-import { Cue, CueId, Ms, Project, Track, TrackId } from '../model/types';
+import { Cue, CueId, Marker, MarkerId, Ms, Project, Track, TrackId } from '../model/types';
 
 type P = Draft<Project>;
 
@@ -266,5 +266,33 @@ export function reorderTrack(trackId: TrackId, toIndex: number) {
 		if (from < 0) return;
 		const [t] = p.tracks.splice(from, 1);
 		p.tracks.splice(Math.max(0, Math.min(toIndex, p.tracks.length)), 0, t);
+	};
+}
+
+// ---- Markers (anchored to video time, so cue edits never move them) ----
+
+function sortMarkers(p: P): void {
+	p.markers.sort((a, b) => a.at - b.at);
+}
+
+export function addMarker(marker: Marker) {
+	return (p: P) => {
+		p.markers.push(marker);
+		sortMarkers(p);
+	};
+}
+
+export function updateMarker(id: MarkerId, changes: Partial<Omit<Marker, 'id'>>) {
+	return (p: P) => {
+		const m = p.markers.find((m) => m.id === id);
+		if (!m) throw new Error(`Marker not found: ${id}`);
+		Object.assign(m, changes);
+		sortMarkers(p);
+	};
+}
+
+export function deleteMarker(id: MarkerId) {
+	return (p: P) => {
+		p.markers = p.markers.filter((m) => m.id !== id);
 	};
 }
