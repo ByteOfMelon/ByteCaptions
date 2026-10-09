@@ -124,8 +124,3 @@ export function rangeOverride(runs: readonly TextRun[], from: number, to: number
 		if (parts.every((p) => (p.styleOverride as Record<string, unknown>)?.[k] === v)) out[k] = v;
 	return out as Override;
 }
-
-/** Whether any run has formatting of its own. */
-export function hasFormatting(runs: readonly TextRun[]): boolean {
-	return runs.some((r) => r.styleOverride && Object.keys(r.styleOverride).length);
-}

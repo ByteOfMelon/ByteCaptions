@@ -58,6 +58,8 @@ export function retimeWords(
 	if (!next.length) return null;
 	if (!words.length) return spreadWords(next, start, end);
 	const out: WordTiming[] = [];
+	let pendingStart: Ms | null = null;
+	let pendingInsert: string[] | null = null;
 	// Old words [i0, i1) became new words [j0, j1).
 	const gap = (i0: number, i1: number, j0: number, j1: number) => {
 		const added = next.slice(j0, j1);
@@ -79,8 +81,6 @@ export function retimeWords(
 			out.push(...shared.slice(1));
 		} else pendingInsert = added;
 	};
-	let pendingStart: Ms | null = null;
-	let pendingInsert: string[] | null = null;
 	const keep = (w: WordTiming) => {
 		let word = { ...w };
 		if (pendingStart !== null) word.start = pendingStart;
