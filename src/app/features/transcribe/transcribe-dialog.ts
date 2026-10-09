@@ -5,20 +5,20 @@ import { TrackId } from '../../core/model/types';
 import { formatClock, formatTimecode } from '../../core/time/timecode';
 import { EditorUi } from '../../state/editor-ui';
 import { ProjectStore } from '../../state/project-store';
-import { LANGUAGES, MODELS, ModelId, Transcription } from '../../state/transcription';
-import { Button } from '../../ui/button/button';
-import { Playback } from '../player/playback';
-import { SpeakerRows } from '../speakers/speaker-rows';
 import {
 	SPEAKER_COUNTS,
 	SPEAKER_MODELS_SIZE,
 	SpeakerSeparation,
 } from '../../state/speaker-separation';
+import { LANGUAGES, MODELS, ModelId, Transcription } from '../../state/transcription';
+import { Button } from '../../ui/button/button';
 import { Toggle } from '../../ui/controls/controls';
 import { Dialog, DialogRef } from '../../ui/dialog/dialog';
 import { Notice } from '../../ui/notice/notice';
 import { Select } from '../../ui/select/select';
 import { Tooltip } from '../../ui/tooltip/tooltip';
+import { Playback } from '../player/playback';
+import { SpeakerRows } from '../speakers/speaker-rows';
 
 /** Auto-transcribe (PLAN §5.11): setup → running → done / error. Closing keeps it running. */
 @Component({
@@ -88,14 +88,14 @@ export class TranscribeDialog {
 	protected readonly scopeOptions = computed(() => {
 		const r = this.range();
 		if (!r) return [];
-		const tc = (ms: number) =>
+		const timeLabel = (ms: number) =>
 			this.ui.timeUnits() === 'ms'
 				? formatClock(ms)
 				: formatTimecode(ms, this.store.project().fps);
 		return [
 			{
 				value: 'range',
-				label: `In/out range • ${tc(r.start)} → ${tc(r.end)} (${length(r.end - r.start)})`,
+				label: `In/out range • ${timeLabel(r.start)} → ${timeLabel(r.end)} (${durationLabel(r.end - r.start)})`,
 			},
 			{ value: 'all', label: 'Whole video' },
 		];
@@ -189,7 +189,7 @@ export class TranscribeDialog {
 }
 
 /** "6.5 s" / "2 min 5 s". */
-function length(ms: number): string {
+function durationLabel(ms: number): string {
 	const s = Math.round(ms / 100) / 10;
 	return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${Math.round(s % 60)} s`;
 }
