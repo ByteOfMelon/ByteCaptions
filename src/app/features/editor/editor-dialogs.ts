@@ -5,6 +5,7 @@ import { CueId, StyleId, TrackId } from '../../core/model/types';
 import { ExportDialog } from '../export/export-dialog';
 import { ProjectSettingsDialog, SettingsTab } from '../settings/project-settings-dialog';
 import { StylePresetsDialog } from '../presets/style-presets-dialog';
+import { ShortcutsDialog } from '../shortcuts/shortcuts-dialog';
 import { ShiftTimingDialog } from '../timeline/shift-timing-dialog';
 import { TranscribeDialog } from '../transcribe/transcribe-dialog';
 import { EditorCommands } from './editor-commands';
@@ -34,6 +35,10 @@ export class EditorDialogs {
 
 	projectSettings(initialTab?: SettingsTab): void {
 		this.dialogs.open(ProjectSettingsDialog, { inputs: initialTab ? { initialTab } : {} });
+	}
+
+	shortcuts(): void {
+		this.dialogs.open(ShortcutsDialog);
 	}
 
 	presets(initialStyleId?: StyleId): void {

@@ -142,6 +142,9 @@ export class Editor implements OnDestroy {
 		switch (key) {
 			case 'ctrl+k':
 				return run(() => this.openPalette());
+			case '?':
+			case 'shift+?':
+				return run(() => this.editorDialogs.shortcuts());
 			case 'ctrl+g':
 				return run(() => this.openPalette('timecode'));
 			case 'ctrl+e':

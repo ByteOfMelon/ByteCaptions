@@ -15,9 +15,11 @@ import {
 	stripExtension,
 } from '../../state/file-io';
 import { ProjectFiles } from '../../state/project-files';
+import { ShortcutsDialog } from '../shortcuts/shortcuts-dialog';
 import { RecentProject, RecentProjects, editedLabel } from '../../state/recent-projects';
 import { Recovery, RecoveryEntry } from '../../state/recovery';
 import { Button } from '../../ui/button/button';
+import { Dialogs } from '../../ui/dialog/dialog';
 import { Notice } from '../../ui/notice/notice';
 import { Tooltip } from '../../ui/tooltip/tooltip';
 
@@ -40,6 +42,7 @@ export class Start implements OnDestroy {
 	private readonly recentProjects = inject(RecentProjects);
 	private readonly drop = inject(FileDrop);
 	private readonly recovery = inject(Recovery);
+	private readonly dialogs = inject(Dialogs);
 	protected readonly version = version;
 	protected readonly website = WEBSITE;
 	protected readonly error = this.files.error;
@@ -149,6 +152,10 @@ export class Start implements OnDestroy {
 					`${file.name} isn't a video, project or caption file ByteCaptions can open.`,
 				);
 		}
+	}
+
+	protected openShortcuts(): void {
+		this.dialogs.open(ShortcutsDialog);
 	}
 
 	protected openWebsite(e: Event): void {

@@ -25,6 +25,7 @@ import {
 	LucideReplace,
 	LucideSave,
 	LucideScissors,
+	LucideKeyboard,
 	LucideSettings,
 	LucideTimer,
 	LucideTrash2,
@@ -272,6 +273,13 @@ export class CommandRegistry {
 				label: 'Project settings…',
 				icon: LucideSettings.icon,
 				run: () => this.dialogs.projectSettings(),
+			},
+			{
+				id: 'shortcuts',
+				label: 'Keyboard shortcuts…',
+				icon: LucideKeyboard.icon,
+				keys: '?',
+				run: () => this.dialogs.shortcuts(),
 			},
 			{
 				id: 'save',

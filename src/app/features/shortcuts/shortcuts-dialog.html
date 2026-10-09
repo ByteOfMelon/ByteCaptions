@@ -1,0 +1,25 @@
+<bc-dialog
+	heading="Keyboard shortcuts"
+	subtitle="Press ? to open this anywhere in the editor"
+	[width]="760"
+>
+	<div class="columns">
+		@for (column of columns; track $index) {
+			<div class="column">
+				@for (group of column; track group.name) {
+					<section>
+						<h3 class="text-small text-faded">{{ group.name }}</h3>
+						<dl>
+							@for (s of group.shortcuts; track s.label) {
+								<div class="row">
+									<dt class="text-body">{{ s.label }}</dt>
+									<dd><bc-kbd [keys]="s.keys" /></dd>
+								</div>
+							}
+						</dl>
+					</section>
+				}
+			</div>
+		}
+	</div>
+</bc-dialog>
