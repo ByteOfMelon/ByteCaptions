@@ -7,6 +7,15 @@ import { EditorUi } from '../../state/editor-ui';
 import { ProjectStore } from '../../state/project-store';
 import { Playback } from '../player/playback';
 
+/** Marker colors in menu order, with their names. */
+export const MARKER_COLOR_NAMES: { id: MarkerColor; label: string }[] = [
+	{ id: 'yellow', label: 'Yellow' },
+	{ id: 'red', label: 'Red' },
+	{ id: 'blue', label: 'Blue' },
+	{ id: 'purple', label: 'Purple' },
+	{ id: 'green', label: 'Green' },
+];
+
 /**
  * Markers (Shift+M): notes pinned to video times, shown on the ruler and in the Markers tab.
  * Holds which marker is selected and which one's edit popover is open.

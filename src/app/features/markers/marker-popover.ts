@@ -10,22 +10,14 @@ import {
 	untracked,
 } from '@angular/core';
 import { MARKER_COLORS } from '../../core/model/defaults';
-import { Marker, MarkerColor, MarkerId } from '../../core/model/types';
+import { Marker, MarkerId } from '../../core/model/types';
 import { formatClock, formatTimecode } from '../../core/time/timecode';
 import { EditorUi } from '../../state/editor-ui';
 import { ProjectStore } from '../../state/project-store';
 import { Autofocus } from '../../ui/autofocus/autofocus';
 import { Button } from '../../ui/button/button';
 import { Field } from '../../ui/field/field';
-import { Markers } from './markers';
-
-const COLORS: { id: MarkerColor; label: string }[] = [
-	{ id: 'yellow', label: 'Yellow' },
-	{ id: 'red', label: 'Red' },
-	{ id: 'blue', label: 'Blue' },
-	{ id: 'purple', label: 'Purple' },
-	{ id: 'green', label: 'Green' },
-];
+import { MARKER_COLOR_NAMES, Markers } from './markers';
 
 /**
  * Edits a marker's note and color (Markers board). The timeline positions it under the
@@ -116,7 +108,7 @@ export class MarkerPopover {
 	private readonly store = inject(ProjectStore);
 	private readonly ui = inject(EditorUi);
 	private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
-	protected readonly colors = COLORS;
+	protected readonly colors = MARKER_COLOR_NAMES;
 	protected readonly hex = MARKER_COLORS;
 
 	/** Typed note; resets only when a different marker is shown, not on color changes. */
@@ -163,10 +155,11 @@ export class MarkerPopover {
 		const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
 		if (!step) return;
 		e.preventDefault();
-		const i = COLORS.findIndex((c) => c.id === this.marker().color);
-		const next = COLORS[(i + step + COLORS.length) % COLORS.length];
+		const i = MARKER_COLOR_NAMES.findIndex((c) => c.id === this.marker().color);
+		const next =
+			MARKER_COLOR_NAMES[(i + step + MARKER_COLOR_NAMES.length) % MARKER_COLOR_NAMES.length];
 		this.markers.setColor(this.marker().id, next.id);
 		const buttons = (e.currentTarget as HTMLElement).querySelectorAll('button');
-		queueMicrotask(() => buttons[COLORS.indexOf(next)]?.focus());
+		queueMicrotask(() => buttons[MARKER_COLOR_NAMES.indexOf(next)]?.focus());
 	}
 }

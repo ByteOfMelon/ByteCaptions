@@ -33,7 +33,7 @@ import { Transcription } from '../../state/transcription';
 import { ContextMenu, MenuEntry } from '../../ui/menu/menu';
 import { EditorCommands } from '../editor/editor-commands';
 import { EditorDialogs } from '../editor/editor-dialogs';
-import { Markers } from '../markers/markers';
+import { MARKER_COLOR_NAMES, Markers } from '../markers/markers';
 import { Playback } from '../player/playback';
 
 type At = { x: number; y: number } | MouseEvent;
@@ -394,7 +394,6 @@ export class TimelineMenus {
 	async marker(at: At, id: MarkerId): Promise<void> {
 		const m = this.markers.find(id);
 		if (!m) return;
-		const colors: MarkerColor[] = ['yellow', 'red', 'blue', 'purple', 'green'];
 		const choice = await this.menu.open(at, [
 			{ kind: 'header', label: `Marker ${this.markers.number(id)}` },
 			{ id: 'edit', label: 'Edit note…', icon: LucidePencil.icon },
@@ -402,11 +401,11 @@ export class TimelineMenus {
 				id: 'color',
 				label: 'Color',
 				swatch: MARKER_COLORS[m.color],
-				submenu: colors.map((c) => ({
-					id: `color:${c}`,
-					label: c[0].toUpperCase() + c.slice(1),
-					swatch: MARKER_COLORS[c],
-					checked: c === m.color,
+				submenu: MARKER_COLOR_NAMES.map((c) => ({
+					id: `color:${c.id}`,
+					label: c.label,
+					swatch: MARKER_COLORS[c.id],
+					checked: c.id === m.color,
 				})),
 			},
 			{ kind: 'separator' },
