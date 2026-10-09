@@ -3,9 +3,9 @@ import {
 	DestroyRef,
 	ElementRef,
 	computed,
+	effect,
 	inject,
 	input,
-	effect,
 	signal,
 	untracked,
 } from '@angular/core';
