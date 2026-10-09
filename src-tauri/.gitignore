@@ -5,3 +5,6 @@
 
 # Bundled helper binaries (ffmpeg, the Vulkan loader); fetched by scripts/fetch-*.mjs
 /binaries/
+
+# Google OAuth client for YouTube upload; never commit
+/google-oauth.json

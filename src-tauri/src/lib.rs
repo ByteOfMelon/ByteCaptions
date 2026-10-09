@@ -3,6 +3,7 @@ mod gpu;
 mod jobs;
 mod media;
 mod models;
+mod youtube;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -11,6 +12,7 @@ pub fn run() {
 		.plugin(tauri_plugin_fs::init())
 		.plugin(tauri_plugin_opener::init())
 		.manage(jobs::Jobs::default())
+		.manage(youtube::YouTube::default())
 		.invoke_handler(tauri::generate_handler![
 			media::media_peaks,
 			gpu::gpu_device,
@@ -19,6 +21,16 @@ pub fn run() {
 			models::model_delete,
 			asr::transcribe,
 			jobs::job_cancel,
+			youtube::youtube_available,
+			youtube::youtube_account,
+			youtube::youtube_sign_in,
+			youtube::youtube_cancel_sign_in,
+			youtube::youtube_sign_out,
+			youtube::youtube_videos,
+			youtube::youtube_video,
+			youtube::youtube_captions,
+			youtube::youtube_upload,
+			youtube::youtube_delete_caption,
 		])
 		.setup(|app| {
 			if cfg!(debug_assertions) {

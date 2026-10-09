@@ -13,4 +13,29 @@
 		</p>
 	</section>
 	<button bcButton class="reset" (click)="resetLayout()">Reset layout</button>
+	@if (youtube.available()) {
+		<section class="layout">
+			<h3 class="text-small">YouTube</h3>
+			@if (youtube.account(); as a) {
+				<div class="account">
+					@if (a.thumbnail) {
+						<img
+							class="avatar"
+							[src]="a.thumbnail"
+							alt=""
+							referrerpolicy="no-referrer"
+						/>
+					}
+					<span class="text-body-bold">{{ a.title }}</span>
+					<button bcButton class="sign-out" (click)="signOut()">Sign out</button>
+				</div>
+			} @else if (youtube.account() === null) {
+				<p class="text-small text-faded">
+					Not signed in. You sign in when you first upload captions.
+				</p>
+			} @else {
+				<p class="text-small text-faded">Checking your sign-in…</p>
+			}
+		</section>
+	}
 </bc-dialog>

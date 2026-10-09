@@ -1,0 +1,386 @@
+@if (!yt.available()) {
+	<bc-dialog heading="Upload to YouTube" [subtitle]="subtitle()">
+		<bc-notice
+			tone="info"
+			heading="This build of ByteCaptions can't upload to YouTube"
+			detail="It was built without a Google sign-in client."
+		/>
+		<div dialogFooter>
+			<button bcButton (click)="ref.close()">Close</button>
+		</div>
+	</bc-dialog>
+} @else if (yt.phase() !== 'setup') {
+	<bc-dialog heading="Upload to YouTube" [subtitle]="jobSubtitle()">
+		<ng-container *ngTemplateOutlet="steps" />
+
+		@if (yt.phase() === 'running') {
+			<div
+				class="bar"
+				role="progressbar"
+				aria-label="Upload progress"
+				[attr.aria-valuenow]="progress()"
+				aria-valuemin="0"
+				aria-valuemax="100"
+			>
+				<span [style.width.%]="progress()"></span>
+			</div>
+		}
+		@if (yt.phase() === 'done' && yt.result(); as r) {
+			<div class="result">
+				<div class="result-head">
+					<span class="mark"></span>
+					<span
+						>{{
+							r.caption.isDraft
+								? 'Captions saved as a draft on'
+								: 'Captions are live on'
+						}}
+						"{{ r.options.video.title }}"</span
+					>
+				</div>
+				<div class="stats">
+					<div class="stat">
+						<span class="text-heading-2">{{ r.cues }}</span>
+						<span class="text-small text-faded">cues</span>
+					</div>
+					<div class="stat">
+						<span class="text-heading-2">{{ languageName(r.options.language) }}</span>
+						<span class="text-small text-faded">{{
+							r.options.replace ? 'replaced the old captions' : 'new caption track'
+						}}</span>
+					</div>
+					<div class="stat">
+						<span class="text-heading-2" [class.warn]="r.warnings">{{
+							r.warnings
+						}}</span>
+						<span class="text-small text-faded">reading-speed warnings</span>
+					</div>
+				</div>
+			</div>
+		}
+		@if (yt.phase() === 'error' && yt.error(); as e) {
+			<bc-notice
+				tone="danger"
+				[heading]="errorText(e).title"
+				[detail]="errorText(e).detail"
+			/>
+		}
+
+		@if (yt.phase() === 'running') {
+			<div dialogFooter>
+				<span class="footer-note">You can keep editing while this uploads.</span>
+				<button bcButton variant="primary" (click)="ref.close()">Run in background</button>
+			</div>
+		}
+		@if (yt.phase() === 'done') {
+			<div dialogFooter>
+				<span class="footer-note">Finished in {{ yt.result()?.took }}</span>
+				<button bcButton (click)="openStudio()">Open in YouTube Studio</button>
+				<button bcButton variant="primary" (click)="finish()">Done</button>
+			</div>
+		}
+		@if (yt.phase() === 'error') {
+			<div dialogFooter>
+				<div class="footer-start">
+					@switch (yt.error()?.kind) {
+						@case ('signed-out') {
+							<button
+								bcButton
+								variant="primary"
+								[disabled]="yt.signingIn()"
+								(click)="signInAndRetry()"
+							>
+								{{ yt.signingIn() ? 'Waiting for the browser…' : 'Sign in again' }}
+							</button>
+						}
+						@case ('not-found') {
+							<button bcButton variant="primary" (click)="chooseAnother()">
+								Choose another video
+							</button>
+						}
+						@case ('forbidden') {
+							<button bcButton variant="primary" (click)="chooseAnother()">
+								Choose another video
+							</button>
+						}
+						@case ('quota') {}
+						@default {
+							<button bcButton variant="primary" (click)="retry()">Try again</button>
+						}
+					}
+					<button bcButton (click)="finish()">Cancel</button>
+				</div>
+			</div>
+		}
+	</bc-dialog>
+} @else if (yt.account() === undefined) {
+	<bc-dialog heading="Upload to YouTube" [subtitle]="subtitle()">
+		<p class="text-small text-faded loading">Checking your YouTube sign-in…</p>
+		<div dialogFooter>
+			<button bcButton (click)="ref.close()">Cancel</button>
+		</div>
+	</bc-dialog>
+} @else if (!yt.account()) {
+	<bc-dialog heading="Upload to YouTube" [subtitle]="subtitle()">
+		<div class="intro">
+			<span>Sign in to upload captions straight to your videos</span>
+			<span class="text-small text-faded"
+				>Google opens in your browser to sign in. ByteCaptions only lists your videos and
+				uploads captions to them.</span
+			>
+		</div>
+		<p class="text-small text-faded note">
+			Your sign-in stays on this computer, in your system's secure storage. Sign out any time
+			from Settings.
+		</p>
+		@if (yt.accountError(); as e) {
+			<bc-notice tone="danger" [heading]="errorText(e).title" [detail]="e.message" />
+		}
+		<div dialogFooter>
+			@if (yt.signingIn()) {
+				<span class="footer-note">Finish signing in in your browser.</span>
+				<button bcButton (click)="yt.cancelSignIn()">Cancel sign-in</button>
+			} @else {
+				<button bcButton (click)="ref.close()">Cancel</button>
+				<button bcButton variant="primary" (click)="yt.signIn()">
+					Sign in with Google
+				</button>
+			}
+		</div>
+	</bc-dialog>
+} @else if (view() === 'choose') {
+	<bc-dialog heading="Choose a video" [subtitle]="chooseSubtitle()">
+		<bc-field label="Search" #f>
+			<input
+				[id]="f.fieldId"
+				bcAutofocus
+				placeholder="Title, video ID or link"
+				spellcheck="false"
+				[value]="query()"
+				(input)="query.set($any($event.target).value)"
+			/>
+		</bc-field>
+		<section class="group">
+			<span class="text-small" id="yt-videos">{{ listLabel() }}</span>
+			<div class="videos" role="radiogroup" aria-labelledby="yt-videos">
+				@if (foundOther(); as v) {
+					<bc-notice
+						tone="warning"
+						heading="That video is on another channel"
+						[detail]="
+							'Sign in as the channel that owns “' + v.title + '” to upload to it.'
+						"
+					/>
+				} @else if (found() === 'none') {
+					<p class="text-small text-faded empty">No video with that ID.</p>
+				}
+				@for (v of listed(); track v.id) {
+					<ng-container
+						*ngTemplateOutlet="videoCard; context: { $implicit: v, pick: true }"
+					/>
+				}
+				@if (!listed().length && found() === null && !yt.loadingVideos()) {
+					<p class="text-small text-faded empty">
+						{{ query() ? 'No videos match.' : 'This channel has no videos yet.' }}
+					</p>
+				}
+				@if (yt.videosError(); as e) {
+					<bc-notice tone="danger" [heading]="errorText(e).title" [detail]="e.message" />
+				}
+				@if (yt.loadingVideos()) {
+					<p class="text-small text-faded empty">Loading videos…</p>
+				} @else if (yt.hasMoreVideos()) {
+					<button bcButton variant="ghost" class="more" (click)="yt.loadVideos()">
+						Load more videos
+					</button>
+				}
+			</div>
+		</section>
+		<div dialogFooter>
+			<button bcButton (click)="view.set('main')">Back</button>
+			<button bcButton variant="primary" [disabled]="!picked()" (click)="usePicked()">
+				Use this video
+			</button>
+		</div>
+	</bc-dialog>
+} @else {
+	<bc-dialog heading="Upload to YouTube" [subtitle]="subtitle()">
+		<section class="group">
+			<span class="text-small">Video</span>
+			@if (video(); as v) {
+				<ng-container
+					*ngTemplateOutlet="videoCard; context: { $implicit: v, pick: false }"
+				/>
+			} @else {
+				<div class="video-card empty-card">
+					<span class="text-small text-faded">{{
+						yt.loadingVideos()
+							? 'Looking for this project’s video…'
+							: 'No video chosen yet.'
+					}}</span>
+					<button bcButton (click)="choose()">Choose a video</button>
+				</div>
+			}
+		</section>
+
+		<section class="group">
+			<span class="text-small" id="yt-tracks">Tracks</span>
+			<div class="tracks" role="group" aria-labelledby="yt-tracks">
+				@for (t of project().tracks; track t.id) {
+					<label class="track">
+						<bc-checkbox
+							[checked]="included().has(t.id)"
+							(checkedChange)="toggleTrack(t.id, $event)"
+						/>
+						<span class="color" [style.background]="t.color"></span>
+						<span class="name">{{ t.name }}</span>
+						<span class="text-mono-small text-faded">{{
+							t.cues.length | count: 'cue'
+						}}</span>
+					</label>
+				}
+			</div>
+			<span class="text-small text-faded"
+				>Selected tracks are combined into one caption track.</span
+			>
+		</section>
+
+		<section class="group">
+			<div class="row">
+				<bc-select
+					label="Caption language"
+					[options]="languageOptions"
+					[value]="language()"
+					(valueChange)="language.set($any($event))"
+				/>
+				<bc-field label="Track name on YouTube" #n>
+					<input
+						[id]="n.fieldId"
+						placeholder="Optional"
+						[value]="name()"
+						(input)="name.set($any($event.target).value)"
+					/>
+				</bc-field>
+			</div>
+			<span class="text-small text-faded">{{ languageNote() }}</span>
+		</section>
+
+		@if (showDraftToggle) {
+			<bc-toggle labelStart [checked]="draft()" (checkedChange)="draft.set($event)">
+				<span class="option-text">
+					<span>Upload as draft</span>
+					<span class="text-small text-faded"
+						>Hidden from viewers. Upload again with this off to publish them.</span
+					>
+				</span>
+			</bc-toggle>
+		}
+
+		@if (problems().errors + problems().warnings) {
+			<bc-notice
+				[tone]="problems().errors ? 'danger' : 'warning'"
+				[heading]="problemTitle()"
+				detail="It's recommended to review these before uploading."
+			>
+				<button bcButton noticeAction variant="ghost" (click)="review()">Review</button>
+			</bc-notice>
+		}
+		@if (yt.accountError(); as e) {
+			<bc-notice tone="danger" [heading]="errorText(e).title" [detail]="e.message" />
+		}
+
+		<div dialogFooter>
+			@if (yt.account(); as a) {
+				<div class="channel">
+					@if (a.thumbnail) {
+						<img
+							class="avatar"
+							[src]="a.thumbnail"
+							alt=""
+							referrerpolicy="no-referrer"
+						/>
+					}
+					<span class="text-body-bold">{{ a.title }}</span>
+					<button
+						type="button"
+						class="link text-small"
+						[disabled]="yt.signingIn()"
+						(click)="yt.signIn()"
+					>
+						{{ yt.signingIn() ? 'Waiting for the browser…' : 'Switch account' }}
+					</button>
+				</div>
+			}
+			<button bcButton (click)="ref.close()">Cancel</button>
+			<button bcButton variant="primary" [disabled]="!canUpload()" (click)="upload()">
+				Upload
+			</button>
+		</div>
+	</bc-dialog>
+}
+
+<ng-template #videoCard let-v let-pick="pick">
+	@if (pick) {
+		<button
+			type="button"
+			role="radio"
+			class="video-card"
+			[attr.aria-checked]="picked()?.id === v.id"
+			(click)="picked.set(v)"
+			(dblclick)="picked.set(v); usePicked()"
+		>
+			<ng-container *ngTemplateOutlet="videoInfo; context: { $implicit: v }" />
+		</button>
+	} @else {
+		<div class="video-card">
+			<ng-container *ngTemplateOutlet="videoInfo; context: { $implicit: v }" />
+			<button bcButton (click)="choose()">Change</button>
+		</div>
+	}
+</ng-template>
+
+<ng-template #videoInfo let-v>
+	@if (v.thumbnail) {
+		<img
+			class="thumb"
+			[src]="v.thumbnail"
+			alt=""
+			referrerpolicy="no-referrer"
+			(error)="$any($event.target).removeAttribute('src')"
+		/>
+	} @else {
+		<span class="thumb"></span>
+	}
+	<span class="video-text">
+		<span class="text-body-bold title">{{ v.title }}</span>
+		<span class="text-small text-faded">{{ meta(v) }}</span>
+		@if (sameLength(v)) {
+			<span class="text-small match">Same length as this project</span>
+		}
+	</span>
+</ng-template>
+
+<ng-template #steps>
+	<ol class="steps">
+		@for (s of yt.steps(); track s.id) {
+			<li [class]="s.status">
+				@switch (s.status) {
+					@case ('done') {
+						<svg lucideCheck class="icon"></svg>
+					}
+					@case ('running') {
+						<svg lucideLoaderCircle class="icon spin"></svg>
+					}
+					@case ('error') {
+						<svg lucideX class="icon"></svg>
+					}
+					@default {
+						<svg lucideCircle class="icon"></svg>
+					}
+				}
+				<span class="step-label">{{ s.label }}</span>
+				<span class="text-mono-small step-detail">{{ s.detail }}</span>
+			</li>
+		}
+	</ol>
+</ng-template>

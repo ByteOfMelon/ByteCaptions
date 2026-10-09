@@ -90,6 +90,9 @@
 				},
 				{
 					"url": "https://github.com/ByteOfMelon/ByteCaptions/*"
+				},
+				{
+					"url": "https://studio.youtube.com/video/*"
 				}
 			]
 		}

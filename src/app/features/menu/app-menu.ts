@@ -96,6 +96,7 @@ export class AppMenu {
 					'separator',
 					{ text: 'Import captions…', keys: 'Ctrl+I', run: () => void this.import() },
 					{ command: 'export' },
+					...(this.registry.get('youtube') ? [{ command: 'youtube' }] : []),
 					'separator',
 					{ text: 'Settings…', keys: 'Ctrl+,', run: () => this.settings() },
 					'separator',

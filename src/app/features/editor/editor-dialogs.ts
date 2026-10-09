@@ -9,6 +9,7 @@ import { SettingsDialog } from '../settings/settings-dialog';
 import { ShortcutsDialog } from '../shortcuts/shortcuts-dialog';
 import { ShiftTimingDialog } from '../timeline/shift-timing-dialog';
 import { TranscribeDialog } from '../transcribe/transcribe-dialog';
+import { YouTubeDialog } from '../youtube/youtube-dialog';
 import { EditorCommands } from './editor-commands';
 
 /** Opens the editor's modal dialogs; one place so toolbar, palette and shortcuts agree. */
@@ -32,6 +33,11 @@ export class EditorDialogs {
 
 	transcribe(): void {
 		if (this.transcription.available) this.dialogs.open(TranscribeDialog);
+	}
+
+	/** Upload captions to YouTube (desktop only). */
+	youtube(): void {
+		this.dialogs.open(YouTubeDialog);
 	}
 
 	projectSettings(initialTab?: SettingsTab): void {

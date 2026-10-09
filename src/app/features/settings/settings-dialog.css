@@ -15,3 +15,17 @@ p {
 .reset {
 	align-self: flex-start;
 }
+
+.account {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+}
+.avatar {
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+}
+.sign-out {
+	margin-left: auto;
+}

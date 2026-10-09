@@ -16,6 +16,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2.7.0", features = [] }
+serde_json = "1.0"
 
 [dependencies]
 serde_json = "1.0"
@@ -29,6 +30,13 @@ tauri-plugin-opener = "2"
 whisper-rs = { version = "0.16", features = ["raw-api"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "http2"] }
 sha2 = "0.10"
+# YouTube sign-in (src/youtube.rs): PKCE codes, the loopback redirect, and the refresh token
+# kept in the OS's secure storage.
+base64 = "0.22"
+getrandom = "0.3"
+tokio = { version = "1", features = ["net", "io-util", "time", "sync", "macros"] }
+url = "2"
+keyring = { version = "3", features = ["windows-native", "apple-native", "linux-native-sync-persistent", "crypto-rust"] }
 
 # Transcription on the GPU through Vulkan (any vendor), falling back to the CPU; see src/gpu.rs.
 # Building needs the Vulkan SDK (VULKAN_SDK set by its installer).

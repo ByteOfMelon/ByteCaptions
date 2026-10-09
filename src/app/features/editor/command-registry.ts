@@ -8,6 +8,7 @@ import {
 	LucideBookmarkPlus,
 	LucideChevronFirst,
 	LucideChevronLast,
+	LucideCloudUpload,
 	LucideRepeat,
 	LucideX,
 	LucideClipboardPaste,
@@ -56,6 +57,7 @@ import { Playback } from '../player/playback';
 import { Markers } from '../markers/markers';
 import { PanelLayout } from '../../state/panel-layout';
 import { confirmResetLayout } from '../settings/settings-dialog';
+import { YouTube } from '../../state/youtube';
 
 export interface Command {
 	id: string;
@@ -88,6 +90,7 @@ export class CommandRegistry {
 	private readonly layout = inject(PanelLayout);
 	private readonly playback = inject(Playback);
 	private readonly markers = inject(Markers);
+	private readonly youtube = inject(YouTube);
 
 	readonly all = computed<Command[]>(() => {
 		const hasCue = () => !!this.store.primary();
@@ -382,6 +385,18 @@ export class CommandRegistry {
 				keys: 'Ctrl+E',
 				run: () => this.dialogs.export(),
 			},
+			// Desktop only: sign-in and upload run in the backend.
+			...(isDesktop
+				? [
+						{
+							id: 'youtube',
+							label: 'Upload to YouTube…',
+							icon: LucideCloudUpload.icon,
+							enabled: () => this.youtube.available(),
+							run: () => this.dialogs.youtube(),
+						},
+					]
+				: []),
 			{
 				id: 'presets',
 				label: 'Edit style presets…',
