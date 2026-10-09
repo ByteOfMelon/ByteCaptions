@@ -4,7 +4,6 @@ import {
 	booleanAttribute,
 	computed,
 	effect,
-	inject,
 	input,
 	model,
 	signal,

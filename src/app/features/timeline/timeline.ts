@@ -465,7 +465,7 @@ export class Timeline {
 		const tracks = this.store.project().tracks;
 		const i = Math.floor((y - LANES_TOP) / (LANE_H + LANE_GAP));
 		const track = tracks[i];
-		if (y < LANES_TOP || !track || y > laneY(i) + LANE_H) return { kind: 'none' };
+		if (!track || y > laneY(i) + LANE_H) return { kind: 'none' };
 		const v = this.view();
 		const ms = xToMs(v, x);
 		const inCue = y >= laneY(i) + CUE_INSET && y <= laneY(i) + LANE_H - CUE_INSET;

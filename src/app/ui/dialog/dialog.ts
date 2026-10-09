@@ -159,11 +159,9 @@ export class Dialogs {
 				}
 				<ng-content select="[dialogTitleExtra]" />
 			</div>
-			@if (closable()) {
-				<button bcIconButton variant="ghost" aria-label="Close" (click)="ref.close()">
-					<svg lucideX></svg>
-				</button>
-			}
+			<button bcIconButton variant="ghost" aria-label="Close" (click)="ref.close()">
+				<svg lucideX></svg>
+			</button>
 		</header>
 		<div class="body"><ng-content /></div>
 		<ng-content select="[dialogFooter]" />
@@ -183,7 +181,6 @@ export class Dialog {
 	readonly heading = input.required<string>();
 	readonly subtitle = input<string>();
 	readonly width = input(640);
-	readonly closable = input(true, { transform: booleanAttribute });
 	/** Subtitle beside the title instead of below it (Style Presets). */
 	readonly inlineSubtitle = input(false, { transform: booleanAttribute });
 

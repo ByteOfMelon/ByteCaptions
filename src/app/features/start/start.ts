@@ -13,7 +13,6 @@ import { Dialogs } from '../../ui/dialog/dialog';
 import { keyCaps } from '../../ui/kbd/keys';
 import { Notice } from '../../ui/notice/notice';
 import { SettingsDialog } from '../settings/settings-dialog';
-import { ShortcutsDialog } from '../shortcuts/shortcuts-dialog';
 
 /**
  * Start screen (PLAN §5.1): new project from a video, open a project, import captions,
@@ -145,10 +144,6 @@ export class Start implements OnDestroy {
 
 	protected openSettings(): void {
 		this.dialogs.open(SettingsDialog);
-	}
-
-	protected openShortcuts(): void {
-		this.dialogs.open(ShortcutsDialog);
 	}
 
 	protected openWebsite(e: Event): void {

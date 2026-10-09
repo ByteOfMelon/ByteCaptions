@@ -21,7 +21,6 @@ import { Dialogs } from '../../ui/dialog/dialog';
 import { IS_MAC } from '../../ui/kbd/keys';
 import { CommandRegistry } from '../editor/command-registry';
 import { EditorCommands } from '../editor/editor-commands';
-import { EditorDialogs } from '../editor/editor-dialogs';
 import { CommandPalette } from '../palette/command-palette';
 import { SettingsDialog, confirmResetLayout } from '../settings/settings-dialog';
 
@@ -51,7 +50,6 @@ export class AppMenu {
 	private readonly files = inject(ProjectFiles);
 	private readonly registry = inject(CommandRegistry);
 	private readonly commands = inject(EditorCommands);
-	private readonly editorDialogs = inject(EditorDialogs);
 	private readonly dialogs = inject(Dialogs);
 	private readonly ui = inject(EditorUi);
 	private readonly layout = inject(PanelLayout);

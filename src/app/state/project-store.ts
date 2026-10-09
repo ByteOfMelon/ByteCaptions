@@ -1,7 +1,6 @@
 import { Injectable, computed, effect, signal, untracked } from '@angular/core';
 import { History, Recipe } from '../core/commands/history';
 import { lintProject } from '../core/lint/rules';
-import { cueText } from '../core/model/cue';
 import { Cue, CueId, Ms, Project, Track, TrackId } from '../core/model/types';
 import { demoProject } from './demo-project';
 
@@ -189,9 +188,4 @@ export class ProjectStore {
 				a.every((r, i) => r.cue === b[i].cue && r.track === b[i].track),
 		},
 	);
-
-	/** Cue text helper for templates. */
-	text(cue: Cue): string {
-		return cueText(cue);
-	}
 }

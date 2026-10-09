@@ -227,17 +227,6 @@ footer {
 	display: flex;
 	align-items: center;
 }
-.link {
-	padding: 0;
-	border: none;
-	background: none;
-	color: inherit;
-	font: inherit;
-	cursor: pointer;
-}
-.link[aria-disabled='true'] {
-	cursor: default;
-}
 
 @media (max-width: 720px) {
 	.actions {

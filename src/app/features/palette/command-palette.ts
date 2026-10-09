@@ -75,7 +75,6 @@ export class CommandPalette implements OnInit {
 	protected readonly mode = signal<'search' | 'timecode'>('search');
 	protected readonly active = signal(0);
 	protected readonly highlight = highlight;
-	protected readonly cueText = cueText;
 
 	protected readonly placeholder = computed(() =>
 		this.mode() === 'timecode'

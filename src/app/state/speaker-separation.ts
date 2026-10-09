@@ -48,7 +48,6 @@ export interface SpeakerResult {
 export class SpeakerSeparation {
 	private readonly store = inject(ProjectStore);
 	private readonly media = inject(MediaSource);
-	readonly available = isDesktop;
 	/** The speaker models are downloaded (null until checked). */
 	readonly installed = signal<boolean | null>(null);
 
