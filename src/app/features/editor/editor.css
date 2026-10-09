@@ -107,20 +107,18 @@
 	box-shadow: inset 0 0 0 var(--outline-width) var(--color-outline);
 }
 .cues {
-	width: 360px;
 	flex-shrink: 0;
 }
 .preview {
 	flex: 1;
 	min-width: 0;
 }
+/* Widths and the timeline height come from PanelLayout (resizable). */
 .inspector {
-	width: 320px;
 	flex-shrink: 0;
 }
 .timeline {
 	flex-shrink: 0;
-	height: 300px;
 }
 
 .ok {

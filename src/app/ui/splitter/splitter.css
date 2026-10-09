@@ -1,0 +1,38 @@
+/* Fills the gap between two panels; negative margins cancel the parent's gap on both sides. */
+:host {
+	position: relative;
+	flex-shrink: 0;
+	outline: none;
+	touch-action: none;
+}
+:host(.vertical) {
+	width: var(--spacing-sm);
+	margin: 0 calc(-1 * var(--spacing-sm));
+	cursor: col-resize;
+}
+:host(.horizontal) {
+	height: var(--spacing-sm);
+	margin: calc(-1 * var(--spacing-sm)) 0;
+	cursor: row-resize;
+}
+
+/* 2px brand line, shown on hover, while dragging and with keyboard focus. */
+:host::after {
+	content: '';
+	position: absolute;
+	border-radius: 1px;
+	background: var(--color-brand);
+	opacity: 0;
+	transition: opacity 0.1s;
+}
+:host(.vertical)::after {
+	inset: 0 3px;
+}
+:host(.horizontal)::after {
+	inset: 3px 0;
+}
+:host(:hover)::after,
+:host(.dragging)::after,
+:host(:focus-visible)::after {
+	opacity: 1;
+}

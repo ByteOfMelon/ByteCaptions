@@ -1,4 +1,4 @@
-import { Component, OnDestroy, computed, inject } from '@angular/core';
+import { Component, ElementRef, OnDestroy, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
 	LucideCaptions,
@@ -23,6 +23,8 @@ import { FileDrop, dropKind } from '../../state/file-drop';
 import { PickedFile } from '../../state/file-io';
 import { ProjectFiles } from '../../state/project-files';
 import { Notice } from '../../ui/notice/notice';
+import { Splitter } from '../../ui/splitter/splitter';
+import { PANEL_DEFAULTS, PANEL_MIN, PanelLayout } from '../../state/panel-layout';
 import { Transcription } from '../../state/transcription';
 import { CommandPalette } from '../palette/command-palette';
 import { EditorCommands } from './editor-commands';
@@ -41,6 +43,13 @@ const FIELD_SAFE = new Set([
 	'ctrl+h',
 ]);
 
+/** `--spacing-sm` gap between the editor's panels, and the toolbar height (editor.css). */
+const GAP = 8;
+const TOOLBAR_H = 36;
+
+const clamp = (v: number, min: number, max: number) =>
+	Math.min(Math.max(v, min), Math.max(min, max));
+
 /** The main editor: toolbar, cue list / preview / inspector, and the timeline (PLAN §5). */
 @Component({
 	selector: 'bc-editor',
@@ -55,6 +64,7 @@ const FIELD_SAFE = new Set([
 		PreviewPanel,
 		Inspector,
 		Timeline,
+		Splitter,
 		LucideCaptions,
 		LucideUndo2,
 		LucideRedo2,
@@ -78,6 +88,37 @@ export class Editor implements OnDestroy {
 	private readonly drop = inject(FileDrop);
 	private readonly onDrop = (file: PickedFile) => void this.openDropped(file);
 	private readonly ui = inject(EditorUi);
+	protected readonly layout = inject(PanelLayout);
+	protected readonly defaults = PANEL_DEFAULTS;
+	protected readonly min = PANEL_MIN;
+
+	/** The editor's content box (inside its padding), for the panels' maximum sizes. */
+	private readonly box = signal({ width: 1424, height: 884 });
+	/** Width shared by the cue list, inspector and preview (two 8px gaps between them). */
+	private readonly panelsWidth = computed(() => this.box().width - 2 * GAP);
+	protected readonly inspectorWidth = computed(() =>
+		clamp(
+			this.layout.inspector(),
+			PANEL_MIN.inspector,
+			this.panelsWidth() - PANEL_MIN.cues - PANEL_MIN.preview,
+		),
+	);
+	protected readonly cuesMax = computed(
+		() => this.panelsWidth() - this.inspectorWidth() - PANEL_MIN.preview,
+	);
+	protected readonly cuesWidth = computed(() =>
+		clamp(this.layout.cues(), PANEL_MIN.cues, this.cuesMax()),
+	);
+	protected readonly inspectorMax = computed(
+		() => this.panelsWidth() - this.cuesWidth() - PANEL_MIN.preview,
+	);
+	/** Below the toolbar and its gap, and the gap above the timeline. */
+	protected readonly timelineMax = computed(
+		() => this.box().height - TOOLBAR_H - 2 * GAP - PANEL_MIN.workspace,
+	);
+	protected readonly timelineHeight = computed(() =>
+		clamp(this.layout.timeline(), PANEL_MIN.timeline, this.timelineMax()),
+	);
 
 	protected readonly undoTip = computed(() =>
 		this.store.undoLabel() ? `Undo ${this.store.undoLabel()}` : 'Undo',
@@ -86,12 +127,18 @@ export class Editor implements OnDestroy {
 		this.store.redoLabel() ? `Redo ${this.store.redoLabel()}` : 'Redo',
 	);
 
+	private readonly resize = new ResizeObserver(([e]) =>
+		this.box.set({ width: e.contentRect.width, height: e.contentRect.height }),
+	);
+
 	constructor() {
 		this.drop.handler = this.onDrop;
+		this.resize.observe(inject<ElementRef<HTMLElement>>(ElementRef).nativeElement);
 	}
 
 	ngOnDestroy(): void {
 		if (this.drop.handler === this.onDrop) this.drop.handler = null;
+		this.resize.disconnect();
 	}
 
 	/** Video: becomes the preview. Captions: a new track. Project: replaces this one. */

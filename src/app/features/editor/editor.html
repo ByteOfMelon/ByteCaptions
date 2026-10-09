@@ -79,12 +79,39 @@
 </header>
 
 <div class="workspace">
-	<bc-side-panel class="panel cues" />
+	<bc-side-panel class="panel cues" [style.width.px]="cuesWidth()" />
+	<bc-splitter
+		label="Resize cue list"
+		[min]="min.cues"
+		[max]="cuesMax()"
+		[defaultValue]="defaults.cues"
+		[value]="cuesWidth()"
+		(valueChange)="layout.cues.set($event)"
+	/>
 	<bc-preview-panel class="panel preview" />
-	<bc-inspector class="panel inspector" />
+	<bc-splitter
+		label="Resize inspector"
+		reverse
+		[min]="min.inspector"
+		[max]="inspectorMax()"
+		[defaultValue]="defaults.inspector"
+		[value]="inspectorWidth()"
+		(valueChange)="layout.inspector.set($event)"
+	/>
+	<bc-inspector class="panel inspector" [style.width.px]="inspectorWidth()" />
 </div>
 
-<bc-timeline class="panel timeline" />
+<bc-splitter
+	label="Resize timeline"
+	orientation="horizontal"
+	reverse
+	[min]="min.timeline"
+	[max]="timelineMax()"
+	[defaultValue]="defaults.timeline"
+	[value]="timelineHeight()"
+	(valueChange)="layout.timeline.set($event)"
+/>
+<bc-timeline class="panel timeline" [style.height.px]="timelineHeight()" />
 
 @if (files.error(); as message) {
 	<bc-notice class="file-error" tone="danger" heading="Something went wrong" [detail]="message">
