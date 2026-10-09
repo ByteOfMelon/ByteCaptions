@@ -82,17 +82,17 @@ mod linux {
 			.strip_prefix(prefix)
 			.and_then(|p| urlencoding_decode(p.split('?').next().unwrap_or(p)));
 		let (Some(path), true) = (path, method == "GET" || method == "HEAD") else {
-			return respond(&mut stream, "404 Not Found", &[], None).await;
+			return respond(&mut stream, "404 Not Found", &[]).await;
 		};
 		let Ok(mut file) = std::fs::File::open(&path) else {
-			return respond(&mut stream, "404 Not Found", &[], None).await;
+			return respond(&mut stream, "404 Not Found", &[]).await;
 		};
 		let size = file.metadata()?.len();
 		let (start, end, status) = match range.as_deref().and_then(|r| parse_range(r, size)) {
 			Some((s, e)) => (s, e, "206 Partial Content"),
 			None if range.is_some() => {
 				let cr = format!("bytes */{size}");
-				return respond(&mut stream, "416 Range Not Satisfiable", &[("Content-Range", &cr)], None).await;
+				return respond(&mut stream, "416 Range Not Satisfiable", &[("Content-Range", &cr)]).await;
 			}
 			None => (0, size.saturating_sub(1), "200 OK"),
 		};
@@ -104,7 +104,7 @@ mod linux {
 		}
 		let len_text = len.to_string();
 		headers.push(("Content-Length", &len_text));
-		respond(&mut stream, status, &headers, None).await?;
+		respond(&mut stream, status, &headers).await?;
 		if method == "HEAD" || len == 0 {
 			return Ok(());
 		}
@@ -126,11 +126,11 @@ mod linux {
 		Ok(())
 	}
 
+	/// Write the status line and headers; the body, if any, is the caller's to send.
 	async fn respond(
 		stream: &mut TcpStream,
 		status: &str,
 		headers: &[(&str, &str)],
-		body: Option<&[u8]>,
 	) -> std::io::Result<()> {
 		let mut out = format!(
 			"HTTP/1.1 {status}\r\nConnection: close\r\nAccess-Control-Allow-Origin: *\r\nCache-Control: no-store\r\n"
@@ -139,14 +139,10 @@ mod linux {
 			out.push_str(&format!("{k}: {v}\r\n"));
 		}
 		if headers.iter().all(|(k, _)| *k != "Content-Length") {
-			out.push_str(&format!("Content-Length: {}\r\n", body.map_or(0, |b| b.len())));
+			out.push_str("Content-Length: 0\r\n");
 		}
 		out.push_str("\r\n");
-		stream.write_all(out.as_bytes()).await?;
-		if let Some(b) = body {
-			stream.write_all(b).await?;
-		}
-		Ok(())
+		stream.write_all(out.as_bytes()).await
 	}
 
 	/// "bytes=START-END", "bytes=START-" or "bytes=-SUFFIX" → inclusive (start, end).
