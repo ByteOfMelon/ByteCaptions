@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { AppMenu } from './features/menu/app-menu';
 import { askSaveChanges, isDesktop } from './state/file-io';
 import { ProjectFiles } from './state/project-files';
 import { ProjectStore } from './state/project-store';
@@ -21,8 +22,11 @@ export class App {
 	private readonly files = inject(ProjectFiles);
 
 	constructor() {
-		if (isDesktop) void getCurrentWindow().onCloseRequested((e) => this.onClose(e));
-		else
+		if (isDesktop) {
+			// The window's menu bar; the browser has none for now.
+			inject(AppMenu);
+			void getCurrentWindow().onCloseRequested((e) => this.onClose(e));
+		} else
 			window.addEventListener('beforeunload', (e) => {
 				if (this.store.dirty()) e.preventDefault();
 			});

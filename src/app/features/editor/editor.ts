@@ -37,6 +37,7 @@ const FIELD_SAFE = new Set([
 	'ctrl+y',
 	'ctrl+k',
 	'ctrl+s',
+	'ctrl+shift+s',
 	'ctrl+e',
 	'ctrl+o',
 	'ctrl+g',
@@ -202,6 +203,10 @@ export class Editor implements OnDestroy {
 					: undefined;
 			case 'ctrl+s':
 				return run(() => void this.files.save());
+			case 'ctrl+shift+s':
+				return run(() => void this.files.save(true));
+			case 'ctrl+n':
+				return run(() => void this.files.newFromVideo());
 			case 'ctrl+o':
 				return run(() => void this.files.open());
 			case 'ctrl+h':

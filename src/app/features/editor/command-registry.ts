@@ -289,6 +289,13 @@ export class CommandRegistry {
 				run: () => void this.files.save(),
 			},
 			{
+				id: 'save-as',
+				label: 'Save project as…',
+				icon: LucideSave.icon,
+				keys: 'Ctrl+Shift+S',
+				run: () => void this.files.save(true),
+			},
+			{
 				id: 'open',
 				label: 'Open project…',
 				icon: LucideFolderOpen.icon,

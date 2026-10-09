@@ -168,6 +168,9 @@ export async function askSaveChanges(name: string): Promise<'save' | 'discard' |
 	return 'cancel';
 }
 
+/** ByteCaptions on GitHub (the desktop app may only open the links allowed in its capabilities). */
+export const WEBSITE = 'https://github.com/ByteOfMelon/ByteCaptions';
+
 /** Open a web page in the system browser. */
 export function openExternal(url: string): void {
 	if (isDesktop) void openUrl(url);

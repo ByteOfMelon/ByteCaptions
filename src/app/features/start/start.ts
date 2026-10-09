@@ -4,15 +4,13 @@ import { LucideCaptions, LucideFilm, LucideFolderOpen, LucideUpload } from '@luc
 import { version } from '../../../../package.json';
 import { FileDrop, dropKind } from '../../state/file-drop';
 import {
-	CAPTION_FILTER,
 	PickedFile,
 	confirmAction,
 	formatBytes,
 	formatDuration,
+	WEBSITE,
 	openExternal,
-	openFile,
 	probeVideo,
-	stripExtension,
 } from '../../state/file-io';
 import { ProjectFiles } from '../../state/project-files';
 import { ShortcutsDialog } from '../shortcuts/shortcuts-dialog';
@@ -22,8 +20,6 @@ import { Button } from '../../ui/button/button';
 import { Dialogs } from '../../ui/dialog/dialog';
 import { Notice } from '../../ui/notice/notice';
 import { Tooltip } from '../../ui/tooltip/tooltip';
-
-export const WEBSITE = 'https://byteofmelon.com';
 
 /**
  * Start screen (PLAN §5.1): new project from a video, open a project, import captions,
@@ -133,10 +129,7 @@ export class Start implements OnDestroy {
 
 	/** New project with the captions as its first track. */
 	protected async importCaptions(file?: PickedFile | null): Promise<void> {
-		file ??= await openFile(CAPTION_FILTER);
-		if (!file || !(await this.files.confirmDiscard())) return;
-		this.files.newEmpty(stripExtension(file.name));
-		this.go(await this.files.importCaptions(file));
+		this.go(await this.files.importAsNewProject(file));
 	}
 
 	private async openDropped(file: PickedFile): Promise<void> {

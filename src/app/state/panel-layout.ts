@@ -39,6 +39,13 @@ export class PanelLayout {
 		});
 	}
 
+	/** Back to the default sizes (Reset layout). */
+	reset(): void {
+		this.cues.set(PANEL_DEFAULTS.cues);
+		this.inspector.set(PANEL_DEFAULTS.inspector);
+		this.timeline.set(PANEL_DEFAULTS.timeline);
+	}
+
 	private size(k: keyof Sizes): number {
 		const v = this.saved[k];
 		return typeof v === 'number' && Number.isFinite(v) ? v : PANEL_DEFAULTS[k];

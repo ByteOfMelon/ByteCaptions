@@ -201,6 +201,14 @@ export class ProjectFiles {
 		return true;
 	}
 
+	/** Start a new project with a caption file as its first track (Start screen, menu). */
+	async importAsNewProject(file?: PickedFile | null): Promise<boolean> {
+		file ??= await openFile(CAPTION_FILTER);
+		if (!file || !(await this.confirmDiscard())) return false;
+		this.newEmpty(stripExtension(file.name));
+		return this.importCaptions(file);
+	}
+
 	/** Link a video to the open project (dropped on the editor, or located when it moved). */
 	async linkVideo(file: PickedFile, label = 'Link video'): Promise<void> {
 		const media = await this.videoRef(file);
