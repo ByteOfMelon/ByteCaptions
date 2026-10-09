@@ -1,6 +1,7 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { LucideLoaderCircle } from '@lucide/angular';
 import { TrackId } from '../../core/model/types';
+import { formatBytes, formatSpan } from '../../core/units/units';
 import { EditorUi } from '../../state/editor-ui';
 import { isStopped, jobErrorText } from '../../state/jobs';
 import { ProjectStore } from '../../state/project-store';
@@ -10,7 +11,6 @@ import {
 	SpeakerResult,
 	SpeakerSeparation,
 } from '../../state/speaker-separation';
-import { bytes } from '../../state/transcription';
 import { Button } from '../../ui/button/button';
 import { Dialog, DialogRef } from '../../ui/dialog/dialog';
 import { Notice } from '../../ui/notice/notice';
@@ -241,7 +241,9 @@ export class SeparateSpeakersDialog {
 	});
 	protected readonly detail = computed(() => {
 		const d = this.download();
-		return d ? `${bytes(d.received)} of ${d.total ? bytes(d.total) : SPEAKER_MODELS_SIZE}` : '';
+		return d
+			? `${formatBytes(d.received)} of ${d.total ? formatBytes(d.total) : SPEAKER_MODELS_SIZE}`
+			: '';
 	});
 	protected readonly cueCount = computed(
 		() => this.result()?.rows.reduce((n, r) => n + r.cues, 0) ?? 0,
@@ -275,7 +277,7 @@ export class SeparateSpeakersDialog {
 			const split = this.separation.split(track, turns, !this.speakers());
 			this.store.apply('Separate speakers', SpeakerSeparation.replace(track.id, split));
 			this.result.set(SpeakerSeparation.result(split));
-			this.took.set(seconds(performance.now() - started));
+			this.took.set(formatSpan(performance.now() - started));
 			this.phase.set('done');
 		} catch (err) {
 			if (isStopped(err)) {
@@ -299,9 +301,4 @@ export class SeparateSpeakersDialog {
 		this.ui.sideTab.set('problems');
 		this.ref.close();
 	}
-}
-
-function seconds(ms: number): string {
-	const s = Math.round(ms / 1000);
-	return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${s % 60} s`;
 }

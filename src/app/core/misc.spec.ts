@@ -2,6 +2,7 @@ import { sampleProject } from './testing/fixtures';
 import { SCHEMA_VERSION } from './model/types';
 import { parseProject, serializeProject } from './project/serialize';
 import { formatClock, formatTimecode, parseTime, snapToFrame } from './time/timecode';
+import { formatBytes, formatLength, formatSpan } from './units/units';
 
 describe('timecode', () => {
 	it('formats', () => {
@@ -50,5 +51,29 @@ describe('project file', () => {
 		const raw = JSON.parse(serializeProject(p));
 		delete raw.settings.maxCps;
 		expect(parseProject(JSON.stringify(raw)).settings.maxCps).toBe(20);
+	});
+});
+
+describe('units', () => {
+	it('formats sizes', () => {
+		expect(formatBytes(0)).toBe('0 KB');
+		expect(formatBytes(350_000)).toBe('350 KB');
+		expect(formatBytes(999_600)).toBe('1 MB');
+		expect(formatBytes(42_400_000)).toBe('42 MB');
+		expect(formatBytes(1_500_000_000)).toBe('1.5 GB');
+	});
+
+	it('formats lengths as a clock', () => {
+		expect(formatLength(42_000)).toBe('0:42');
+		expect(formatLength(17 * 60_000 + 42_000)).toBe('17:42');
+		expect(formatLength(3_725_000)).toBe('1:02:05');
+	});
+
+	it('formats spans', () => {
+		expect(formatSpan(6_540)).toBe('6.5 s');
+		expect(formatSpan(42_300)).toBe('42 s');
+		expect(formatSpan(119_600)).toBe('2 min 0 s');
+		expect(formatSpan(125_000)).toBe('2 min 5 s');
+		expect(formatSpan(3_840_000)).toBe('1 h 4 min');
 	});
 });

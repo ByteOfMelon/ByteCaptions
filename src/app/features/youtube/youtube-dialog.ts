@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { LucideCheck, LucideCircle, LucideLoaderCircle, LucideX } from '@lucide/angular';
 import { TrackId } from '../../core/model/types';
+import { formatLength } from '../../core/units/units';
 import { EditorUi } from '../../state/editor-ui';
 import { openExternal } from '../../state/file-io';
 import { ProjectStore } from '../../state/project-store';
@@ -102,7 +103,7 @@ export class YouTubeDialog {
 		() => this.project().media?.durationMs ?? this.store.duration(),
 	);
 	protected readonly subtitle = computed(
-		() => `${this.project().name} • ${clock(this.lengthMs())}`,
+		() => `${this.project().name} • ${formatLength(this.lengthMs())}`,
 	);
 
 	protected readonly view = signal<'main' | 'choose'>('main');
@@ -183,7 +184,8 @@ export class YouTubeDialog {
 		return `${total} video${total === 1 ? '' : 's'} • Newest first`;
 	});
 	protected readonly chooseSubtitle = computed(
-		() => `${this.yt.account()?.title ?? ''} • The project is ${clock(this.lengthMs())} long`,
+		() =>
+			`${this.yt.account()?.title ?? ''} • The project is ${formatLength(this.lengthMs())} long`,
 	);
 
 	// Uploading
@@ -335,18 +337,12 @@ export class YouTubeDialog {
 
 	protected meta(v: YtVideo): string {
 		const privacy = v.privacy ? v.privacy[0].toUpperCase() + v.privacy.slice(1) : '';
-		return [clock(v.durationMs), privacy, uploaded(v.publishedAt)].filter(Boolean).join(' • ');
+		return [formatLength(v.durationMs), privacy, uploaded(v.publishedAt)]
+			.filter(Boolean)
+			.join(' • ');
 	}
 
 	protected readonly languageName = languageName;
-}
-
-function clock(ms: number): string {
-	const s = Math.round(ms / 1000);
-	const h = Math.floor(s / 3600);
-	const m = Math.floor((s % 3600) / 60);
-	const ss = String(s % 60).padStart(2, '0');
-	return h ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`;
 }
 
 /** "Uploaded Sep 30", with the year when it isn't this year. */

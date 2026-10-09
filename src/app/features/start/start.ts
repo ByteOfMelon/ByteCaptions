@@ -2,16 +2,9 @@ import { Component, OnDestroy, computed, effect, inject, signal } from '@angular
 import { Router } from '@angular/router';
 import { LucideCaptions, LucideFilm, LucideFolderOpen, LucideUpload } from '@lucide/angular';
 import { version } from '../../../../package.json';
+import { formatBytes, formatLength } from '../../core/units/units';
 import { FileDrop, dropKind } from '../../state/file-drop';
-import {
-	PickedFile,
-	confirmAction,
-	formatBytes,
-	formatDuration,
-	WEBSITE,
-	openExternal,
-	probeVideo,
-} from '../../state/file-io';
+import { PickedFile, confirmAction, WEBSITE, openExternal, probeVideo } from '../../state/file-io';
 import { ProjectFiles } from '../../state/project-files';
 import { RecentProject, RecentProjects, editedLabel } from '../../state/recent-projects';
 import { Recovery, RecoveryEntry } from '../../state/recovery';
@@ -63,7 +56,7 @@ export class Start implements OnDestroy {
 		this.recentProjects.list().map((r) => ({
 			...r,
 			edited: editedLabel(r.editedAt),
-			meta: `${r.cues} cue${r.cues === 1 ? '' : 's'} • ${formatDuration(r.durationMs)}`,
+			meta: `${r.cues} cue${r.cues === 1 ? '' : 's'} • ${formatLength(r.durationMs)}`,
 		})),
 	);
 
@@ -88,7 +81,7 @@ export class Start implements OnDestroy {
 			void Promise.all([probeVideo(h.file.mediaUrl()), h.file.size()]).then(
 				([info, size]) => {
 					const parts = [
-						info ? formatDuration(info.durationMs) : null,
+						info ? formatLength(info.durationMs) : null,
 						size !== null ? formatBytes(size) : null,
 					].filter(Boolean);
 					if (live && parts.length) this.dragDetail.set(parts.join(' • '));

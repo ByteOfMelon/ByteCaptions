@@ -3,6 +3,7 @@ import { Component, computed, inject } from '@angular/core';
 import { LucideCheck, LucideCircle, LucideLoaderCircle, LucideX } from '@lucide/angular';
 import { TrackId } from '../../core/model/types';
 import { formatClock, formatTimecode } from '../../core/time/timecode';
+import { formatSpan } from '../../core/units/units';
 import { EditorUi } from '../../state/editor-ui';
 import { ProjectStore } from '../../state/project-store';
 import {
@@ -95,7 +96,7 @@ export class TranscribeDialog {
 		return [
 			{
 				value: 'range',
-				label: `In/out range • ${timeLabel(r.start)} → ${timeLabel(r.end)} (${durationLabel(r.end - r.start)})`,
+				label: `In/out range • ${timeLabel(r.start)} → ${timeLabel(r.end)} (${formatSpan(r.end - r.start)})`,
 			},
 			{ value: 'all', label: 'Whole video' },
 		];
@@ -166,6 +167,13 @@ export class TranscribeDialog {
 		return formatClock(ms).slice(0, 8);
 	}
 
+	/** "Retry download" only when the download is what failed. */
+	protected readonly retryLabel = computed(() =>
+		this.job.steps().find((s) => s.status === 'error')?.id === 'download'
+			? 'Retry download'
+			: 'Try again',
+	);
+
 	protected start(): void {
 		void this.job.start();
 	}
@@ -185,12 +193,4 @@ export class TranscribeDialog {
 		this.job.reset();
 		this.ref.close();
 	}
-}
-
-/** "6.5 s" / "2 min 5 s". */
-function durationLabel(ms: number): string {
-	const tenths = Math.round(ms / 100);
-	if (tenths < 600) return `${tenths / 10} s`;
-	const s = Math.round(tenths / 10);
-	return `${Math.floor(s / 60)} min ${s % 60} s`;
 }

@@ -1,6 +1,7 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
 import { Cue, Ms, ProjectSettings, WordTiming } from '../core/model/types';
 import { segmentWords } from '../core/segment/segment';
+import { formatBytes, formatLength } from '../core/units/units';
 import { stopped, wasCancelled } from './jobs';
 import {
 	EngineEvent,
@@ -9,7 +10,6 @@ import {
 	ModelId,
 	TranscribeOptions,
 	TranscriptionEngine,
-	bytes,
 } from './transcription';
 
 type AsrEvent =
@@ -19,11 +19,6 @@ type AsrEvent =
 
 /** Voice activity detection model; keep in sync with VAD_MODEL in src-tauri/src/models.rs. */
 const VAD_MODEL = 'silero-v6.2.0';
-
-function clock(ms: Ms): string {
-	const s = Math.round(ms / 1000);
-	return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-}
 
 /**
  * Transcription on the desktop app: whisper.cpp in the Rust backend (src-tauri/src/asr.rs),
@@ -102,7 +97,7 @@ export class WhisperEngine implements TranscriptionEngine {
 				let last = '';
 				const progress = new Channel<{ received: number; total: number }>();
 				progress.onmessage = (p) => {
-					last = `${bytes(p.received)} of ${p.total ? bytes(p.total) : model.size}`;
+					last = `${formatBytes(p.received)} of ${p.total ? formatBytes(p.total) : model.size}`;
 					emit({ type: 'step', step: 'download', status: 'running', detail: last });
 					emit({ type: 'download', received: p.received, total: p.total });
 				};
@@ -128,7 +123,7 @@ export class WhisperEngine implements TranscriptionEngine {
 							type: 'step',
 							step: 'extract',
 							status: 'done',
-							detail: clock(e.durationMs),
+							detail: formatLength(e.durationMs),
 						});
 						emit({ type: 'step', step: 'transcribe', status: 'running', detail: '0%' });
 						return;

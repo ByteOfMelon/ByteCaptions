@@ -292,7 +292,9 @@
 			@if (job.phase() === 'error') {
 				<div dialogFooter>
 					<div class="footer-start">
-						<button bcButton variant="primary" (click)="start()">Retry download</button>
+						<button bcButton variant="primary" (click)="start()">
+							{{ retryLabel() }}
+						</button>
 						@if (job.options().model !== 'fast') {
 							<button bcButton (click)="useFast()">Use Fast instead</button>
 						}

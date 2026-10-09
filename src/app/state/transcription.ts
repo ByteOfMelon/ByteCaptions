@@ -3,6 +3,7 @@ import { addTrack } from '../core/commands/edits';
 import { createTrack } from '../core/model/defaults';
 import { Cue, Ms, TrackId } from '../core/model/types';
 import { SpeakerTurn } from '../core/speakers/speakers';
+import { formatBytes, formatSpan } from '../core/units/units';
 import { isDesktop } from './file-io';
 import { isStopped, jobErrorText } from './jobs';
 import { MediaSource } from './media-source';
@@ -143,10 +144,6 @@ export interface TranscriptionEngine {
 	): Promise<Cue[]>;
 }
 
-export function bytes(n: number): string {
-	return n >= 1e9 ? `${(n / 1e9).toFixed(1)} GB` : `${Math.round(n / 1e6)} MB`;
-}
-
 /** A cue is in a range when its middle is, as for the other in/out range operations. */
 function inside(c: { start: Ms; end: Ms }, r: { start: Ms; end: Ms }): boolean {
 	const mid = (c.start + c.end) / 2;
@@ -175,11 +172,6 @@ function roughly(ms: Ms): string {
 	return ms < 50_000
 		? `About ${Math.max(5, Math.round(ms / 5000) * 5)} s`
 		: `About ${Math.max(1, Math.round(ms / 60_000))} min`;
-}
-
-function formatDuration(ms: Ms): string {
-	const s = Math.round(ms / 1000);
-	return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${s % 60} s`;
 }
 
 /**
@@ -323,7 +315,7 @@ export class Transcription {
 		if (!models.length) return null;
 		return {
 			names: models.map(([n]) => n),
-			size: bytes(models.reduce((sum, [, b]) => sum + b, 0)),
+			size: formatBytes(models.reduce((sum, [, b]) => sum + b, 0)),
 		};
 	});
 
@@ -426,7 +418,7 @@ export class Transcription {
 				// Finished compute steps show how long they took.
 				const took =
 					e.status === 'done' && !e.detail && stepStarted.has(e.step)
-						? formatDuration(performance.now() - stepStarted.get(e.step)!)
+						? formatSpan(performance.now() - stepStarted.get(e.step)!)
 						: undefined;
 				this.steps.update((steps) =>
 					steps.map((s) =>
@@ -448,7 +440,7 @@ export class Transcription {
 							setStep(
 								'speakers',
 								'running',
-								`Downloading ${bytes(e.received)} of ${e.total ? bytes(e.total) : SPEAKER_MODELS_SIZE}`,
+								`Downloading ${formatBytes(e.received)} of ${e.total ? formatBytes(e.total) : SPEAKER_MODELS_SIZE}`,
 							);
 						} else if (e.type === 'separating') {
 							this.download.set(null);
@@ -459,7 +451,7 @@ export class Transcription {
 					if (!isStopped(err)) setStep('speakers', 'error', '');
 					throw err;
 				}
-				setStep('speakers', 'done', formatDuration(performance.now() - started));
+				setStep('speakers', 'done', formatSpan(performance.now() - started));
 			}
 			this.finish(cues, turns);
 		} catch (err) {
@@ -468,6 +460,10 @@ export class Transcription {
 				return;
 			}
 			this.error.set(jobErrorText(err));
+			// The step that was running is the one that failed.
+			this.steps.update((steps) =>
+				steps.map((s) => (s.status === 'running' ? { ...s, status: 'error' } : s)),
+			);
 			this.phase.set('error');
 		} finally {
 			this.abort = null;
@@ -555,7 +551,7 @@ export class Transcription {
 			replaced,
 			lowConfidence,
 			speedWarnings,
-			took: formatDuration(performance.now() - this.startedAt),
+			took: formatSpan(performance.now() - this.startedAt),
 			speakers,
 		});
 		this.phase.set('done');

@@ -226,16 +226,3 @@ export function probeVideo(url: string): Promise<VideoInfo | null> {
 		v.src = url;
 	});
 }
-
-export function formatBytes(n: number): string {
-	return n >= 1e9 ? `${(n / 1e9).toFixed(1)} GB` : `${Math.max(1, Math.round(n / 1e6))} MB`;
-}
-
-/** "17:42", or "1:02:05" past an hour. */
-export function formatDuration(ms: Ms): string {
-	const s = Math.round(ms / 1000);
-	const h = Math.floor(s / 3600);
-	const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-	const ss = String(s % 60).padStart(2, '0');
-	return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
-}
