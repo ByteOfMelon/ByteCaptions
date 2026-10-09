@@ -1,0 +1,8 @@
+docs/
+PLAN.md
+src-tauri/gen/
+src-tauri/vendor/
+src-tauri/target/
+src-tauri/google-oauth.json
+package-lock.json
+dist/

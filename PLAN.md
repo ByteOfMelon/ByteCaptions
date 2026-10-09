@@ -316,7 +316,7 @@ Performance target: 60fps scroll/zoom with 5,000 cues on a 2-hour video.
 - P0 Position presets: 3×3 anchor picker + x/y fine-tune.
 - P1 Per-run (partial text) styling: select words in the text editor → style them.
 - P1 Karaoke toggle per cue: choose highlight style; uses word timings.
-- P1 Ruby text.
+- P1 Ruby text. The model (`TextRun.ruby`) and the VTT export already carry it, but the SRV3 export drops it and the SRV3 import flattens it with a warning. When ruby is built, export it to SRV3 (YouTube's ruby pens) and import it, or until then list it in `FORMATS.srv3.loses` so the export dialog says it's lost.
 - P2 Vertical text (moved after v1.0: v1.0 is English only).
 - P1 Global preset library (shared across projects).
 - P2 Simple animated effects that SRV3 can express (fade in, typewriter), each showing a weight cost.
