@@ -10,19 +10,19 @@ import {
 } from '@angular/core';
 import { LucideSearch, LucideX } from '@lucide/angular';
 import * as edits from '../../core/commands/edits';
-import { cueText } from '../../core/model/cue';
 import { readingSpeed } from '../../core/lint/rules';
-import { formatTimecode, parseTime } from '../../core/time/timecode';
+import { cueText } from '../../core/model/cue';
 import { CueId } from '../../core/model/types';
+import { formatTimecode, parseTime } from '../../core/time/timecode';
 import { EditorUi } from '../../state/editor-ui';
-import { Button, IconButton } from '../../ui/button/button';
-import { CueRef, ProjectStore } from '../../state/project-store';
-import { Field } from '../../ui/field/field';
-import { Autofocus } from '../../ui/autofocus/autofocus';
 import { isDesktop } from '../../state/file-io';
-import { Playback } from '../player/playback';
+import { CueRef, ProjectStore } from '../../state/project-store';
+import { Autofocus } from '../../ui/autofocus/autofocus';
+import { Button, IconButton } from '../../ui/button/button';
 import { CountPipe } from '../../ui/count/count';
+import { Field } from '../../ui/field/field';
 import { ErrorTip } from '../../ui/tooltip/tooltip';
+import { Playback } from '../player/playback';
 
 @Component({
 	selector: 'bc-cue-list',

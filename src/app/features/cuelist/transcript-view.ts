@@ -4,9 +4,9 @@ import { cueText, wordGap } from '../../core/model/cue';
 import { Cue, Track } from '../../core/model/types';
 import { formatTimecode } from '../../core/time/timecode';
 import { ProjectStore } from '../../state/project-store';
+import { CountPipe } from '../../ui/count/count';
 import { Select } from '../../ui/select/select';
 import { Playback } from '../player/playback';
-import { CountPipe } from '../../ui/count/count';
 
 /** Pause between cues that starts a new paragraph. */
 const PARAGRAPH_GAP_MS = 1500;

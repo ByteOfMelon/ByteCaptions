@@ -4,12 +4,12 @@ import * as edits from '../../core/commands/edits';
 import { cueText } from '../../core/model/cue';
 import { Problem, readingSpeed } from '../../core/lint/rules';
 import { formatTimecode } from '../../core/time/timecode';
-import { EditorDialogs } from '../editor/editor-dialogs';
 import { ProjectStore } from '../../state/project-store';
 import { Button } from '../../ui/button/button';
-import { Select } from '../../ui/select/select';
-import { Playback } from '../player/playback';
 import { CountPipe } from '../../ui/count/count';
+import { Select } from '../../ui/select/select';
+import { EditorDialogs } from '../editor/editor-dialogs';
+import { Playback } from '../player/playback';
 
 const ALL = '__all__';
 
@@ -29,7 +29,7 @@ export class ProblemsView {
 	protected readonly dialogs = inject(EditorDialogs);
 
 	protected readonly filter = signal<string>(ALL);
-	/** Ignored for this session; persisting ignores in the project is a later decision. */
+	/** Ignored for this session only; not saved in the project. */
 	private readonly ignored = signal<ReadonlySet<string>>(new Set());
 
 	protected readonly filterOptions = computed(() => [
