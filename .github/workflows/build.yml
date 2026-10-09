@@ -91,25 +91,36 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/onnxruntime-lib
-          key: onnxruntime-1.28.0-${{ matrix.target }}-macos14
+          key: onnxruntime-1.28.0-${{ matrix.target }}-macos14-v2
 
       # ort's static linking looks for each of ONNX Runtime's dependencies at a fixed path, which
       # doesn't match 1.28's build folder. A single libonnxruntime.a is linked as is, so merge
       # every library the build made into one (not tests, or the protobuf compiler and full
-      # protobuf: ONNX Runtime uses protobuf-lite).
+      # protobuf: ONNX Runtime uses protobuf-lite). re2 is only built on request: nothing in a
+      # static build links against it. --apple_deploy_target only applies to iOS and framework
+      # builds, so the macOS minimum goes to CMake directly.
       - name: Build ONNX Runtime
         if: matrix.ort-from-source && steps.ort-cache.outputs.cache-hit != 'true'
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '14.0'
         run: |
           git clone --depth 1 --branch v1.28.0 --recurse-submodules --shallow-submodules https://github.com/microsoft/onnxruntime.git "$RUNNER_TEMP/onnxruntime"
           cd "$RUNNER_TEMP/onnxruntime"
-          ./build.sh --config Release --build_dir "$RUNNER_TEMP/onnxruntime-build" --parallel --skip_tests \
-            --compile_no_warning_as_error --apple_deploy_target 14.0 \
-            --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF
-          find "$RUNNER_TEMP/onnxruntime-build/Release" -name '*.a' ! -name '*test*' ! -name '*gmock*' \
+          build="$RUNNER_TEMP/onnxruntime-build"
+          ./build.sh --config Release --build_dir "$build" --parallel --skip_tests \
+            --compile_no_warning_as_error \
+            --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF CMAKE_OSX_DEPLOYMENT_TARGET=14.0
+          cmake --build "$build/Release" --target re2 --parallel
+          find "$build/Release" -name '*.a' ! -name '*test*' ! -name '*gmock*' \
             ! -name '*benchmark*' ! -name 'libprotoc.a' ! -name 'libprotobuf.a' | sort > libs.txt
           cat libs.txt
           mkdir -p ~/onnxruntime-lib
           libtool -static -no_warning_for_no_symbols -o ~/onnxruntime-lib/libonnxruntime.a $(cat libs.txt)
+          # Check it links on its own (no missing dependencies) and targets macOS 14.
+          echo 'const void *OrtGetApiBase(void); int main(void) { return OrtGetApiBase() == 0; }' > check.c
+          clang check.c ~/onnxruntime-lib/libonnxruntime.a -lc++ -framework Foundation -o check
+          ./check
+          otool -l check | grep -A4 LC_BUILD_VERSION
 
       # Saved now rather than at the end of the job, so a later failure doesn't lose the build.
       - name: Save ONNX Runtime
@@ -117,7 +128,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ~/onnxruntime-lib
-          key: onnxruntime-1.28.0-${{ matrix.target }}-macos14
+          key: onnxruntime-1.28.0-${{ matrix.target }}-macos14-v2
 
       - name: Use the ONNX Runtime build
         if: matrix.ort-from-source
