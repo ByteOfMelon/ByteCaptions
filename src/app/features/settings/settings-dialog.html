@@ -1,0 +1,16 @@
+<bc-dialog heading="Settings">
+	<bc-select
+		class="theme"
+		label="Theme"
+		[options]="themes"
+		[value]="theme.preference()"
+		(valueChange)="theme.setPreference($any($event))"
+	/>
+	<section class="layout">
+		<h3 class="text-small">Panel layout</h3>
+		<p class="text-small text-faded">
+			Puts the cue list, inspector and timeline back to their default sizes.
+		</p>
+	</section>
+	<button bcButton class="reset" (click)="resetLayout()">Reset layout</button>
+</bc-dialog>

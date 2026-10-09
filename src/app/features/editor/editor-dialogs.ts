@@ -5,6 +5,7 @@ import { CueId, StyleId, TrackId } from '../../core/model/types';
 import { ExportDialog } from '../export/export-dialog';
 import { ProjectSettingsDialog, SettingsTab } from '../settings/project-settings-dialog';
 import { StylePresetsDialog } from '../presets/style-presets-dialog';
+import { SettingsDialog } from '../settings/settings-dialog';
 import { ShortcutsDialog } from '../shortcuts/shortcuts-dialog';
 import { ShiftTimingDialog } from '../timeline/shift-timing-dialog';
 import { TranscribeDialog } from '../transcribe/transcribe-dialog';
@@ -35,6 +36,11 @@ export class EditorDialogs {
 
 	projectSettings(initialTab?: SettingsTab): void {
 		this.dialogs.open(ProjectSettingsDialog, { inputs: initialTab ? { initialTab } : {} });
+	}
+
+	/** App-wide settings (not the project's). */
+	settings(): void {
+		this.dialogs.open(SettingsDialog);
 	}
 
 	shortcuts(): void {

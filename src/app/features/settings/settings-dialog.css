@@ -1,0 +1,17 @@
+.theme {
+	width: 240px;
+}
+
+.layout {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+}
+h3,
+p {
+	margin: 0;
+}
+
+.reset {
+	align-self: flex-start;
+}

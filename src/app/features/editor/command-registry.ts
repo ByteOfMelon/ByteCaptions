@@ -27,6 +27,8 @@ import {
 	LucideScissors,
 	LucideKeyboard,
 	LucideSettings,
+	LucideSlidersHorizontal,
+	LucidePanelsTopLeft,
 	LucideTimer,
 	LucideTrash2,
 	LucideUndo2,
@@ -40,6 +42,8 @@ import { ProjectStore } from '../../state/project-store';
 import { ThemePreference, ThemeService } from '../../theme/theme.service';
 import { EditorCommands } from './editor-commands';
 import { EditorDialogs } from './editor-dialogs';
+import { PanelLayout } from '../../state/panel-layout';
+import { confirmResetLayout } from '../settings/settings-dialog';
 
 export interface Command {
 	id: string;
@@ -69,6 +73,7 @@ export class CommandRegistry {
 	private readonly files = inject(ProjectFiles);
 	private readonly ui = inject(EditorUi);
 	private readonly theme = inject(ThemeService);
+	private readonly layout = inject(PanelLayout);
 
 	readonly all = computed<Command[]>(() => {
 		const hasCue = () => !!this.store.primary();
@@ -273,6 +278,19 @@ export class CommandRegistry {
 				label: 'Project settings…',
 				icon: LucideSettings.icon,
 				run: () => this.dialogs.projectSettings(),
+			},
+			{
+				id: 'settings',
+				label: 'Settings…',
+				icon: LucideSlidersHorizontal.icon,
+				keys: 'Ctrl+,',
+				run: () => this.dialogs.settings(),
+			},
+			{
+				id: 'reset-layout',
+				label: 'Reset layout…',
+				icon: LucidePanelsTopLeft.icon,
+				run: () => void confirmResetLayout().then((ok) => ok && this.layout.reset()),
 			},
 			{
 				id: 'shortcuts',

@@ -6,7 +6,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { message } from '@tauri-apps/plugin-dialog';
 import { version } from '../../../../package.json';
 import { EditorUi } from '../../state/editor-ui';
-import { WEBSITE, confirmAction, openExternal } from '../../state/file-io';
+import { WEBSITE, openExternal } from '../../state/file-io';
 import { PanelLayout } from '../../state/panel-layout';
 import { ProjectFiles } from '../../state/project-files';
 import { ThemePreference, ThemeService } from '../../theme/theme.service';
@@ -15,6 +15,7 @@ import { CommandRegistry } from '../editor/command-registry';
 import { EditorCommands } from '../editor/editor-commands';
 import { EditorDialogs } from '../editor/editor-dialogs';
 import { CommandPalette } from '../palette/command-palette';
+import { SettingsDialog, confirmResetLayout } from '../settings/settings-dialog';
 
 /** A menu entry: its own action, or a palette command (label, keys and enabled come from it). */
 type Entry =
@@ -95,6 +96,8 @@ export class AppMenu {
 					'separator',
 					{ text: 'Import captions…', keys: 'Ctrl+I', run: () => void this.import() },
 					{ command: 'export' },
+					'separator',
+					{ text: 'Settings…', keys: 'Ctrl+,', run: () => this.settings() },
 					'separator',
 					{ text: 'Exit', keys: 'Alt+F4', run: () => void getCurrentWindow().close() },
 				]),
@@ -242,6 +245,11 @@ export class AppMenu {
 		else this.go(await this.files.importAsNewProject());
 	}
 
+	/** Works on the Start screen too, so not via the editor's dialogs. */
+	private settings(): void {
+		if (!this.dialogs.isOpen) this.dialogs.open(SettingsDialog);
+	}
+
 	private palette(startMode: 'search' | 'timecode'): void {
 		if (!this.dialogs.isOpen)
 			this.dialogs.open(CommandPalette, { placement: 'top', inputs: { startMode } });
@@ -288,11 +296,6 @@ export class AppMenu {
 	}
 
 	private async resetLayout(): Promise<void> {
-		const ok = await confirmAction(
-			'Put the cue list, inspector and timeline back to their default sizes?',
-			'Reset layout',
-			'Reset layout',
-		);
-		if (ok) this.layout.reset();
+		if (await confirmResetLayout()) this.layout.reset();
 	}
 }

@@ -84,6 +84,7 @@ export class ShortcutsDialog {
 					...(this.transcription.available
 						? [{ label: 'Auto-transcribe', keys: 'Ctrl+T' }]
 						: []),
+					{ label: 'Settings', keys: 'Ctrl+,' },
 					{ label: 'Keyboard shortcuts', keys: '?' },
 				],
 			},

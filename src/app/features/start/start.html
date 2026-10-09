@@ -111,12 +111,7 @@
 	</section>
 
 	<footer class="text-small text-faded">
-		v{{ version }}&nbsp; • &nbsp;<button
-			type="button"
-			class="link"
-			aria-disabled="true"
-			bcTooltip="Not built yet"
-		>
+		v{{ version }}&nbsp; • &nbsp;<button type="button" class="link" (click)="openSettings()">
 			Settings</button
 		>&nbsp; • &nbsp;<button type="button" class="link" (click)="openShortcuts()">
 			Keyboard shortcuts

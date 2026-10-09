@@ -205,6 +205,8 @@ export class Editor implements OnDestroy {
 				return run(() => void this.files.save());
 			case 'ctrl+shift+s':
 				return run(() => void this.files.save(true));
+			case 'ctrl+,':
+				return run(() => this.editorDialogs.settings());
 			case 'ctrl+n':
 				return run(() => void this.files.newFromVideo());
 			case 'ctrl+o':

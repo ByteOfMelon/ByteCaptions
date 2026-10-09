@@ -13,13 +13,13 @@ import {
 	probeVideo,
 } from '../../state/file-io';
 import { ProjectFiles } from '../../state/project-files';
+import { SettingsDialog } from '../settings/settings-dialog';
 import { ShortcutsDialog } from '../shortcuts/shortcuts-dialog';
 import { RecentProject, RecentProjects, editedLabel } from '../../state/recent-projects';
 import { Recovery, RecoveryEntry } from '../../state/recovery';
 import { Button } from '../../ui/button/button';
 import { Dialogs } from '../../ui/dialog/dialog';
 import { Notice } from '../../ui/notice/notice';
-import { Tooltip } from '../../ui/tooltip/tooltip';
 
 /**
  * Start screen (PLAN §5.1): new project from a video, open a project, import captions,
@@ -27,7 +27,7 @@ import { Tooltip } from '../../ui/tooltip/tooltip';
  */
 @Component({
 	selector: 'bc-start',
-	imports: [Button, Notice, Tooltip, LucideCaptions, LucideFilm, LucideFolderOpen, LucideUpload],
+	imports: [Button, Notice, LucideCaptions, LucideFilm, LucideFolderOpen, LucideUpload],
 	templateUrl: './start.html',
 	styleUrl: './start.css',
 	host: { '(window:keydown)': 'onKey($event)' },
@@ -147,6 +147,10 @@ export class Start implements OnDestroy {
 		}
 	}
 
+	protected openSettings(): void {
+		this.dialogs.open(SettingsDialog);
+	}
+
 	protected openShortcuts(): void {
 		this.dialogs.open(ShortcutsDialog);
 	}
@@ -162,6 +166,7 @@ export class Start implements OnDestroy {
 			n: () => this.newProject(),
 			o: () => this.openProject(),
 			i: () => this.importCaptions(),
+			',': () => this.openSettings(),
 		}[e.key.toLowerCase()];
 		if (!run) return;
 		e.preventDefault();
