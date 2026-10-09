@@ -7,6 +7,9 @@ import { ProjectStore } from '../../state/project-store';
 export const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 /** Fastest J / L shuttle speed. */
 const MAX_SHUTTLE = 8;
+/** Reloads allowed in RECOVER_WINDOW_MS before a broken video is left alone. */
+const MAX_RECOVERIES = 3;
+const RECOVER_WINDOW_MS = 10_000;
 
 /**
  * Transport. Drives the store's playhead from the attached <video> when media is loaded,
@@ -18,6 +21,7 @@ export class Playback {
 	private video: HTMLVideoElement | null = null;
 	private raf = 0;
 	private lastTick = 0;
+	private recoveries: number[] = [];
 	/** URL of the loaded video, if any. */
 	readonly mediaUrl = inject(MediaSource).url;
 	/**
@@ -67,6 +71,7 @@ export class Playback {
 				video.playbackRate = this.store.rate();
 				video.currentTime = this.store.playhead() / 1000;
 				video.onended = () => this.onEnded();
+				video.onerror = () => this.recover(video);
 			});
 	}
 
@@ -87,7 +92,7 @@ export class Playback {
 		this.lastTick = performance.now();
 		// Video elements can't play backwards; the clock in tick() scrubs the video instead.
 		if (this.video) {
-			if (speed > 0) void this.video.play();
+			if (speed > 0) this.startVideo(this.video);
 			else this.video.pause();
 		}
 		cancelAnimationFrame(this.raf);
@@ -177,7 +182,43 @@ export class Playback {
 	private onEnded(): void {
 		if (!this.loop() || !this.store.playing() || this.shuttle() < 0) return this.pause();
 		this.seek(this.loopSpan().start);
-		void this.video?.play();
+		if (this.video) this.startVideo(this.video);
+	}
+
+	/**
+	 * A pause before play() finishes rejects it with an AbortError, which is expected. Any
+	 * other refusal means the video won't play, so the transport shows paused to match.
+	 */
+	private startVideo(video: HTMLVideoElement): void {
+		video.play().catch((e: DOMException) => {
+			if (e.name === 'AbortError' || video !== this.video || video.error) return;
+			console.warn('The video would not play', e);
+			this.pause();
+		});
+	}
+
+	/**
+	 * The desktop app's video stream can fail mid-seek (WebView2 drops the request when
+	 * seeks pile up), and a <video> with an error never plays again. Reload it where it
+	 * was and carry on, unless it keeps failing.
+	 */
+	private recover(video: HTMLVideoElement): void {
+		if (video !== this.video) return;
+		const now = performance.now();
+		this.recoveries = this.recoveries.filter((t) => now - t < RECOVER_WINDOW_MS);
+		console.warn('Video error; reloading it', video.error?.code, video.error?.message);
+		if (this.recoveries.length >= MAX_RECOVERIES) return this.pause();
+		this.recoveries.push(now);
+		video.addEventListener(
+			'loadedmetadata',
+			() => {
+				if (video !== this.video) return;
+				video.currentTime = this.store.playhead() / 1000;
+				if (this.store.playing() && this.shuttle() > 0) this.startVideo(video);
+			},
+			{ once: true },
+		);
+		video.load();
 	}
 
 	private readonly tick = (now: number) => {
