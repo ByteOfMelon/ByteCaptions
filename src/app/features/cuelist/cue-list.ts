@@ -135,7 +135,13 @@ export class CueList {
 
 	protected editTime(e: MouseEvent, r: CueRef, edge: 'start' | 'end'): void {
 		// The first click selects the cue; clicking a time of the selected cue edits it.
-		if (r.track.locked || !this.store.selection().has(r.cue.id) || e.shiftKey || e.ctrlKey)
+		if (
+			r.track.locked ||
+			!this.store.selection().has(r.cue.id) ||
+			e.shiftKey ||
+			e.ctrlKey ||
+			e.metaKey
+		)
 			return;
 		e.stopPropagation();
 		this.editingTime.set({ id: r.cue.id, edge });
