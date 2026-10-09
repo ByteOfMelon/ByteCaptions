@@ -80,6 +80,7 @@ jobs:
         run: |
           npm run fetch:vulkan
           mkdir -p src-tauri/binaries/directml
+          npm run build  # the Rust build checks that the web pages exist
           (cd src-tauri && cargo build --release --target ${{ matrix.target }} --features tauri/custom-protocol) || true
           dll=src-tauri/target/${{ matrix.target }}/release/DirectML.dll
           [ -f src-tauri/binaries/directml/DirectML.dll ] || cp "$dll" src-tauri/binaries/directml/
