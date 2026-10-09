@@ -138,6 +138,10 @@ export class TranscribeDialog {
 		// Opening with a range set defaults to transcribing just that.
 		if (!this.job.running() && this.job.phase() === 'setup')
 			this.setScope(this.range() ? 'range' : 'all');
+		// Closing on an error (close button, Escape) starts over next time.
+		void this.ref.closed.then(() => {
+			if (this.job.phase() === 'error') this.job.reset();
+		});
 	}
 
 	protected setScope(scope: string): void {
@@ -181,15 +185,12 @@ export class TranscribeDialog {
 		this.job.reset();
 		this.ref.close();
 	}
-
-	protected cancel(): void {
-		if (this.job.phase() === 'error') this.job.reset();
-		this.ref.close();
-	}
 }
 
 /** "6.5 s" / "2 min 5 s". */
 function durationLabel(ms: number): string {
-	const s = Math.round(ms / 100) / 10;
-	return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${Math.round(s % 60)} s`;
+	const tenths = Math.round(ms / 100);
+	if (tenths < 600) return `${tenths / 10} s`;
+	const s = Math.round(tenths / 10);
+	return `${Math.floor(s / 60)} min ${s % 60} s`;
 }
