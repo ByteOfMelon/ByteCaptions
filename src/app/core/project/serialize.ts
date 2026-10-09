@@ -45,7 +45,9 @@ export function parseProject(json: string): Project {
 	if (
 		!Array.isArray(p.tracks) ||
 		typeof p.styles !== 'object' ||
-		typeof p.positions !== 'object'
+		p.styles === null ||
+		typeof p.positions !== 'object' ||
+		p.positions === null
 	) {
 		throw new ProjectFileError('Project file is missing tracks, styles or positions');
 	}
@@ -53,6 +55,8 @@ export function parseProject(json: string): Project {
 	p.settings = { ...defaultSettings(), ...(p.settings ?? {}) };
 	p.markers = Array.isArray(p.markers) ? p.markers.sort((a, b) => a.at - b.at) : [];
 	for (const t of p.tracks) {
+		if (typeof t !== 'object' || t === null)
+			throw new ProjectFileError('Project file has a track that is not an object');
 		if (!Array.isArray(t.cues))
 			throw new ProjectFileError(`Track "${t.name}" has no cues array`);
 		t.cues.sort((a, b) => a.start - b.start || a.end - b.end);

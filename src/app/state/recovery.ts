@@ -4,7 +4,7 @@ import { mkdir, readDir, readTextFile, remove, writeTextFile } from '@tauri-apps
 import { Project } from '../core/model/types';
 import { parseProject, serializeProject } from '../core/project/serialize';
 import { isDesktop } from './file-io';
-import { ProjectFiles } from './project-files';
+import { ProjectFiles, errorMessage } from './project-files';
 import { ProjectStore } from './project-store';
 
 /** A copy of a project with unsaved changes, kept in case the app closes before it's saved. */
@@ -223,7 +223,7 @@ export class Recovery {
 		try {
 			project = parseProject(e.project);
 		} catch (err) {
-			this.files.error.set(`${e.name} couldn't be recovered. ${err}`);
+			this.files.error.set(`${e.name} couldn't be recovered. ${errorMessage(err)}`);
 			return false;
 		}
 		if (!(await this.files.restore(project, e.path))) return false;

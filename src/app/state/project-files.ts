@@ -28,7 +28,8 @@ import { RecentProject, RecentProjects } from './recent-projects';
 /** Track colors from the design tokens (--color-track-1..4), assigned round-robin. */
 export const TRACK_COLORS = ['#4a6fa5', '#7e60a6', '#9a6a3e', '#3b7c6f'];
 
-const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+/** An error's text without the "Error: " prefix, for messages. */
+export const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /** New, open, save and import. Paths on desktop; File objects and downloads in the browser. */
 @Injectable({ providedIn: 'root' })
@@ -109,7 +110,7 @@ export class ProjectFiles {
 			await this.media.loadForProject(p);
 			return true;
 		} catch (e) {
-			this.error.set(`${file.name} couldn't be opened. ${message(e)}`);
+			this.error.set(`${file.name} couldn't be opened. ${errorMessage(e)}`);
 			return false;
 		}
 	}
@@ -169,7 +170,7 @@ export class ProjectFiles {
 		try {
 			await writeText({ name, path }, serializeProject(p));
 		} catch (e) {
-			this.error.set(`Couldn't save ${name}. ${message(e)}`);
+			this.error.set(`Couldn't save ${name}. ${errorMessage(e)}`);
 			return false;
 		}
 		this.currentPath.set(path);

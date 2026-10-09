@@ -33,6 +33,13 @@ describe('project file', () => {
 	it('rejects bad files with readable errors', () => {
 		expect(() => parseProject('{')).toThrow(/not valid JSON/);
 		expect(() => parseProject('{"schemaVersion":1}')).toThrow(/missing tracks/);
+		const valid = JSON.parse(serializeProject(sampleProject()));
+		expect(() => parseProject(JSON.stringify({ ...valid, styles: null }))).toThrow(
+			/missing tracks/,
+		);
+		expect(() => parseProject(JSON.stringify({ ...valid, tracks: [null] }))).toThrow(
+			/not an object/,
+		);
 		expect(() => parseProject(JSON.stringify({ schemaVersion: SCHEMA_VERSION + 1 }))).toThrow(
 			/newer version/,
 		);
