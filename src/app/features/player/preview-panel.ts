@@ -23,7 +23,7 @@ import { Tooltip } from '../../ui/tooltip/tooltip';
 import { captionTextStyle, captionWindowStyle } from './caption-render';
 import { PLAYBACK_RATES, Playback } from './playback';
 
-type PreviewMode = 'desktop' | 'mobile' | 'tv' | 'plain';
+type PreviewMode = 'desktop' | 'mobile' | 'plain';
 
 @Component({
 	selector: 'bc-preview-panel',
@@ -54,7 +54,6 @@ export class PreviewPanel {
 	protected readonly modes = [
 		{ value: 'desktop' as PreviewMode, label: 'Desktop web' },
 		{ value: 'mobile' as PreviewMode, label: 'Mobile app' },
-		{ value: 'tv' as PreviewMode, label: 'TV' },
 		{ value: 'plain' as PreviewMode, label: 'Plain (fallback)' },
 	];
 	protected readonly mode = signal<PreviewMode>('desktop');
@@ -84,9 +83,12 @@ export class PreviewPanel {
 	protected readonly captions = computed(() => {
 		const p = this.store.project();
 		const plain = this.mode() === 'plain';
+		const mobile = this.mode() === 'mobile';
 		const fontPx = this.frameHeight() * 0.0533;
 		return this.store.activeCues().map(({ track, cue }) => {
-			const style = resolveStyle(p, track, cue);
+			let style = resolveStyle(p, track, cue);
+			// YouTube's mobile apps draw every caption on a black box, at one fixed size.
+			if (mobile) style = { ...style, bgColor: '#080808', bgOpacity: 0.75, scale: 1 };
 			const pos = resolvePosition(p, track, cue);
 			const textStyle = captionTextStyle(style, Math.max(1, fontPx / 18));
 			if (plain) {
