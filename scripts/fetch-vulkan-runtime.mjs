@@ -10,11 +10,11 @@
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import {
+	copyFileSync,
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
-	copyFileSync,
 	rmSync,
 	writeFileSync,
 } from 'node:fs';

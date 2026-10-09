@@ -10,11 +10,11 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import {
 	chmodSync,
+	copyFileSync,
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
-	copyFileSync,
 	rmSync,
 	writeFileSync,
 } from 'node:fs';
@@ -50,14 +50,13 @@ const BUILDS = {
 	},
 };
 
-// A build for another target than the machine's: npm run fetch:ffmpeg -- linux-x64
-
 // Windows' own bsdtar reads zips; a GNU tar earlier on PATH (Git Bash) doesn't.
 const tar =
 	process.platform === 'win32' ? join(process.env.SystemRoot, 'System32', 'tar.exe') : 'tar';
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
 
+// A build for another target than the machine's: npm run fetch:ffmpeg -- linux-x64
 const key = process.argv[2] ?? `${process.platform}-${process.arch}`;
 const build = BUILDS[key];
 if (!build) {
