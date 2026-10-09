@@ -1,5 +1,6 @@
-//! Cancellation for long jobs (model downloads and transcription). The app runs one at a
-//! time, so a single flag is enough: starting a job clears it, `job_cancel` sets it.
+//! Cancellation for long jobs (model downloads, transcription and speaker separation). The
+//! app runs one at a time, so a single flag is enough: starting a job clears it, `job_cancel`
+//! sets it.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};

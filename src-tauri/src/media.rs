@@ -59,11 +59,9 @@ fn cache_file(app: &AppHandle, path: &Path) -> Option<PathBuf> {
 	Some(dir.join(format!("{:016x}.bin", h.finish())))
 }
 
-/**
- * Decode a file's first audio track to mono 16-bit samples at `rate`, passing them to `sink`
- * as they arrive. `range` limits it to that stretch, in ms. `sink` returns false to stop
- * early (the job was cancelled).
- */
+/// Decode a file's first audio track to mono 16-bit samples at `rate`, passing them to `sink`
+/// as they arrive. `range` limits it to that stretch, in ms. `sink` returns false to stop
+/// early (the job was cancelled).
 pub fn decode_audio(
 	path: &Path,
 	rate: u32,

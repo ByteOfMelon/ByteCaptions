@@ -8,8 +8,7 @@
 
 use tauri::AppHandle;
 
-/// The device to transcribe on, as whisper.cpp's `gpu_device` index and a display name, or
-/// None for the CPU.
+/// The GPU to transcribe on: whisper.cpp's `gpu_device` index and a display name.
 pub struct Device {
 	pub index: i32,
 	pub name: String,
@@ -64,8 +63,8 @@ fn ensure_loader(_app: &AppHandle) -> Result<(), String> {
 }
 
 /// Get whisper.cpp ready to use the GPU and pick the device: the first dedicated GPU, else an
-/// integrated one, else None for the CPU. (whisper.cpp would otherwise take the first one Vulkan lists,
-/// which on many PCs is the processor's integrated graphics.)
+/// integrated one, else None for the CPU. (whisper.cpp would otherwise take the first one
+/// Vulkan lists, which on many PCs is the processor's integrated graphics.)
 pub fn prepare(app: &AppHandle) -> Result<Option<Device>, String> {
 	ensure_loader(app)?;
 	use whisper_rs::whisper_rs_sys as sys;
