@@ -9,8 +9,8 @@ import {
 	basename,
 	canPickSaveTarget,
 	confirmAction,
-	fileExists,
 	dirname,
+	fileExists,
 	isDesktop,
 	pickSaveTarget,
 	writeText,
@@ -19,10 +19,11 @@ import { ProjectFiles } from '../../state/project-files';
 import { ProjectStore } from '../../state/project-store';
 import { Button } from '../../ui/button/button';
 import { Checkbox } from '../../ui/controls/controls';
+import { CountPipe } from '../../ui/count/count';
 import { Dialog, DialogRef } from '../../ui/dialog/dialog';
 import { Field } from '../../ui/field/field';
 import { Notice } from '../../ui/notice/notice';
-import { CountPipe } from '../../ui/count/count';
+import { ShowEnd } from '../../ui/show-end/show-end';
 
 const isAbsolute = (p: string) => /^([a-zA-Z]:[\\/]|[\\/])/.test(p);
 const sep = (p: string) => (p.includes('\\') ? '\\' : '/');
@@ -35,7 +36,6 @@ const CARDS: { id: FormatId; name: string; description: string }[] = [
 ];
 
 /** Export captions (PLAN §5.9): format, tracks to combine, destination, and lint warnings. */
-import { ShowEnd } from '../../ui/show-end/show-end';
 @Component({
 	selector: 'bc-export-dialog',
 	imports: [CountPipe, Dialog, Button, Checkbox, Field, Notice, ShowEnd, LucideFolder],
