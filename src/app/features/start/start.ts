@@ -1,6 +1,5 @@
 import { Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { keyCaps } from '../../ui/kbd/keys';
 import { LucideCaptions, LucideFilm, LucideFolderOpen, LucideUpload } from '@lucide/angular';
 import { version } from '../../../../package.json';
 import { FileDrop, dropKind } from '../../state/file-drop';
@@ -14,13 +13,14 @@ import {
 	probeVideo,
 } from '../../state/file-io';
 import { ProjectFiles } from '../../state/project-files';
-import { SettingsDialog } from '../settings/settings-dialog';
-import { ShortcutsDialog } from '../shortcuts/shortcuts-dialog';
 import { RecentProject, RecentProjects, editedLabel } from '../../state/recent-projects';
 import { Recovery, RecoveryEntry } from '../../state/recovery';
 import { Button } from '../../ui/button/button';
 import { Dialogs } from '../../ui/dialog/dialog';
+import { keyCaps } from '../../ui/kbd/keys';
 import { Notice } from '../../ui/notice/notice';
+import { SettingsDialog } from '../settings/settings-dialog';
+import { ShortcutsDialog } from '../shortcuts/shortcuts-dialog';
 
 /**
  * Start screen (PLAN §5.1): new project from a video, open a project, import captions,
