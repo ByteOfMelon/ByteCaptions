@@ -17,8 +17,10 @@ describe('lint', () => {
 	});
 
 	it('flags overlaps with a trim fix', () => {
-		const [a] = lintProject(project(createCue(0, 2000, 'One'), createCue(1500, 3000, 'Two')));
+		const two = createCue(1500, 3000, 'Two');
+		const [a] = lintProject(project(createCue(0, 2000, 'One'), two));
 		expect(a.kind).toBe('overlap');
+		expect(a.otherCueId).toBe(two.id);
 		expect(a.fix).toEqual({
 			kind: 'setTiming',
 			label: 'Trim to next cue',

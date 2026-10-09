@@ -23,6 +23,8 @@ export interface Problem {
 	cueId: CueId;
 	message: string;
 	fix?: ProblemFix;
+	/** For an overlap: the cue it overlaps (the next one on the same track). */
+	otherCueId?: CueId;
 }
 
 /** Characters per second, ignoring line breaks. */
@@ -41,7 +43,17 @@ export function lintTrack(project: Project, track: Track): Problem[] {
 		severity: Severity,
 		message: string,
 		fix?: ProblemFix,
-	) => out.push({ kind, severity, trackId: track.id, cueId: cue.id, message, fix });
+		otherCueId?: CueId,
+	) =>
+		out.push({
+			kind,
+			severity,
+			trackId: track.id,
+			cueId: cue.id,
+			message,
+			fix,
+			...(otherCueId && { otherCueId }),
+		});
 
 	track.cues.forEach((cue, i) => {
 		const next = track.cues[i + 1];
@@ -49,12 +61,14 @@ export function lintTrack(project: Project, track: Track): Problem[] {
 		const text = cueText(cue);
 
 		if (next && next.start < cue.end) {
-			add(cue, 'overlap', 'error', 'Overlaps the next cue', {
-				kind: 'setTiming',
-				label: 'Trim to next cue',
-				start: cue.start,
-				end: next.start,
-			});
+			add(
+				cue,
+				'overlap',
+				'error',
+				'Overlaps the next cue',
+				{ kind: 'setTiming', label: 'Trim to next cue', start: cue.start, end: next.start },
+				next.id,
+			);
 		} else if (next && next.start - cue.end < s.minGapMs) {
 			add(cue, 'gap', 'warning', `Gap to next cue under ${s.minGapMs} ms`);
 		}

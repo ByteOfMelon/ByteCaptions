@@ -47,15 +47,15 @@ export class ProblemsView {
 			.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === 'error' ? -1 : 1))
 			.map((p) => {
 				const ref = this.store.find(p.cueId)!;
+				const other = p.otherCueId && this.store.find(p.otherCueId);
 				return {
 					problem: p,
 					key: problemKey(p),
 					title: this.title(p),
 					location: `Cue ${ref.index} • ${formatTimecode(ref.cue.start, fps)}`,
-					detail:
-						p.kind === 'overlap'
-							? p.message.replace('the next cue', `cue ${ref.index + 1}`)
-							: cueText(ref.cue).replace(/\n/g, ' '),
+					detail: other
+						? `Overlaps cue ${other.index}`
+						: cueText(ref.cue).replace(/\n/g, ' '),
 					fixLabel: this.fixLabel(p, ref.index),
 					selected: this.store.selection().has(p.cueId),
 				};
