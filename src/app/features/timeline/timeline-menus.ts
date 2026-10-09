@@ -206,6 +206,8 @@ export class TimelineMenus {
 			split: () => this.commands.splitAtPlayhead(),
 			merge: () => this.commands.merge(),
 			duplicate: () => this.commands.duplicateSelected(),
+			cut: () => this.commands.cut(),
+			copy: () => this.commands.copy(),
 			'words-spread': () => this.commands.spreadWords(),
 			'words-tap': () => this.commands.tapToTime(),
 			'words-clear': () => this.commands.clearWords(),
