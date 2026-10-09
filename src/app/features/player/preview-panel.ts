@@ -22,17 +22,17 @@ import {
 	LucideSkipForward,
 	LucideUnderline,
 } from '@lucide/angular';
-import { cueText, resolvePosition, resolveStyle } from '../../core/model/cue';
-import { CaptionStyle, TextRun } from '../../core/model/types';
-import { TextFormat } from '../../state/text-format';
-import { karaokeRuns, sungAt } from '../../core/model/karaoke';
 import * as edits from '../../core/commands/edits';
+import { cueText, resolvePosition, resolveStyle } from '../../core/model/cue';
+import { karaokeRuns, sungAt } from '../../core/model/karaoke';
+import { CaptionStyle, TextRun } from '../../core/model/types';
 import { formatTimecode } from '../../core/time/timecode';
-import { Autofocus } from '../../ui/autofocus/autofocus';
 import { FileDrop } from '../../state/file-drop';
 import { VIDEO_FILTER, basename, isDesktop, openFile } from '../../state/file-io';
 import { ProjectFiles } from '../../state/project-files';
 import { ProjectStore } from '../../state/project-store';
+import { TextFormat } from '../../state/text-format';
+import { Autofocus } from '../../ui/autofocus/autofocus';
 import { Button, IconButton } from '../../ui/button/button';
 import { Select } from '../../ui/select/select';
 import { Tooltip } from '../../ui/tooltip/tooltip';
@@ -100,7 +100,10 @@ export class PreviewPanel {
 	protected readonly dragging = computed(() => !!this.drop.hover());
 	private readonly files = inject(ProjectFiles);
 	protected readonly isDesktop = isDesktop;
-	/** The project's video when it isn't playing: moved on desktop, or not picked yet in the browser. */
+	/**
+	 * The project's video when it isn't playing: moved on desktop, or not picked yet in the
+	 * browser.
+	 */
 	protected readonly missingVideo = computed(() => {
 		const path = this.store.project().media?.path;
 		return path && !this.playback.mediaUrl() ? { path, name: basename(path) } : null;
@@ -311,12 +314,12 @@ export class PreviewPanel {
 		if (el) this.commit(id, textOf(el));
 	}
 
-	/** Clicking a caption selects its cue instead of toggling playback. */
 	protected async locateVideo(): Promise<void> {
 		const file = await openFile(VIDEO_FILTER);
 		if (file) await this.files.linkVideo(file, 'Relink video');
 	}
 
+	/** Clicking a caption selects its cue instead of toggling playback. */
 	protected select(e: MouseEvent, id: string): void {
 		e.stopPropagation();
 		this.store.select(id);
