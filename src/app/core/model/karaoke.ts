@@ -43,12 +43,13 @@ export function karaokeSteps(cue: Cue): { start: Ms; end: Ms; sung: number }[] |
 	if (!cue.karaoke || !words?.length) return null;
 	const ends = wordEnds(cueText(cue), words);
 	if (!ends) return null;
+	// When each word starts, kept inside the cue and in order (a trimmed cue can leave word
+	// times outside it), so the steps cover the whole cue with no gaps.
+	const starts: Ms[] = [];
+	for (let i = 0; i < words.length; i++)
+		starts.push(i ? Math.max(starts[i - 1], Math.min(cue.end, words[i].start)) : cue.start);
 	return words
-		.map((w, i) => ({
-			start: i ? Math.max(cue.start, w.start) : cue.start,
-			end: Math.min(cue.end, words[i + 1]?.start ?? cue.end),
-			sung: ends[i],
-		}))
+		.map((_, i) => ({ start: starts[i], end: starts[i + 1] ?? cue.end, sung: ends[i] }))
 		.filter((s) => s.end > s.start);
 }
 

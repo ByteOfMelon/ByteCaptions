@@ -28,6 +28,14 @@ describe('karaoke', () => {
 		]);
 	});
 
+	it('covers the whole cue when word times fall outside it', () => {
+		const cue = { ...song(), start: 1400, end: 1700 };
+		expect(karaokeSteps(cue)).toEqual([
+			{ start: 1400, end: 1600, sung: 7 },
+			{ start: 1600, end: 1700, sung: 11 },
+		]);
+	});
+
 	it('colours sung text on top of its own formatting', () => {
 		const cue = song();
 		expect(sungAt(cue, 1450)).toBe(7);
