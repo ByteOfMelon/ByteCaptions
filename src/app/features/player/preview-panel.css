@@ -56,9 +56,24 @@ video {
 	inset: 0;
 	display: grid;
 	place-items: center;
-	padding: var(--spacing-lg);
-	color: var(--color-text-faded);
+	padding: var(--spacing-md);
+	/* The stage is black in both themes, so the text uses the dark theme's colors. */
+	color: rgb(252 252 252 / 0.5);
 	text-align: center;
+}
+.empty.missing {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	gap: var(--spacing-xs);
+	overflow-wrap: anywhere;
+}
+.missing .text-body-bold {
+	color: #fcfcfc;
+}
+.missing button {
+	margin-top: var(--spacing-sm);
 }
 
 .caption-window {

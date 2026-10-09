@@ -3,6 +3,7 @@ import {
 	LucideCaptions,
 	LucideChevronLeft,
 	LucideChevronRight,
+	LucideFolder,
 	LucidePause,
 	LucidePlay,
 	LucideSkipBack,
@@ -13,6 +14,8 @@ import * as edits from '../../core/commands/edits';
 import { formatTimecode } from '../../core/time/timecode';
 import { Autofocus } from '../../ui/autofocus/autofocus';
 import { FileDrop } from '../../state/file-drop';
+import { VIDEO_FILTER, basename, isDesktop, openFile } from '../../state/file-io';
+import { ProjectFiles } from '../../state/project-files';
 import { ProjectStore } from '../../state/project-store';
 import { Button, IconButton } from '../../ui/button/button';
 import { Select } from '../../ui/select/select';
@@ -33,6 +36,7 @@ type PreviewMode = 'desktop' | 'mobile' | 'tv' | 'plain';
 		LucideCaptions,
 		LucideChevronLeft,
 		LucideChevronRight,
+		LucideFolder,
 		LucidePause,
 		LucidePlay,
 		LucideSkipBack,
@@ -60,6 +64,13 @@ export class PreviewPanel {
 	private readonly drop = inject(FileDrop);
 	/** A file is being dragged over the window (the editor handles the drop). */
 	protected readonly dragging = computed(() => !!this.drop.hover());
+	private readonly files = inject(ProjectFiles);
+	protected readonly isDesktop = isDesktop;
+	/** The project's video when it isn't playing: moved on desktop, or not picked yet in the browser. */
+	protected readonly missingVideo = computed(() => {
+		const path = this.store.project().media?.path;
+		return path && !this.playback.mediaUrl() ? { path, name: basename(path) } : null;
+	});
 	/** Player height drives caption size, like YouTube's player. */
 	private readonly frameHeight = signal(360);
 
@@ -121,6 +132,11 @@ export class PreviewPanel {
 	}
 
 	/** Clicking a caption selects its cue instead of toggling playback. */
+	protected async locateVideo(): Promise<void> {
+		const file = await openFile(VIDEO_FILTER);
+		if (file) await this.files.linkVideo(file, 'Relink video');
+	}
+
 	protected select(e: MouseEvent, id: string): void {
 		e.stopPropagation();
 		this.store.select(id);

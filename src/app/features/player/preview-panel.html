@@ -7,6 +7,21 @@
 	<div #frame class="stage">
 		@if (playback.mediaUrl(); as url) {
 			<video #video [src]="url" preload="auto"></video>
+		} @else if (missingVideo(); as video) {
+			<div class="empty missing">
+				@if (isDesktop) {
+					<span class="text-body-bold">Video not found</span>
+					<span class="text-small">{{ video.path }} was moved or renamed</span>
+				} @else {
+					<span class="text-body-bold">Video not loaded</span>
+					<span class="text-small"
+						>Choose {{ video.name }} to play it with the captions</span
+					>
+				}
+				<button bcButton (click)="$event.stopPropagation(); locateVideo()">
+					<svg lucideFolder></svg>{{ isDesktop ? 'Locate video' : 'Choose video' }}
+				</button>
+			</div>
 		} @else {
 			<div class="empty text-small">
 				Drop a video here to preview it • captions play without one

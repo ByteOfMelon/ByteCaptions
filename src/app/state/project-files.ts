@@ -11,6 +11,7 @@ import {
 	VIDEO_FILTER,
 	basename,
 	confirmAction,
+	dirname,
 	fileExists,
 	fromPath,
 	isDesktop,
@@ -98,8 +99,12 @@ export class ProjectFiles {
 		file ??= await openFile(PROJECT_FILTER);
 		if (!file || !(await this.confirmDiscard())) return false;
 		try {
-			const p = parseProject(await file.text());
-			this.loadProject(p, file.path, true);
+			const { project: p, relinked } = await this.findMovedVideo(
+				parseProject(await file.text()),
+				file.path,
+			);
+			this.loadProject(p, file.path, !relinked);
+			if (relinked) this.store.dirty.set(true);
 			this.recent.record(p, file.name, file.path);
 			await this.media.loadForProject(p);
 			return true;
@@ -115,10 +120,28 @@ export class ProjectFiles {
 	 */
 	async restore(p: Project, path: string | null): Promise<boolean> {
 		if (!(await this.confirmDiscard())) return false;
+		({ project: p } = await this.findMovedVideo(p, path));
 		this.loadProject(p, path, false);
 		this.store.dirty.set(true);
 		await this.media.loadForProject(p);
 		return true;
+	}
+
+	/**
+	 * When the video isn't at its saved path but a file with its name sits next to the project
+	 * file (the folder was moved), point the project there. Save then keeps the new path.
+	 */
+	private async findMovedVideo(
+		p: Project,
+		projectPath: string | null,
+	): Promise<{ project: Project; relinked: boolean }> {
+		const path = p.media?.path;
+		if (!isDesktop || !projectPath || !p.media || !path || (await fileExists(path)))
+			return { project: p, relinked: false };
+		const sep = projectPath.includes('\\') ? '\\' : '/';
+		const nearby = `${dirname(projectPath)}${sep}${basename(path)}`;
+		if (!(await fileExists(nearby))) return { project: p, relinked: false };
+		return { project: { ...p, media: { ...p.media, path: nearby } }, relinked: true };
 	}
 
 	/** Reopen a recent project: by path on desktop, by asking for the file in the browser. */
@@ -178,11 +201,11 @@ export class ProjectFiles {
 		return true;
 	}
 
-	/** Link a video to the open project (dropped on the editor). */
-	async linkVideo(file: PickedFile): Promise<void> {
+	/** Link a video to the open project (dropped on the editor, or located when it moved). */
+	async linkVideo(file: PickedFile, label = 'Link video'): Promise<void> {
 		const media = await this.videoRef(file);
 		this.media.load(file);
-		this.store.apply('Link video', (p) => {
+		this.store.apply(label, (p) => {
 			p.media = media;
 		});
 	}
