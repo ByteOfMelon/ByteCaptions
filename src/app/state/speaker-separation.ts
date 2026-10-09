@@ -11,7 +11,7 @@ import {
 import { isDesktop } from './file-io';
 import { stopped, wasCancelled } from './jobs';
 import { MediaSource } from './media-source';
-import { TRACK_COLORS } from './project-files';
+import { trackColors } from './project-files';
 import { ProjectStore } from './project-store';
 
 /** Size of the speaker models (src-tauri/src/speakers.rs), for messages before they download. */
@@ -119,7 +119,8 @@ export class SpeakerSeparation {
 		project: Project = this.store.project(),
 	): SpeakerSplit {
 		const others = project.tracks.filter((t) => t.id !== track.id).length;
-		const colors = TRACK_COLORS.map((_, i) => TRACK_COLORS[(others + i) % TRACK_COLORS.length]);
+		const palette = trackColors();
+		const colors = palette.map((_, i) => palette[(others + i) % palette.length]);
 		return splitBySpeaker(
 			track,
 			assignSpeakers(track.cues, turns, { foldMinor: detected }),

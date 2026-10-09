@@ -25,8 +25,14 @@ import { MediaSource } from './media-source';
 import { ProjectStore } from './project-store';
 import { RecentProject, RecentProjects } from './recent-projects';
 
-/** Track colors from the design tokens (--color-track-1..4), assigned round-robin. */
-export const TRACK_COLORS = ['#4a6fa5', '#7e60a6', '#9a6a3e', '#3b7c6f'];
+/**
+ * Track colors from the design tokens (--color-track-1..4), assigned round-robin. Read as
+ * their hex values, since projects save them and the timeline canvas can't use CSS variables.
+ */
+export function trackColors(): string[] {
+	const css = getComputedStyle(document.documentElement);
+	return [1, 2, 3, 4].map((n) => css.getPropertyValue(`--color-track-${n}`).trim());
+}
 
 /** An error's text without the "Error: " prefix, for messages. */
 export const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -45,7 +51,8 @@ export class ProjectFiles {
 	readonly saved = signal(false);
 
 	nextTrackColor(p: Project = this.store.project()): string {
-		return TRACK_COLORS[p.tracks.length % TRACK_COLORS.length];
+		const colors = trackColors();
+		return colors[p.tracks.length % colors.length];
 	}
 
 	private loadProject(p: Project, path: string | null, saved: boolean): void {
@@ -81,7 +88,7 @@ export class ProjectFiles {
 		const p = createProject(stripExtension(file.name));
 		p.fps = 60;
 		p.tracks[0].name = 'Dialogue';
-		p.tracks[0].color = TRACK_COLORS[0];
+		p.tracks[0].color = trackColors()[0];
 		p.media = {
 			path: file.path ?? file.name,
 			hash: '',

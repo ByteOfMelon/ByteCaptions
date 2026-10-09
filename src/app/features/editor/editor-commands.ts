@@ -17,7 +17,7 @@ import {
 } from '../../core/commands/edits';
 import { createCue, createTrack, newId } from '../../core/model/defaults';
 import { Cue, CueId, Ms, StyleId, TrackId } from '../../core/model/types';
-import { TRACK_COLORS } from '../../state/project-files';
+import { trackColors } from '../../state/project-files';
 import { CueRef, ProjectStore } from '../../state/project-store';
 import { WordTapping } from '../../state/word-tapping';
 import { Playback } from '../player/playback';
@@ -320,10 +320,8 @@ export class EditorCommands {
 		const p = this.store.project();
 		let n = p.tracks.length + 1;
 		while (p.tracks.some((t) => t.name === `Track ${n}`)) n++;
-		const track = createTrack(
-			`Track ${n}`,
-			TRACK_COLORS[p.tracks.length % TRACK_COLORS.length],
-		);
+		const colors = trackColors();
+		const track = createTrack(`Track ${n}`, colors[p.tracks.length % colors.length]);
 		const after = p.tracks.findIndex((t) => t.id === afterId);
 		this.store.apply('New track', addTrack(track, after < 0 ? undefined : after + 1));
 		return track.id;

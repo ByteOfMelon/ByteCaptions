@@ -27,7 +27,7 @@ import { cueText } from '../../core/model/cue';
 import { MARKER_COLORS } from '../../core/model/defaults';
 import { CueId, MarkerColor, MarkerId, Ms, StyleId, Track, TrackId } from '../../core/model/types';
 import { EditorUi } from '../../state/editor-ui';
-import { TRACK_COLORS } from '../../state/project-files';
+import { trackColors } from '../../state/project-files';
 import { ProjectStore } from '../../state/project-store';
 import { Transcription } from '../../state/transcription';
 import { ContextMenu, MenuEntry } from '../../ui/menu/menu';
@@ -435,7 +435,7 @@ export class TimelineMenus {
 				id: 'color',
 				label: 'Track color',
 				swatch: track.color,
-				submenu: TRACK_COLORS.map((c, i) => ({
+				submenu: trackColors().map((c, i) => ({
 					id: `color:${c}`,
 					label: `Color ${i + 1}`,
 					swatch: c,
