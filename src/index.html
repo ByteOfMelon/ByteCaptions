@@ -7,7 +7,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" type="image/x-icon" href="favicon.ico" />
 		<script>
-			// Apply user's selected theme, or use system preference
+			// Set the saved theme (or the system's) before the app loads, so the first paint matches.
 			try {
 				const t = localStorage.getItem('bc.theme');
 				const light = t
