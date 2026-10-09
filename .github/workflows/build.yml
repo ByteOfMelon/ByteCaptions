@@ -4,6 +4,17 @@ name: Build
 
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: Platform to build
+        type: choice
+        default: all
+        options:
+          - all
+          - x86_64-pc-windows-msvc
+          - aarch64-apple-darwin
+          - x86_64-apple-darwin
+          - x86_64-unknown-linux-gnu
   push:
     tags: ['v*']
 
@@ -13,30 +24,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Picks the platforms to build: all of them, or the one chosen when running it by hand.
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.pick.outputs.matrix }}
+    steps:
+      - id: pick
+        env:
+          TARGET: ${{ inputs.target || 'all' }}
+        run: |
+          cat > all.json <<'JSON'
+          [
+            { "name": "Windows (x64)", "os": "windows-latest", "target": "x86_64-pc-windows-msvc", "ffmpeg": "win32-x64" },
+            { "name": "macOS (Apple Silicon)", "os": "macos-latest", "target": "aarch64-apple-darwin", "ffmpeg": "darwin-arm64" },
+            {
+              "name": "macOS (Intel)", "os": "macos-15-intel", "target": "x86_64-apple-darwin", "ffmpeg": "darwin-x64",
+              "ort-from-source": true,
+              "tauri-args": "--config '{\"bundle\":{\"macOS\":{\"minimumSystemVersion\":\"14.0\"}}}'"
+            },
+            { "name": "Linux", "os": "ubuntu-24.04", "target": "x86_64-unknown-linux-gnu", "ffmpeg": "linux-x64" }
+          ]
+          JSON
+          echo "matrix=$(jq -c --arg t "$TARGET" '{include: map(select($t == "all" or .target == $t))}' all.json)" >> "$GITHUB_OUTPUT"
+
+  # Notes on the platforms above:
+  # - macOS (Intel): ort has no prebuilt ONNX Runtime for Intel Macs, so it's built from source
+  #   (see "Build ONNX Runtime"), and that build needs macOS 14.
+  # - Linux: ubuntu-24.04 because ONNX Runtime (speaker separation) needs glibc 2.38+.
   build:
+    needs: plan
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - name: Windows (x64)
-            os: windows-latest
-            target: x86_64-pc-windows-msvc
-            ffmpeg: win32-x64
-          - name: macOS (Apple Silicon)
-            os: macos-latest
-            target: aarch64-apple-darwin
-            ffmpeg: darwin-arm64
-          - name: macOS (Intel)
-            os: macos-15-intel
-            target: x86_64-apple-darwin
-            ffmpeg: darwin-x64
-            # ort has no prebuilt ONNX Runtime for Intel Macs, so it's built from source.
-            ort-from-source: true
-            tauri-args: --config '{"bundle":{"macOS":{"minimumSystemVersion":"14.0"}}}'
-          - name: Linux
-            os: ubuntu-24.04 # ONNX Runtime (speaker separation) needs glibc 2.38+
-            target: x86_64-unknown-linux-gnu
-            ffmpeg: linux-x64
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     steps:
