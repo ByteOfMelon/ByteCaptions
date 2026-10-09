@@ -28,7 +28,7 @@ body {
 	font-size: 16px;
 	font-weight: 500;
 	line-height: var(--line-height);
-	/* Like a desktop app: labels and lists don't select; text you edit does (below). */
+	
 	user-select: none;
 	-webkit-font-smoothing: antialiased;
 }

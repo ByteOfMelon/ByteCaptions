@@ -7,8 +7,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" type="image/x-icon" href="favicon.ico" />
 		<script>
-			// Apply the theme before the app boots so it doesn't flash the wrong one: the
-			// user's choice if they made one, otherwise the system's.
+			// Apply user's selected theme, or use system preference
 			try {
 				const t = localStorage.getItem('bc.theme');
 				const light = t

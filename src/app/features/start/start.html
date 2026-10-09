@@ -5,10 +5,7 @@
 			<h1 class="text-heading-1">ByteCaptions</h1>
 		</div>
 		<p class="text-body text-faded">
-			The open-source video editing-style subtitle editor • Made by
-			<a class="site" [href]="website" (click)="openWebsite($event)"
-				>Michael Webb/Byte of Melon</a
-			>
+			The open-source video editing-style subtitle editor
 		</p>
 	</header>
 
@@ -111,10 +108,9 @@
 	</section>
 
 	<footer class="text-small text-faded">
-		v{{ version }}&nbsp; • &nbsp;<button type="button" class="link" (click)="openSettings()">
-			Settings</button
-		>&nbsp; • &nbsp;<button type="button" class="link" (click)="openShortcuts()">
-			Keyboard shortcuts
-		</button>
+		v{{ version }} • Made by&nbsp;
+			<a class="site" [href]="website" (click)="openWebsite($event)"
+				>Michael Webb/Byte of Melon</a
+			>
 	</footer>
 </main>

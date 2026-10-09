@@ -247,11 +247,11 @@ export class AppMenu {
 					: []),
 				await this.submenu('&Help', [
 					{ command: 'shortcuts' },
+					'separator',
 					{ text: 'ByteCaptions GitHub page', run: () => openExternal(WEBSITE) },
 					...(IS_MAC
 						? []
 						: ([
-								'separator',
 								{ text: 'About ByteCaptions…', run: () => void this.about() },
 							] as Entry[])),
 				]),
