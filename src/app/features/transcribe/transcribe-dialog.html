@@ -1,6 +1,14 @@
 @switch (job.phase()) {
 	@case ('setup') {
 		<bc-dialog heading="Auto-transcribe" [subtitle]="job.privacyNote()" [width]="600">
+			@if (range()) {
+				<bc-select
+					label="Transcribe"
+					[options]="scopeOptions()"
+					[value]="job.options().range ? 'range' : 'all'"
+					(valueChange)="setScope($any($event))"
+				/>
+			}
 			<div class="row">
 				<bc-select
 					label="Spoken language"
@@ -15,6 +23,9 @@
 					(valueChange)="job.setOptions({ target: $any($event) })"
 				/>
 			</div>
+			@if (rangeNote(); as note) {
+				<span class="text-small text-faded range-note">{{ note }}</span>
+			}
 
 			<div class="group">
 				<span class="text-small" id="tx-model">Model</span>
@@ -130,12 +141,21 @@
 				<div class="result">
 					<div class="result-head">
 						<span class="color" [style.background]="r.trackColor"></span>
-						<span
-							>Added to
-							{{ job.options().target === 'new' ? 'new track' : 'track' }} "{{
-								r.trackName
-							}}"</span
-						>
+						@if (job.options().range && job.options().target !== 'new') {
+							<span
+								>{{
+									r.replaced ? 'Replaced the range' : 'Transcribed the range'
+								}}
+								on "{{ r.trackName }}"</span
+							>
+						} @else {
+							<span
+								>Added to
+								{{ job.options().target === 'new' ? 'new track' : 'track' }} "{{
+									r.trackName
+								}}"</span
+							>
+						}
 					</div>
 					<div class="stats">
 						<div class="stat">

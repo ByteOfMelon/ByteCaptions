@@ -70,6 +70,7 @@ fn run(
 	path: &Path,
 	model: &str,
 	language: Option<&str>,
+	range: Option<(u64, u64)>,
 	events: &Channel<AsrEvent>,
 ) -> Result<Transcript, String> {
 	static LOGGING: Once = Once::new();
@@ -82,7 +83,9 @@ fn run(
 	}
 
 	let mut audio = Vec::new();
-	media::decode_audio(path, SAMPLE_RATE, |samples| {
+	// Times come back relative to the audio decoded; shift them to the video's.
+	let offset = range.map_or(0, |(from, _)| from as i64);
+	media::decode_audio(path, SAMPLE_RATE, range, |samples| {
 		audio.extend(samples.iter().map(|&s| s as f32 / 32768.0));
 		!cancel.load(Ordering::Relaxed)
 	})?;
@@ -146,8 +149,8 @@ fn run(
 	let lines = events.clone();
 	params.set_segment_callback_safe_lossy(move |s: whisper_rs::SegmentCallbackData| {
 		let _ = lines.send(AsrEvent::Segment {
-			start_ms: s.start_timestamp * 10,
-			end_ms: s.end_timestamp * 10,
+			start_ms: s.start_timestamp * 10 + offset,
+			end_ms: s.end_timestamp * 10 + offset,
 			text: s.text.trim().to_string(),
 		});
 	});
@@ -165,10 +168,12 @@ fn run(
 	let language = whisper_rs::get_lang_str(state.full_lang_id_from_state())
 		.unwrap_or("")
 		.to_string();
-	Ok(Transcript {
-		words: words(&ctx, &state),
-		language,
-	})
+	let mut words = words(&ctx, &state);
+	for w in &mut words {
+		w.start += offset;
+		w.end += offset;
+	}
+	Ok(Transcript { words, language })
 }
 
 /// Silence everything the VAD model doesn't hear as speech. Whisper tends to invent text over
@@ -324,7 +329,8 @@ fn words(ctx: &WhisperContext, state: &whisper_rs::WhisperState) -> Vec<Word> {
 }
 
 /// Transcribe a media file's speech with a downloaded model. `language` is a Whisper code
-/// ("en"), or None to detect it.
+/// ("en"), or None to detect it. `from_ms` and `to_ms` limit it to that stretch (the in/out
+/// range); word and line times are still the video's.
 #[tauri::command]
 pub async fn transcribe(
 	app: AppHandle,
@@ -332,8 +338,11 @@ pub async fn transcribe(
 	path: String,
 	model: String,
 	language: Option<String>,
+	from_ms: Option<u64>,
+	to_ms: Option<u64>,
 	on_event: Channel<AsrEvent>,
 ) -> Result<Transcript, String> {
+	let range = from_ms.zip(to_ms).filter(|(from, to)| to > from);
 	let cancel = jobs.start();
 	tauri::async_runtime::spawn_blocking(move || {
 		run(
@@ -342,6 +351,7 @@ pub async fn transcribe(
 			Path::new(&path),
 			&model,
 			language.as_deref(),
+			range,
 			&on_event,
 		)
 	})

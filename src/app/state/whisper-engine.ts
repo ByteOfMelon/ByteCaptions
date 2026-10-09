@@ -149,7 +149,7 @@ export class WhisperEngine implements TranscriptionEngine {
 						if (e.text)
 							emit({
 								type: 'progress',
-								mediaMs: e.endMs,
+								mediaMs: e.endMs - (opts.range?.start ?? 0),
 								line: { at: e.startMs, text: e.text },
 							});
 				}
@@ -160,6 +160,8 @@ export class WhisperEngine implements TranscriptionEngine {
 					path,
 					model: model.whisper,
 					language: LANGUAGE_CODES[opts.language] ?? null,
+					fromMs: opts.range ? Math.round(opts.range.start) : null,
+					toMs: opts.range ? Math.round(opts.range.end) : null,
 					onEvent: events,
 				}));
 			} catch (e) {

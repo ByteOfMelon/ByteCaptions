@@ -89,8 +89,13 @@ export const LANGUAGES = Object.keys(LANGUAGE_CODES);
 
 export interface TranscribeOptions {
 	language: string;
-	/** 'new' adds a "Transcript" track; never overwrites existing cues (handoff §4). */
+	/**
+	 * 'new' adds a "Transcript" track. A whole-video run onto a track adds to its cues; a
+	 * range run replaces the track's cues inside the range (one undo step).
+	 */
 	target: 'new' | TrackId;
+	/** Transcribe only this stretch (the in/out range), or null for the whole video. */
+	range: { start: Ms; end: Ms } | null;
 	model: ModelId;
 	wordTimings: boolean;
 	flagLowConfidence: boolean;
@@ -135,6 +140,29 @@ export function bytes(n: number): string {
 	return n >= 1e9 ? `${(n / 1e9).toFixed(1)} GB` : `${Math.round(n / 1e6)} MB`;
 }
 
+/** A cue is in a range when its middle is, as for the other in/out range operations. */
+function inside(c: { start: Ms; end: Ms }, r: { start: Ms; end: Ms }): boolean {
+	const mid = (c.start + c.end) / 2;
+	return mid >= r.start && mid < r.end;
+}
+
+/**
+ * Keep a range run's cues inside the range, so they can't overlap the cues on either side:
+ * cues mostly outside go, the rest are trimmed to it (and their words with them).
+ */
+function clipToRange(cues: Cue[], r: { start: Ms; end: Ms }): Cue[] {
+	return cues
+		.filter((c) => inside(c, r))
+		.map((c) => {
+			const start = Math.max(c.start, r.start);
+			const end = Math.min(c.end, r.end);
+			const words = c.words
+				?.filter((w) => inside(w, { start, end }))
+				.map((w) => ({ ...w, start: Math.max(w.start, start), end: Math.min(w.end, end) }));
+			return { ...c, start, end, ...(words && { words }) };
+		});
+}
+
 /** "About 30 s" / "About 4 min": an estimate, rounded to what's worth showing. */
 function roughly(ms: Ms): string {
 	return ms < 50_000
@@ -177,6 +205,7 @@ export class Transcription {
 	readonly options = signal<TranscribeOptions>({
 		language: 'English',
 		target: 'new',
+		range: null,
 		model: 'balanced',
 		wordTimings: true,
 		flagLowConfidence: true,
@@ -189,6 +218,8 @@ export class Transcription {
 		trackName: string;
 		trackColor: string;
 		cues: number;
+		/** Cues the range run replaced. */
+		replaced: number;
 		lowConfidence: number;
 		speedWarnings: number;
 		took: string;
@@ -196,7 +227,11 @@ export class Transcription {
 	private startedAt = 0;
 	private abort: AbortController | null = null;
 
-	readonly durationMs = computed(() => this.store.duration());
+	/** Length of what's transcribed: the range, or the whole video. */
+	readonly durationMs = computed(() => {
+		const r = this.options().range;
+		return r ? r.end - r.start : this.store.duration();
+	});
 	/** Model download progress while the download step runs; null otherwise. */
 	readonly download = signal<{ received: number; total: number } | null>(null);
 	/** Stop was pressed; the engine takes a moment to finish the chunk it's on. */
@@ -223,10 +258,13 @@ export class Transcription {
 	readonly summary = computed(() => {
 		const o = this.options();
 		const model = MODELS.find((m) => m.id === o.model)!;
+		const name = o.target === 'new' ? '' : (this.store.track(o.target)?.name ?? 'track');
 		const target =
 			o.target === 'new'
 				? `New track: ${this.trackName()}`
-				: `Add to ${this.store.track(o.target)?.name ?? 'track'}`;
+				: o.range
+					? `Range on ${name}`
+					: `Add to ${name}`;
 		const language = LANGUAGE_CODES[o.language] ? o.language : 'Any language';
 		return `${model.name} model • ${language} • ${target}`;
 	});
@@ -293,7 +331,8 @@ export class Transcription {
 	}
 
 	estimate(model: ModelInfo): string {
-		return `${roughly(this.durationMs() * this.speed(model))} for this video.`;
+		const what = this.options().range ? 'range' : 'video';
+		return `${roughly(this.durationMs() * this.speed(model))} for this ${what}.`;
 	}
 
 	setOptions(changes: Partial<TranscribeOptions>): void {
@@ -384,11 +423,28 @@ export class Transcription {
 		this.abort.abort();
 	}
 
+	/**
+	 * The part of the range a range run can fill: a kept cue on either side may reach into it,
+	 * and new cues stop where it does (so words it already has aren't repeated).
+	 */
+	private freeSpan(target: TranscribeOptions['target'], range: { start: Ms; end: Ms }) {
+		let { start, end } = range;
+		if (target === 'new') return { start, end };
+		for (const c of this.store.track(target)?.cues ?? []) {
+			if (inside(c, range)) continue;
+			if (c.start < range.start) start = Math.max(start, c.end);
+			else end = Math.min(end, c.start);
+		}
+		return { start, end };
+	}
+
 	private finish(cues: Cue[]): void {
 		const opts = this.options();
+		if (opts.range) cues = clipToRange(cues, this.freeSpan(opts.target, opts.range));
 		let trackId = opts.target;
 		let trackName: string;
 		let trackColor: string;
+		let replaced = 0;
 		if (opts.target === 'new') {
 			const track = createTrack(this.trackName(), this.files.nextTrackColor());
 			track.cues = cues;
@@ -400,8 +456,12 @@ export class Transcription {
 			const t = this.store.track(opts.target)!;
 			trackName = t.name;
 			trackColor = t.color;
-			this.store.apply('Auto-transcribe', (p) => {
+			const range = opts.range;
+			const inRange = (c: Cue) => !!range && inside(c, range);
+			replaced = t.cues.filter(inRange).length;
+			this.store.apply(range ? 'Auto-transcribe range' : 'Auto-transcribe', (p) => {
 				const target = p.tracks.find((x) => x.id === opts.target)!;
+				if (range) target.cues = target.cues.filter((c) => !inRange(c));
 				target.cues.push(...cues);
 				target.cues.sort((a, b) => a.start - b.start);
 			});
@@ -419,6 +479,7 @@ export class Transcription {
 			trackName,
 			trackColor,
 			cues: cues.length,
+			replaced,
 			lowConfidence,
 			speedWarnings,
 			took: formatDuration(performance.now() - this.startedAt),

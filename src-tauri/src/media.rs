@@ -61,15 +61,24 @@ fn cache_file(app: &AppHandle, path: &Path) -> Option<PathBuf> {
 
 /**
  * Decode a file's first audio track to mono 16-bit samples at `rate`, passing them to `sink`
- * as they arrive. `sink` returns false to stop early (the job was cancelled).
+ * as they arrive. `range` limits it to that stretch, in ms. `sink` returns false to stop
+ * early (the job was cancelled).
  */
 pub fn decode_audio(
 	path: &Path,
 	rate: u32,
+	range: Option<(u64, u64)>,
 	mut sink: impl FnMut(&[i16]) -> bool,
 ) -> Result<(), String> {
-	let mut child = ffmpeg()?
-		.args(["-nostdin", "-v", "error", "-i"])
+	let mut cmd = ffmpeg()?;
+	cmd.args(["-nostdin", "-v", "error"]);
+	// Seeking on the input skips straight there; decoding makes it sample-accurate.
+	if let Some((from, to)) = range {
+		let secs = |ms: u64| format!("{:.3}", ms as f64 / 1000.0);
+		cmd.args(["-ss", &secs(from), "-t", &secs(to.saturating_sub(from))]);
+	}
+	let mut child = cmd
+		.arg("-i")
 		.arg(path)
 		.args(["-map", "0:a:0", "-vn", "-ac", "1", "-ar"])
 		.arg(rate.to_string())
@@ -132,7 +141,7 @@ pub fn decode_audio(
 fn decode_peaks(path: &Path) -> Result<Vec<u8>, String> {
 	let mut peaks = Vec::new();
 	let (mut loudest, mut count) = (0u16, 0usize);
-	decode_audio(path, SAMPLE_RATE, |samples| {
+	decode_audio(path, SAMPLE_RATE, None, |samples| {
 		for s in samples {
 			loudest = loudest.max(s.unsigned_abs());
 			count += 1;
