@@ -16,12 +16,14 @@ import {
 	LucideRepeat,
 	LucideScissors,
 	LucideSquareDashedMousePointer,
+	LucideTimer,
 	LucideTrash2,
 	LucideType,
 	LucideUpload,
 	LucideUsers,
 	LucideX,
 } from '@lucide/angular';
+import { cueText } from '../../core/model/cue';
 import { MARKER_COLORS } from '../../core/model/defaults';
 import { CueId, MarkerColor, MarkerId, Ms, StyleId, Track, TrackId } from '../../core/model/types';
 import { EditorUi } from '../../state/editor-ui';
@@ -148,6 +150,23 @@ export class TimelineMenus {
 				disabled: locked,
 				submenu: this.trackMenu(track.id),
 			},
+			{
+				id: 'words',
+				label: 'Word timing',
+				icon: LucideTimer.icon,
+				disabled: locked || !cueText(cue).trim(),
+				submenu: [
+					{ id: 'words-spread', label: 'Spread evenly' },
+					{ id: 'words-tap', label: 'Tap to time' },
+					{ kind: 'separator' },
+					{
+						id: 'words-clear',
+						label: 'Clear word timings',
+						icon: LucideX.icon,
+						disabled: !cue.words,
+					},
+				],
+			},
 			{ kind: 'separator' },
 			{
 				id: 'set-start',
@@ -186,6 +205,9 @@ export class TimelineMenus {
 			split: () => this.commands.splitAtPlayhead(),
 			merge: () => this.commands.merge(),
 			duplicate: () => this.commands.duplicateSelected(),
+			'words-spread': () => this.commands.spreadWords(),
+			'words-tap': () => this.commands.tapToTime(),
+			'words-clear': () => this.commands.clearWords(),
 			'set-start': () => this.commands.setStartToPlayhead(),
 			'set-end': () => this.commands.setEndToPlayhead(),
 			delete: () => this.commands.deleteSelected(),

@@ -204,6 +204,11 @@
 				[style.top.px]="p.top"
 			/>
 		}
+		@if (tapHint(); as t) {
+			<div class="hud tap-hint text-small" [style.left.px]="t.x" role="status">
+				{{ t.text }}
+			</div>
+		}
 		@if (hud(); as h) {
 			<div
 				class="hud text-small"

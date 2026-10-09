@@ -5,6 +5,7 @@
 import { Draft } from 'immer';
 import { createCue, newId } from '../model/defaults';
 import { cueText, joinWords, sortCues, wordGap } from '../model/cue';
+import { retimeWords, spreadWords, splitWords } from '../model/words';
 import { normalizeRuns, replaceText, splitRuns, styleRange, trimRuns } from '../model/runs';
 import {
 	CaptionStyle,
@@ -16,6 +17,7 @@ import {
 	Project,
 	Track,
 	TrackId,
+	WordTiming,
 } from '../model/types';
 
 type P = Draft<Project>;
@@ -102,10 +104,14 @@ export function setText(cueId: CueId, text: string) {
 		assertUnlocked(track);
 		// Formatting stays on the text that didn't change.
 		cue.runs = replaceText(cue.runs, text);
-		// Word timings no longer match edited text.
-		if (cue.words && joinWords(cue.words) !== text.replace(/\s+/g, ' ').trim()) {
-			delete cue.words;
-			delete cue.karaoke;
+		// Word timings follow the edit: unchanged words keep theirs.
+		if (cue.words) {
+			const words = retimeWords(cue.words, text, cue.start, cue.end);
+			if (words) cue.words = words;
+			else {
+				delete cue.words;
+				delete cue.karaoke;
+			}
 		}
 	};
 }
@@ -124,6 +130,34 @@ export function styleText(
 		const { track, cue } = findCue(p, cueId);
 		assertUnlocked(track);
 		cue.runs = styleRange(cue.runs, from, to, change);
+	};
+}
+
+/** Replace a cue's word timings (dragging a word edge, tapping). */
+export function setWords(cueId: CueId, words: WordTiming[]) {
+	return (p: P) => {
+		const { track, cue } = findCue(p, cueId);
+		assertUnlocked(track);
+		cue.words = words;
+	};
+}
+
+/** Give a cue's words timings by sharing its time out by word length. */
+export function spreadCueWords(cueId: CueId) {
+	return (p: P) => {
+		const { track, cue } = findCue(p, cueId);
+		assertUnlocked(track);
+		const words = splitWords(cueText(cue));
+		if (words.length) cue.words = spreadWords(words, cue.start, cue.end);
+	};
+}
+
+export function clearWords(cueId: CueId) {
+	return (p: P) => {
+		const { track, cue } = findCue(p, cueId);
+		assertUnlocked(track);
+		delete cue.words;
+		delete cue.karaoke;
 	};
 }
 

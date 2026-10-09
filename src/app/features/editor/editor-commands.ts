@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import {
 	addCue,
 	addTrack,
+	clearWords,
 	deleteCues,
 	mergeCues,
 	moveCues,
@@ -11,12 +12,14 @@ import {
 	setTiming,
 	shiftAfter,
 	splitCue,
+	spreadCueWords,
 	updateTrack,
 } from '../../core/commands/edits';
 import { createCue, createTrack, newId } from '../../core/model/defaults';
 import { Cue, CueId, Ms, StyleId, TrackId } from '../../core/model/types';
 import { TRACK_COLORS } from '../../state/project-files';
 import { CueRef, ProjectStore } from '../../state/project-store';
+import { WordTapping } from '../../state/word-tapping';
 import { Playback } from '../player/playback';
 
 /** Edit actions shared by the toolbar, timeline, menus and keyboard shortcuts. */
@@ -24,6 +27,7 @@ import { Playback } from '../player/playback';
 export class EditorCommands {
 	private readonly store = inject(ProjectStore);
 	private readonly playback = inject(Playback);
+	private readonly tapping = inject(WordTapping);
 	/** Copied cues, with times relative to the earliest one. */
 	private clipboard: Cue[] = [];
 
@@ -47,6 +51,29 @@ export class EditorCommands {
 		const out: { rightId?: string } = {};
 		this.store.apply('Split cue', splitCue(target.cue.id, t, out));
 		if (out.rightId) this.store.select(out.rightId);
+	}
+
+	/** The single selected cue, if it's on an unlocked track (for word timing). */
+	private editableCue(): CueRef | null {
+		const sel = this.store.selectedCues();
+		return sel.length === 1 && !sel[0].track.locked ? sel[0] : null;
+	}
+
+	/** Word timing • Spread evenly: share the cue's time out to its words by length. */
+	spreadWords(): void {
+		const r = this.editableCue();
+		if (r) this.store.apply('Spread words evenly', spreadCueWords(r.cue.id));
+	}
+
+	/** Word timing • Tap to time. */
+	tapToTime(): void {
+		const r = this.editableCue();
+		if (r) this.tapping.start(r.cue.id);
+	}
+
+	clearWords(): void {
+		const r = this.editableCue();
+		if (r?.cue.words) this.store.apply('Clear word timings', clearWords(r.cue.id));
 	}
 
 	/** Merge the selection, or the single selected cue with the next one on its track. */

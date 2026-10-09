@@ -81,6 +81,10 @@ export interface PaintInput {
 	range: { start: Ms; end: Ms } | null;
 	/** Markers in time order, with their flag colors. */
 	markers: { at: Ms; color: string; selected: boolean }[];
+	/** The line between two words being dragged (before word `index`). */
+	wordEdge: { cueId: CueId; index: number } | null;
+	/** Tap to time: the cue being tapped and how far it's been tapped. */
+	tapping: { cueId: CueId; tappedUntil: Ms | null } | null;
 }
 
 /** Ruler steps (ms); the major step is the smallest one leaving room for a timecode label. */
@@ -294,7 +298,20 @@ function paintCue(
 	roundRect(ctx, x0, y, w, h, 4);
 	ctx.fill();
 
-	if (w > 24) {
+	const tapping = input.tapping?.cueId === cue.id ? input.tapping : null;
+	if (tapping?.tappedUntil != null) {
+		// Tap to time: the part already tapped is shaded.
+		ctx.save();
+		roundRect(ctx, x0, y, w, h, 4);
+		ctx.clip();
+		ctx.fillStyle = c.onTrack;
+		ctx.globalAlpha = 0.12;
+		ctx.fillRect(x0, y, Math.max(0, msToX(v, tapping.tappedUntil) - x0), h);
+		ctx.restore();
+	}
+	if ((input.selection.has(cue.id) || tapping) && cue.words?.length && w > 40)
+		paintWords(ctx, input, cue, y, h, tapping);
+	else if (w > 24) {
 		ctx.save();
 		ctx.beginPath();
 		ctx.rect(x0 + 8, y, w - 16, h);
@@ -352,4 +369,45 @@ function roundRect(
 	ctx.beginPath();
 	// A zero-size box (box select before it moves) would give a negative radius, which throws.
 	ctx.roundRect(x, y, w, h, Math.max(0, Math.min(r, w / 2, h / 2)));
+}
+
+/**
+ * The selected cue's words, each in its own slot, with a line between them (the one being
+ * dragged drawn solid). While tapping, words not yet tapped are dimmed.
+ */
+function paintWords(
+	ctx: CanvasRenderingContext2D,
+	input: PaintInput,
+	cue: Cue,
+	y: number,
+	h: number,
+	tapping: { tappedUntil: Ms | null } | null,
+): void {
+	const { view: v, palette: c } = input;
+	const words = cue.words!;
+	const base = ctx.globalAlpha;
+	const left = msToX(v, cue.start);
+	const right = msToX(v, cue.end);
+	words.forEach((word, i) => {
+		const x0 = Math.max(left, msToX(v, word.start));
+		const x1 = Math.min(right, msToX(v, words[i + 1]?.start ?? cue.end));
+		if (i > 0) {
+			const dragged = input.wordEdge?.cueId === cue.id && input.wordEdge.index === i;
+			ctx.fillStyle = c.onTrack;
+			ctx.globalAlpha = base * (dragged ? 1 : 0.35);
+			if (dragged) ctx.fillRect(Math.round(x0) - 1, y, 2, h);
+			else ctx.fillRect(Math.round(x0), y + 8, 1, h - 16);
+		}
+		if (x1 - x0 < 12) return;
+		const pending = tapping && (tapping.tappedUntil ?? -Infinity) < word.start;
+		ctx.save();
+		ctx.beginPath();
+		ctx.rect(x0 + 6, y, x1 - x0 - 10, h);
+		ctx.clip();
+		ctx.fillStyle = c.onTrack;
+		ctx.globalAlpha = base * (pending ? 0.4 : 1);
+		ctx.fillText(word.text, x0 + 6, y + h / 2);
+		ctx.restore();
+	});
+	ctx.globalAlpha = base;
 }

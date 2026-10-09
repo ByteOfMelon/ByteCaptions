@@ -242,6 +242,11 @@ canvas {
 .hud.left {
 	transform: translateX(-100%);
 }
+/* Tap to time's hint, centred over the cue being tapped. */
+.hud.tap-hint {
+	top: 2px;
+	transform: translateX(-50%);
+}
 
 /* Click the playhead time to switch the timeline between frames and milliseconds. */
 .timecode {

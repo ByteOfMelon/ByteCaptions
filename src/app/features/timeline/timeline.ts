@@ -26,7 +26,9 @@ import {
 	LucideZoomOut,
 } from '@lucide/angular';
 import { createCue } from '../../core/model/defaults';
-import { addCue, setTiming, moveCues, updateTrack } from '../../core/commands/edits';
+import { addCue, setTiming, moveCues, setWords, updateTrack } from '../../core/commands/edits';
+import { moveWordEdge } from '../../core/model/words';
+import { WordTapping } from '../../state/word-tapping';
 import { CueId, MarkerId, Ms, Track, TrackId } from '../../core/model/types';
 import { MARKER_COLORS } from '../../core/model/defaults';
 import { formatClock, formatTimecode, snapToFrame } from '../../core/time/timecode';
@@ -76,6 +78,8 @@ type Hit =
 	| { kind: 'range'; edge: 'start' | 'end' | null }
 	| { kind: 'marker'; id: MarkerId }
 	| { kind: 'cue'; track: Track; trackIndex: number; cueId: CueId; edge: 'start' | 'end' | null }
+	/** The line before word `index` in the selected cue. */
+	| { kind: 'word'; track: Track; cueId: CueId; index: number }
 	| { kind: 'lane'; track: Track; trackIndex: number }
 	| { kind: 'none' };
 
@@ -93,6 +97,7 @@ type Drag =
 			clickSelect: CueId | null;
 	  }
 	| { mode: 'trim'; cueId: CueId; edge: 'start' | 'end'; start: Ms; end: Ms; original: Ms }
+	| { mode: 'word'; cueId: CueId; index: number; original: Ms }
 	| { mode: 'range'; edge: 'start' | 'end' | null; downMs: Ms; start: Ms; end: Ms }
 	| { mode: 'marker'; id: MarkerId; downX: number; moved: boolean }
 	/** Alt+drag on empty lane space draws a new cue; it's added once the drag moves. */
@@ -162,6 +167,7 @@ export class Timeline {
 	private readonly theme = inject(ThemeService);
 	private readonly audio = inject(AudioPeaks);
 	private readonly menus = inject(TimelineMenus);
+	private readonly tapping = inject(WordTapping);
 	protected readonly markers = inject(Markers);
 	protected readonly ui = inject(EditorUi);
 	private readonly host = inject(ElementRef<HTMLElement>);
@@ -179,6 +185,17 @@ export class Timeline {
 		null,
 	);
 	protected readonly hud = signal<Hud | null>(null);
+	/** The line between two words being dragged. */
+	private readonly wordEdge = signal<{ cueId: CueId; index: number } | null>(null);
+	/** Tap to time's hint, shown above the cue being tapped. */
+	protected readonly tapHint = computed(() => {
+		const t = this.tapping.active();
+		const ref = t && this.store.find(t.cueId);
+		const v = this.view();
+		if (!t || !ref || !v.width) return null;
+		const x = msToX(v, (ref.cue.start + ref.cue.end) / 2);
+		return { text: t.label, x: Math.max(160, Math.min(v.width - 160, x)) };
+	});
 	/** Note of the marker under the pointer. */
 	protected readonly markerTip = signal<Hud | null>(null);
 	private readonly scrollTarget = signal(0);
@@ -300,6 +317,8 @@ export class Timeline {
 				trim: this.trim(),
 				audio: this.audio.waveform(),
 				range: this.playback.range(),
+				wordEdge: this.wordEdge(),
+				tapping: this.tapping.active(),
 				markers: this.store.project().markers.map((m) => ({
 					at: m.at,
 					color: MARKER_COLORS[m.color],
@@ -458,6 +477,11 @@ export class Timeline {
 			if (!inCue || x < x0 - EDGE_PX || x > x1 + EDGE_PX) continue;
 			const edge =
 				Math.abs(x - x0) <= EDGE_PX ? 'start' : Math.abs(x - x1) <= EDGE_PX ? 'end' : null;
+			// The selected cue's word lines can be dragged.
+			const words = this.store.selection().has(c.id) && !edge ? c.words : undefined;
+			const word = words?.findIndex((w, k) => k > 0 && Math.abs(x - msToX(v, w.start)) <= 4);
+			if (word !== undefined && word > 0)
+				return { kind: 'word', track, cueId: c.id, index: word };
 			if (edge || (ms >= c.start && ms <= c.end))
 				return { kind: 'cue', track, trackIndex: i, cueId: c.id, edge };
 		}
@@ -566,6 +590,12 @@ export class Timeline {
 				start: r.start,
 				end: r.end,
 			};
+		} else if (h.kind === 'word' && !h.track.locked && !additive && !e.shiftKey) {
+			const cue = h.track.cues.find((c) => c.id === h.cueId)!;
+			const original = cue.words![h.index].start;
+			this.drag = { mode: 'word', cueId: cue.id, index: h.index, original };
+			this.wordEdge.set({ cueId: cue.id, index: h.index });
+			this.store.begin('Move word timing');
 		} else if (h.kind === 'cue') {
 			const cue = h.track.cues.find((c) => c.id === h.cueId)!;
 			if (h.edge && !h.track.locked && !additive && !e.shiftKey) {
@@ -626,7 +656,8 @@ export class Timeline {
 			const h = this.hit(x, y, e.altKey);
 			this.showMarkerTip(h.kind === 'marker' ? h.id : null);
 			this.cursor.set(
-				h.kind === 'cue' && h.edge && !h.track.locked
+				(h.kind === 'cue' && h.edge && !h.track.locked) ||
+					(h.kind === 'word' && !h.track.locked)
 					? 'ew-resize'
 					: h.kind === 'marker'
 						? 'pointer'
@@ -657,7 +688,11 @@ export class Timeline {
 			this.edgeFrame = 0;
 			const d = this.drag;
 			const p = this.pointer;
-			const always = d?.mode === 'scrub' || d?.mode === 'trim' || d?.mode === 'range';
+			const always =
+				d?.mode === 'scrub' ||
+				d?.mode === 'trim' ||
+				d?.mode === 'word' ||
+				d?.mode === 'range';
 			if (!d || !p || (!always && !d.moved)) return;
 			const width = this.size().width;
 			const over =
@@ -709,6 +744,27 @@ export class Timeline {
 					const sign = diff < 0 ? '−' : '+';
 					const edge = d.edge === 'start' ? 'Start' : 'End';
 					return `${edge} ${tc(d.original)} → ${tc(now)}  ${sign}${Math.abs(diff).toFixed(2)} s`;
+				});
+				break;
+			}
+			case 'word': {
+				const ref = this.store.find(d.cueId);
+				if (!ref?.cue.words) break;
+				const t = Math.round(ms + this.snapDelta([ms], new Set([d.cueId])));
+				const words = moveWordEdge(
+					ref.cue.words,
+					d.index,
+					t,
+					1000 / this.store.project().fps,
+				);
+				this.store.apply('Move word timing', setWords(d.cueId, words));
+				const now = words[d.index].start;
+				this.showHud(now, y, 'right', () => {
+					const tc = (ms: Ms) => formatTimecode(ms, this.store.project().fps);
+					const diff = (now - d.original) / 1000;
+					const sign = diff < 0 ? '−' : '+';
+					const pair = `“${words[d.index - 1].text}” → “${words[d.index].text}”`;
+					return `${pair}  ${tc(d.original)} → ${tc(now)}  ${sign}${Math.abs(diff).toFixed(2)} s`;
 				});
 				break;
 			}
@@ -868,10 +924,12 @@ export class Timeline {
 		this.snapAt.set(null);
 		this.box.set(null);
 		this.trim.set(null);
+		this.wordEdge.set(null);
 		this.hud.set(null);
 		if (!d) return;
 		if (
 			d.mode === 'trim' ||
+			d.mode === 'word' ||
 			((d.mode === 'move' || d.mode === 'create' || d.mode === 'marker') && d.moved)
 		)
 			this.store.end();
