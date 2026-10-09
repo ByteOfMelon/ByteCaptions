@@ -35,9 +35,15 @@ export function exportSbv(project: Project): string {
 }
 
 const TAG_RE = /<\/?(?:b|i|u|c|v|lang|ruby|rt)(?:[.\s][^>]*)?>/gi;
+/** Ruby text, dropped with its tags so it doesn't run into the base text. */
+const RUBY_TEXT_RE = /<rt(?:[.\s][^>]*)?>[\s\S]*?<\/rt>/gi;
+/** WebVTT timestamp tags (karaoke). */
+const TIMESTAMP_RE = /<(?:\d+:)?\d{2}:\d{2}\.\d{3}>/g;
 
 function stripTags(t: string): string {
 	return t
+		.replace(RUBY_TEXT_RE, '')
+		.replace(TIMESTAMP_RE, '')
 		.replace(TAG_RE, '')
 		.replace(/\{\\[^}]*\}/g, '') // stray ASS overrides sometimes found in SRT
 		.replace(/&lt;/g, '<')

@@ -91,6 +91,13 @@ describe('WebVTT', () => {
 		]);
 		expect(warnings).toContain('VTT STYLE blocks were ignored');
 	});
+
+	it('imports karaoke timestamps and ruby as plain text', () => {
+		const src =
+			'WEBVTT\n\n00:00:01.000 --> 00:00:03.000\n' +
+			'<c.k>One</c> <00:00:01.500><c.k>two</c> <ruby>漢<rt>かん</rt></ruby>\n';
+		expect(importVtt(src).cues[0].runs[0].text).toBe('One two 漢');
+	});
 });
 
 describe('SBV', () => {
