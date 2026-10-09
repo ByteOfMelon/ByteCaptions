@@ -24,7 +24,8 @@ import {
 	LucideZoomIn,
 	LucideZoomOut,
 } from '@lucide/angular';
-import { setTiming, moveCues, updateTrack } from '../../core/commands/edits';
+import { createCue } from '../../core/model/defaults';
+import { addCue, setTiming, moveCues, updateTrack } from '../../core/commands/edits';
 import { CueId, Ms, Track, TrackId } from '../../core/model/types';
 import { formatClock, formatTimecode } from '../../core/time/timecode';
 import { EditorUi, TimelineZoom } from '../../state/editor-ui';
@@ -85,6 +86,15 @@ type Drag =
 			clickSelect: CueId | null;
 	  }
 	| { mode: 'trim'; cueId: CueId; edge: 'start' | 'end'; start: Ms; end: Ms; original: Ms }
+	/** Alt+drag on empty lane space draws a new cue; it's added once the drag moves. */
+	| {
+			mode: 'create';
+			trackId: TrackId;
+			ms0: Ms;
+			downX: number;
+			cueId: CueId | null;
+			moved: boolean;
+	  }
 	/** The box's start is kept in time so it stays put while the view auto-scrolls. */
 	| { mode: 'box'; ms0: Ms; y0: number; base: ReadonlySet<CueId>; moved: boolean };
 
@@ -109,7 +119,7 @@ interface Hud {
 /**
  * Canvas timeline (PLAN §5.2): ruler, one lane per track, a waveform lane and the playhead.
  * Drag a cue to move it (vertically to change track), drag its edges to trim, drag empty
- * lane space to box-select. Wheel scrolls; Shift+wheel (or wheel over the track headers)
+ * lane space to box-select, or Alt+drag it to draw a new cue. Wheel scrolls; Shift+wheel (or wheel over the track headers)
  * scrolls tracks vertically; Ctrl+wheel zooms around the pointer.
  */
 @Component({
@@ -485,6 +495,16 @@ export class Timeline {
 				moved: false,
 				clickSelect: wasSelected && !additive && !e.shiftKey ? cue.id : null,
 			};
+		} else if (h.kind === 'lane' && e.altKey && !h.track.locked) {
+			const ms = xToMs(this.view(), x);
+			this.drag = {
+				mode: 'create',
+				trackId: h.track.id,
+				ms0: Math.max(0, Math.round(ms + this.snapDelta([ms], new Set()))),
+				downX: x,
+				cueId: null,
+				moved: false,
+			};
 		} else if (h.kind === 'lane' || h.kind === 'none') {
 			const base = additive || e.shiftKey ? this.store.selection() : new Set<CueId>();
 			this.drag = { mode: 'box', ms0: xToMs(this.view(), x), y0: y, base, moved: false };
@@ -500,7 +520,9 @@ export class Timeline {
 					? 'ew-resize'
 					: h.kind === 'ruler'
 						? 'col-resize'
-						: 'default',
+						: h.kind === 'lane' && e.altKey && !h.track.locked
+							? 'crosshair'
+							: 'default',
 			);
 			return;
 		}
@@ -607,6 +629,30 @@ export class Timeline {
 				}
 				break;
 			}
+			case 'create': {
+				if (!d.moved && Math.abs(x - d.downX) < 3) return;
+				const minLen = 1000 / this.store.project().fps;
+				const t = Math.max(
+					0,
+					Math.round(ms + this.snapDelta([ms], new Set(d.cueId ? [d.cueId] : []))),
+				);
+				const [start, end] = t < d.ms0 ? [t, d.ms0] : [d.ms0, t];
+				const timing = [start, Math.max(end, start + minLen)] as const;
+				if (!d.moved) {
+					d.moved = true;
+					const cue = createCue(timing[0], timing[1], '');
+					d.cueId = cue.id;
+					this.store.begin('New cue');
+					this.store.apply('New cue', addCue(d.trackId, cue));
+					this.store.select(cue.id);
+				} else this.store.apply('New cue', setTiming(d.cueId!, timing[0], timing[1]));
+				this.showHud(t, y, t < d.ms0 ? 'left' : 'right', () => {
+					const tc = (ms: Ms) => formatTimecode(ms, this.store.project().fps);
+					const len = (timing[1] - timing[0]) / 1000;
+					return `${tc(timing[0])} → ${tc(timing[1])}  ${len.toFixed(2)} s`;
+				});
+				break;
+			}
 			case 'box': {
 				d.moved = true;
 				const v = this.view();
@@ -655,7 +701,11 @@ export class Timeline {
 		this.trim.set(null);
 		this.hud.set(null);
 		if (!d) return;
-		if (d.mode === 'trim' || (d.mode === 'move' && d.moved)) this.store.end();
+		if (d.mode === 'trim' || ((d.mode === 'move' || d.mode === 'create') && d.moved))
+			this.store.end();
+		// Alt+click without dragging just moves the playhead, like a plain click.
+		if (d.mode === 'create' && !d.moved)
+			this.playback.seek(xToMs(this.view(), this.local(e).x));
 		if (d.mode === 'move' && !d.moved && d.clickSelect) this.store.select(d.clickSelect);
 		if (d.mode === 'box' && !d.moved) {
 			if (!d.base.size) this.store.clearSelection();

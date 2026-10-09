@@ -62,6 +62,7 @@ export class ShortcutsDialog {
 					{ label: 'Zoom in', keys: 'Ctrl+=' },
 					{ label: 'Zoom out', keys: 'Ctrl+-' },
 					{ label: 'Zoom to fit', keys: 'Ctrl+0' },
+					{ label: 'Draw a new cue', keys: 'Alt+Drag' },
 					{ label: 'Snapping on or off', keys: 'N' },
 					{ label: 'Clear selection', keys: 'Esc' },
 				],
