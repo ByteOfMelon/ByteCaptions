@@ -25,20 +25,21 @@ import {
 	LucideZoomIn,
 	LucideZoomOut,
 } from '@lucide/angular';
-import { createCue } from '../../core/model/defaults';
 import { addCue, setTiming, moveCues, setWords, updateTrack } from '../../core/commands/edits';
-import { moveWordEdge } from '../../core/model/words';
-import { WordTapping } from '../../state/word-tapping';
+import { MARKER_COLORS, createCue } from '../../core/model/defaults';
 import { CueId, MarkerId, Ms, Track, TrackId } from '../../core/model/types';
-import { MARKER_COLORS } from '../../core/model/defaults';
+import { moveWordEdge } from '../../core/model/words';
 import { formatClock, formatTimecode, snapToFrame } from '../../core/time/timecode';
+import { AudioPeaks } from '../../state/audio-peaks';
 import { EditorUi, TimelineZoom } from '../../state/editor-ui';
 import { ProjectStore } from '../../state/project-store';
-import { AudioPeaks } from '../../state/audio-peaks';
+import { WordTapping } from '../../state/word-tapping';
 import { ThemeService } from '../../theme/theme.service';
 import { IconButton } from '../../ui/button/button';
 import { ErrorTip, Tooltip } from '../../ui/tooltip/tooltip';
 import { EditorCommands } from '../editor/editor-commands';
+import { MarkerPopover } from '../markers/marker-popover';
+import { Markers } from '../markers/markers';
 import { Playback } from '../player/playback';
 import { StyleChip } from '../player/style-chip';
 import {
@@ -56,8 +57,6 @@ import {
 	xToMs,
 } from './timeline-paint';
 import { TimelineMenus } from './timeline-menus';
-import { MarkerPopover } from '../markers/marker-popover';
-import { Markers } from '../markers/markers';
 
 const EDGE_PX = 6;
 const SNAP_PX = 8;
@@ -133,8 +132,9 @@ interface Hud {
 /**
  * Canvas timeline (PLAN §5.2): ruler, one lane per track, a waveform lane and the playhead.
  * Drag a cue to move it (vertically to change track), drag its edges to trim, drag empty
- * lane space to box-select, or Alt+drag it to draw a new cue. Wheel scrolls; Shift+wheel (or wheel over the track headers)
- * scrolls tracks vertically; Ctrl+wheel zooms around the pointer.
+ * lane space to box-select, or Alt+drag it to draw a new cue. Wheel scrolls; Shift+wheel
+ * (or wheel over the track headers) scrolls tracks vertically; Ctrl+wheel zooms around the
+ * pointer.
  */
 @Component({
 	selector: 'bc-timeline',
@@ -235,7 +235,10 @@ export class Timeline {
 	private readonly maxStart = computed(() =>
 		Math.max(0, this.store.duration() - this.size().width / this.pxPerMs() / 2),
 	);
-	/** Scrollbar content width; capped below the browser's element size limit (positions map proportionally). */
+	/**
+	 * Scrollbar content width, capped below the browser's element size limit (positions map
+	 * proportionally).
+	 */
 	protected readonly scrollWidth = computed(() =>
 		Math.min(MAX_SCROLL_PX, this.maxStart() * this.pxPerMs() + this.size().width),
 	);
@@ -521,8 +524,9 @@ export class Timeline {
 
 	/**
 	 * Snap whichever of `points` is closest (within SNAP_PX) to the playhead, another cue's
-	 * edge, a word boundary or the edge of a silence; failing that, the first to a frame. Returns the snap delta. `exclude` are
-	 * the cues being dragged; a trimmed cue's own words still count (`ownWords`).
+	 * edge, a word boundary or the edge of a silence; failing that, the first to a frame.
+	 * Returns the snap delta. `exclude` are the cues being dragged; a trimmed cue's own words
+	 * still count (`ownWords`).
 	 */
 	private snapDelta(points: Ms[], exclude: ReadonlySet<CueId>, ownWords = false): number {
 		if (!this.ui.snapping()) return 0;

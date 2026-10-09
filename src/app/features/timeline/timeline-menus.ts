@@ -29,18 +29,19 @@ import { CueId, MarkerColor, MarkerId, Ms, StyleId, Track, TrackId } from '../..
 import { EditorUi } from '../../state/editor-ui';
 import { TRACK_COLORS } from '../../state/project-files';
 import { ProjectStore } from '../../state/project-store';
+import { Transcription } from '../../state/transcription';
 import { ContextMenu, MenuEntry } from '../../ui/menu/menu';
 import { EditorCommands } from '../editor/editor-commands';
 import { EditorDialogs } from '../editor/editor-dialogs';
-import { Playback } from '../player/playback';
 import { Markers } from '../markers/markers';
-import { Transcription } from '../../state/transcription';
+import { Playback } from '../player/playback';
 
 type At = { x: number; y: number } | MouseEvent;
 
 /**
  * Right-click menus for the timeline (Timeline Menus board): a cue, several selected cues,
- * empty lane space, a track header, the ruler and a marker. Keys shown are the editor's current bindings.
+ * empty lane space, a track header, the ruler and a marker. Keys shown are the editor's
+ * current bindings.
  */
 @Injectable({ providedIn: 'root' })
 export class TimelineMenus {
