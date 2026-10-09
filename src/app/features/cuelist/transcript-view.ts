@@ -49,9 +49,12 @@ export class TranscriptView {
 		this.store.project().tracks.map((t) => ({ value: t.id, label: t.name })),
 	);
 	private readonly chosenTrack = signal<string | null>(null);
-	protected readonly trackId = computed(
-		() => this.chosenTrack() ?? this.store.project().tracks[0]?.id ?? '',
-	);
+	/** The chosen track, or the first one if none was chosen or it was deleted. */
+	protected readonly trackId = computed(() => {
+		const tracks = this.store.project().tracks;
+		const chosen = this.chosenTrack();
+		return tracks.some((t) => t.id === chosen) ? chosen! : (tracks[0]?.id ?? '');
+	});
 	protected readonly track = computed<Track | undefined>(() => this.store.track(this.trackId()));
 	protected readonly editing = signal<string | null>(null);
 
