@@ -70,13 +70,21 @@ export function captionTextStyle(s: CaptionStyle, edgeUnitPx = 1): Record<string
 	};
 }
 
-/** Absolute placement of a caption window inside the video frame. */
+/**
+ * YouTube's player keeps caption windows inside a safe area: SRV3's 0–100% maps to 2–98% of
+ * the video (so 93% lands at 91.3%).
+ */
+export function ytSafeArea(percent: number): number {
+	return 2 + percent * 0.96;
+}
+
+/** Absolute placement of a caption window inside the video frame, as YouTube places it. */
 export function captionWindowStyle(p: Position): Record<string, string> {
 	const ax = (p.anchor % 3) * 50;
 	const ay = Math.floor(p.anchor / 3) * 50;
 	return {
-		left: `${p.x}%`,
-		top: `${p.y}%`,
+		left: `${ytSafeArea(p.x)}%`,
+		top: `${ytSafeArea(p.y)}%`,
 		transform: `translate(-${ax}%, -${ay}%)`,
 		'text-align': p.align,
 	};
