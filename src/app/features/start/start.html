@@ -4,9 +4,7 @@
 			<svg lucideCaptions class="logo-icon" aria-hidden="true"></svg>
 			<h1 class="text-heading-1">ByteCaptions</h1>
 		</div>
-		<p class="text-body text-faded">
-			The open-source video editing-style subtitle editor
-		</p>
+		<p class="text-body text-faded">The open-source video editing-style subtitle editor</p>
 	</header>
 
 	@for (r of recovered(); track r.entry.projectId) {
@@ -109,8 +107,8 @@
 
 	<footer class="text-small text-faded">
 		v{{ version }} • Made by&nbsp;
-			<a class="site" [href]="website" (click)="openWebsite($event)"
-				>Michael Webb/Byte of Melon</a
-			>
+		<a class="site" [href]="website" (click)="openWebsite($event)"
+			>Michael Webb/Byte of Melon</a
+		>
 	</footer>
 </main>

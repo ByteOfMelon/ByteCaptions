@@ -27,7 +27,7 @@ jobs:
             target: aarch64-apple-darwin
             ffmpeg: darwin-arm64
           - name: Linux
-            os: ubuntu-24.04  # ONNX Runtime (speaker separation) needs glibc 2.38+
+            os: ubuntu-24.04 # ONNX Runtime (speaker separation) needs glibc 2.38+
             target: x86_64-unknown-linux-gnu
             ffmpeg: linux-x64
     name: ${{ matrix.name }}
@@ -49,7 +49,7 @@ jobs:
         if: runner.os == 'Windows'
         uses: jakoch/install-vulkan-sdk-action@v1
         with:
-          vulkan_version: 1.4.363.0  # same as the dev machine
+          vulkan_version: 1.4.363.0 # same as the dev machine
           install_runtime: false
           cache: true
           stripdown: true

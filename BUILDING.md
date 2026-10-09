@@ -13,9 +13,9 @@ the file in YouTube Studio by hand works in every build.
 1. Open [Google Cloud Console](https://console.cloud.google.com/) and create a project.
 2. Under **APIs & Services → Library**, enable **YouTube Data API v3**.
 3. Under **APIs & Services → OAuth consent screen** (Google Auth Platform):
-    - Choose **External** and fill in the app name and your email.
-    - Add the scope `https://www.googleapis.com/auth/youtube.force-ssl`.
-    - Under **Audience → Test users**, add the Google account that owns your channel.
+   - Choose **External** and fill in the app name and your email.
+   - Add the scope `https://www.googleapis.com/auth/youtube.force-ssl`.
+   - Under **Audience → Test users**, add the Google account that owns your channel.
 4. Under **APIs & Services → Credentials**, choose **Create credentials → OAuth client ID**,
    with application type **Desktop app**.
 5. Download the client's JSON file.
