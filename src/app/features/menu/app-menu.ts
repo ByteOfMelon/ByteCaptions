@@ -18,12 +18,12 @@ import { PanelLayout } from '../../state/panel-layout';
 import { ProjectFiles } from '../../state/project-files';
 import { ThemePreference, ThemeService } from '../../theme/theme.service';
 import { Dialogs } from '../../ui/dialog/dialog';
+import { IS_MAC } from '../../ui/kbd/keys';
 import { CommandRegistry } from '../editor/command-registry';
 import { EditorCommands } from '../editor/editor-commands';
 import { EditorDialogs } from '../editor/editor-dialogs';
 import { CommandPalette } from '../palette/command-palette';
 import { SettingsDialog, confirmResetLayout } from '../settings/settings-dialog';
-import { IS_MAC } from '../../ui/kbd/keys';
 
 /** A menu entry: its own action, or a palette command (label, keys and enabled come from it). */
 type Entry =
