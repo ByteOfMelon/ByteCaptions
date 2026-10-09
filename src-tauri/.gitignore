@@ -3,7 +3,7 @@
 /target/
 /gen/schemas
 
-# Bundled helper binaries (ffmpeg, the Vulkan loader); fetched by scripts/fetch-*.mjs
+# Bundled helper binaries (ffmpeg, the Vulkan loader; fetched by scripts/fetch-*.mjs) and DirectML.dll (copied by build.rs)
 /binaries/
 
 # Google OAuth client for YouTube upload; never commit

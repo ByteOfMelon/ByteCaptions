@@ -1,15 +1,17 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { addTrack } from '../core/commands/edits';
+import { SpeakerTurn } from '../core/speakers/speakers';
 import { createTrack } from '../core/model/defaults';
 import { Cue, Ms, TrackId } from '../core/model/types';
 import { isDesktop } from './file-io';
 import { MediaSource } from './media-source';
 import { ProjectFiles } from './project-files';
 import { ProjectStore } from './project-store';
+import { SPEAKER_MODELS_SIZE, SpeakerResult, SpeakerSeparation } from './speaker-separation';
 import { WhisperEngine } from './whisper-engine';
 
 export type ModelId = 'fast' | 'balanced' | 'accurate';
-export type StepId = 'download' | 'extract' | 'transcribe' | 'align';
+export type StepId = 'download' | 'extract' | 'transcribe' | 'align' | 'speakers';
 export type StepStatus = 'waiting' | 'running' | 'done' | 'error';
 export type Phase = 'setup' | 'running' | 'error' | 'done';
 
@@ -99,6 +101,10 @@ export interface TranscribeOptions {
 	model: ModelId;
 	wordTimings: boolean;
 	flagLowConfidence: boolean;
+	/** Put each speaker on their own new track (whole-video runs only). */
+	separateSpeakers: boolean;
+	/** How many people speak, or null to detect it. */
+	speakers: number | null;
 }
 
 export interface Step {
@@ -184,6 +190,7 @@ export class Transcription {
 	private readonly store = inject(ProjectStore);
 	private readonly files = inject(ProjectFiles);
 	private readonly media = inject(MediaSource);
+	private readonly speakerSeparation = inject(SpeakerSeparation);
 	/**
 	 * Transcription runs Whisper locally, so it only exists in the desktop app; the browser
 	 * build hides every way into it.
@@ -209,6 +216,8 @@ export class Transcription {
 		model: 'balanced',
 		wordTimings: true,
 		flagLowConfidence: true,
+		separateSpeakers: false,
+		speakers: null,
 	});
 	readonly steps = signal<Step[]>([]);
 	readonly mediaMs = signal<Ms>(0);
@@ -223,6 +232,8 @@ export class Transcription {
 		lowConfidence: number;
 		speedWarnings: number;
 		took: string;
+		/** Set when the run separated speakers. */
+		speakers?: SpeakerResult;
 	} | null>(null);
 	private startedAt = 0;
 	private abort: AbortController | null = null;
@@ -236,6 +247,13 @@ export class Transcription {
 	readonly download = signal<{ received: number; total: number } | null>(null);
 	/** Stop was pressed; the engine takes a moment to finish the chunk it's on. */
 	readonly stopping = signal(false);
+	/** The speaker step is running (it reports no progress of its own). */
+	readonly separating = signal(false);
+	/** This run puts each speaker on their own track. */
+	readonly separatesSpeakers = computed(() => {
+		const o = this.options();
+		return o.separateSpeakers && !o.range;
+	});
 	/** Fraction done: of the download while downloading, else of the media. */
 	readonly progress = computed(() => {
 		const d = this.download();
@@ -259,8 +277,9 @@ export class Transcription {
 		const o = this.options();
 		const model = MODELS.find((m) => m.id === o.model)!;
 		const name = o.target === 'new' ? '' : (this.store.track(o.target)?.name ?? 'track');
-		const target =
-			o.target === 'new'
+		const target = this.separatesSpeakers()
+			? 'A new track per speaker'
+			: o.target === 'new'
 				? `New track: ${this.trackName()}`
 				: o.range
 					? `Range on ${name}`
@@ -361,10 +380,21 @@ export class Transcription {
 			{ id: 'extract', label: 'Extract audio', status: 'waiting', detail: 'Waiting' },
 			{ id: 'transcribe', label: 'Transcribe speech', status: 'waiting', detail: 'Waiting' },
 			{ id: 'align', label: 'Align word timings', status: 'waiting', detail: 'Waiting' },
+			...(this.separatesSpeakers()
+				? [
+						{
+							id: 'speakers' as const,
+							label: 'Separate speakers',
+							status: 'waiting' as const,
+							detail: 'Waiting',
+						},
+					]
+				: []),
 		]);
 		this.mediaMs.set(0);
 		this.download.set(null);
 		this.stopping.set(false);
+		this.separating.set(false);
 		this.lines.set([]);
 		this.error.set(null);
 		this.result.set(null);
@@ -373,8 +403,13 @@ export class Transcription {
 		const stepStarted = new Map<StepId, number>();
 		this.abort = new AbortController();
 
+		const signal = this.abort.signal;
+		const setStep = (step: StepId, status: StepStatus, detail: string) =>
+			this.steps.update((steps) =>
+				steps.map((s) => (s.id === step ? { ...s, status, detail } : s)),
+			);
 		try {
-			const cues = await this.engine.run(opts, this.durationMs(), this.abort.signal, (e) => {
+			const cues = await this.engine.run(opts, this.durationMs(), signal, (e) => {
 				if (e.type === 'download') {
 					this.download.set({ received: e.received, total: e.total });
 					return;
@@ -400,7 +435,32 @@ export class Transcription {
 					),
 				);
 			});
-			this.finish(cues);
+			let turns: SpeakerTurn[] | null = null;
+			if (this.separatesSpeakers() && cues.length) {
+				const started = performance.now();
+				setStep('speakers', 'running', '');
+				this.separating.set(true);
+				try {
+					turns = await this.speakerSeparation.turns(opts.speakers, signal, (e) => {
+						if (e.type === 'download') {
+							this.download.set({ received: e.received, total: e.total });
+							setStep(
+								'speakers',
+								'running',
+								`Downloading ${bytes(e.received)} of ${e.total ? bytes(e.total) : SPEAKER_MODELS_SIZE}`,
+							);
+						} else if (e.type === 'separating') {
+							this.download.set(null);
+							setStep('speakers', 'running', '');
+						}
+					});
+				} catch (err) {
+					if ((err as Error).name !== 'AbortError') setStep('speakers', 'error', '');
+					throw err;
+				}
+				setStep('speakers', 'done', formatDuration(performance.now() - started));
+			}
+			this.finish(cues, turns);
 		} catch (err) {
 			if ((err as Error).name === 'AbortError') {
 				this.phase.set('setup');
@@ -413,6 +473,7 @@ export class Transcription {
 			this.abort = null;
 			this.download.set(null);
 			this.stopping.set(false);
+			this.separating.set(false);
 			this.downloads.update((n) => n + 1);
 		}
 	}
@@ -438,14 +499,25 @@ export class Transcription {
 		return { start, end };
 	}
 
-	private finish(cues: Cue[]): void {
+	private finish(cues: Cue[], turns: SpeakerTurn[] | null): void {
 		const opts = this.options();
 		if (opts.range) cues = clipToRange(cues, this.freeSpan(opts.target, opts.range));
 		let trackId = opts.target;
 		let trackName: string;
 		let trackColor: string;
 		let replaced = 0;
-		if (opts.target === 'new') {
+		let speakers: SpeakerResult | undefined;
+		let trackIds: TrackId[] = [];
+		if (turns) {
+			const track = createTrack(this.trackName(), this.files.nextTrackColor());
+			track.cues = cues;
+			const split = this.speakerSeparation.split(track, turns, !opts.speakers);
+			this.store.apply('Auto-transcribe', SpeakerSeparation.replace(null, split));
+			speakers = SpeakerSeparation.result(split);
+			trackIds = split.tracks.map((t) => t.id);
+			trackName = `${split.tracks.length} speaker tracks`;
+			trackColor = split.tracks[0]?.color ?? track.color;
+		} else if (opts.target === 'new') {
 			const track = createTrack(this.trackName(), this.files.nextTrackColor());
 			track.cues = cues;
 			trackId = track.id;
@@ -472,9 +544,10 @@ export class Transcription {
 					0,
 				)
 			: 0;
+		if (!trackIds.length) trackIds = [trackId as TrackId];
 		const speedWarnings = this.store
 			.problems()
-			.filter((p) => p.trackId === trackId && p.kind === 'cps').length;
+			.filter((p) => trackIds.includes(p.trackId) && p.kind === 'cps').length;
 		this.result.set({
 			trackName,
 			trackColor,
@@ -483,6 +556,7 @@ export class Transcription {
 			lowConfidence,
 			speedWarnings,
 			took: formatDuration(performance.now() - this.startedAt),
+			speakers,
 		});
 		this.phase.set('done');
 	}

@@ -7,6 +7,7 @@ import { ProjectSettingsDialog, SettingsTab } from '../settings/project-settings
 import { StylePresetsDialog } from '../presets/style-presets-dialog';
 import { SettingsDialog } from '../settings/settings-dialog';
 import { ShortcutsDialog } from '../shortcuts/shortcuts-dialog';
+import { SeparateSpeakersDialog } from '../speakers/separate-speakers-dialog';
 import { ShiftTimingDialog } from '../timeline/shift-timing-dialog';
 import { TranscribeDialog } from '../transcribe/transcribe-dialog';
 import { YouTubeDialog } from '../youtube/youtube-dialog';
@@ -33,6 +34,12 @@ export class EditorDialogs {
 
 	transcribe(): void {
 		if (this.transcription.available) this.dialogs.open(TranscribeDialog);
+	}
+
+	/** Split a transcribed track into one track per speaker (desktop only). */
+	separateSpeakers(trackId: TrackId): void {
+		if (this.transcription.available && !this.transcription.running())
+			this.dialogs.open(SeparateSpeakersDialog, { inputs: { trackId } });
 	}
 
 	/** Upload captions to YouTube (desktop only). */

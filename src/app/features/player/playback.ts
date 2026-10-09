@@ -22,6 +22,8 @@ export class Playback {
 	private raf = 0;
 	private lastTick = 0;
 	private recoveries: number[] = [];
+	/** Where `playSpan` stops. */
+	private stopAt: Ms | null = null;
 	/** URL of the loaded video, if any. */
 	readonly mediaUrl = inject(MediaSource).url;
 	/**
@@ -99,6 +101,14 @@ export class Playback {
 		this.raf = requestAnimationFrame(this.tick);
 	}
 
+	/** Play just this stretch, then pause (e.g. a sample of one speaker). */
+	playSpan(start: Ms, end: Ms): void {
+		this.pause();
+		this.seek(start);
+		this.play();
+		this.stopAt = end;
+	}
+
 	/** J (-1) / L (1): play that way, or go twice as fast if already going that way. */
 	shuttleBy(dir: 1 | -1): void {
 		const s = this.store.playing() ? this.shuttle() : 0;
@@ -106,6 +116,7 @@ export class Playback {
 	}
 
 	pause(): void {
+		this.stopAt = null;
 		this.shuttle.set(1);
 		this.store.playing.set(false);
 		this.video?.pause();
@@ -235,6 +246,7 @@ export class Playback {
 				this.video.currentTime = this.store.playhead() / 1000;
 		}
 		const t = this.store.playhead();
+		if (this.stopAt !== null && t >= this.stopAt) return this.pause();
 		const span = this.loop() ? this.loopSpan() : null;
 		if (span && (speed > 0 ? t >= span.end : t <= span.start))
 			this.seek(speed > 0 ? span.start : span.end);

@@ -45,7 +45,8 @@
 		},
 		"externalBin": ["binaries/ffmpeg"],
 		"resources": {
-			"licenses/FFMPEG-LICENSE.txt": "licenses/FFMPEG-LICENSE.txt"
+			"licenses/FFMPEG-LICENSE.txt": "licenses/FFMPEG-LICENSE.txt",
+			"licenses/SPEAKER-MODELS.txt": "licenses/SPEAKER-MODELS.txt"
 		}
 	}
 }

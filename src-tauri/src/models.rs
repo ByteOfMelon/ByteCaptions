@@ -33,7 +33,7 @@ const MODELS: &[&str] = &[
 	VAD_MODEL,
 ];
 
-fn models_dir(app: &AppHandle) -> Result<PathBuf, String> {
+pub fn models_dir(app: &AppHandle) -> Result<PathBuf, String> {
 	Ok(app
 		.path()
 		.app_data_dir()
@@ -84,8 +84,8 @@ pub fn model_delete(app: AppHandle, name: String) -> Result<(), String> {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadProgress {
-	received: u64,
-	total: u64,
+	pub received: u64,
+	pub total: u64,
 }
 
 /// Download a model, reporting progress. Resolves once it's verified and in place.
@@ -132,7 +132,22 @@ pub async fn model_download(
 		.and_then(|s| s.parse().ok())
 		.unwrap_or(0);
 
-	let mut res = reqwest::get(&url).await.map_err(offline)?;
+	download_verified(&url, &target, &sha256, total, &cancel, &on_progress).await
+}
+
+/// Download `url` to `target`, reporting progress, and keep it only if its SHA-256 matches.
+/// `total` is the expected size, used when the response doesn't say.
+pub async fn download_verified(
+	url: &str,
+	target: &std::path::Path,
+	sha256: &str,
+	total: u64,
+	cancel: &std::sync::atomic::AtomicBool,
+	on_progress: &Channel<DownloadProgress>,
+) -> Result<(), String> {
+	let mut res = reqwest::get(url).await.map_err(|e| {
+		format!("Couldn't reach Hugging Face to download the model. Check your connection. ({e})")
+	})?;
 	if !res.status().is_success() {
 		return Err(format!("The model download failed ({}).", res.status()));
 	}
@@ -140,7 +155,9 @@ pub async fn model_download(
 
 	let dir = target.parent().unwrap();
 	std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-	let part = target.with_extension("bin.part");
+	let mut part = target.as_os_str().to_owned();
+	part.push(".part");
+	let part = PathBuf::from(part);
 	let result = async {
 		let mut file = std::fs::File::create(&part).map_err(|e| e.to_string())?;
 		let mut hash = Sha256::new();
@@ -174,7 +191,7 @@ pub async fn model_download(
 	.await;
 
 	match result {
-		Ok(()) => std::fs::rename(&part, &target).map_err(|e| e.to_string()),
+		Ok(()) => std::fs::rename(&part, target).map_err(|e| e.to_string()),
 		Err(e) => {
 			let _ = std::fs::remove_file(&part);
 			Err(e)

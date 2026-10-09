@@ -19,6 +19,7 @@ import {
 	LucideTrash2,
 	LucideType,
 	LucideUpload,
+	LucideUsers,
 	LucideX,
 } from '@lucide/angular';
 import { MARKER_COLORS } from '../../core/model/defaults';
@@ -31,6 +32,7 @@ import { EditorCommands } from '../editor/editor-commands';
 import { EditorDialogs } from '../editor/editor-dialogs';
 import { Playback } from '../player/playback';
 import { Markers } from '../markers/markers';
+import { Transcription } from '../../state/transcription';
 
 type At = { x: number; y: number } | MouseEvent;
 
@@ -47,6 +49,7 @@ export class TimelineMenus {
 	private readonly menu = inject(ContextMenu);
 	private readonly playback = inject(Playback);
 	private readonly markers = inject(Markers);
+	private readonly transcription = inject(Transcription);
 
 	/** "Style preset" submenu: presets with a check on `current`, then "Edit presets…". */
 	private presetMenu(current: StyleId | null): MenuEntry[] {
@@ -431,6 +434,17 @@ export class TimelineMenus {
 				disabled: tracks.at(-1)!.id === track.id,
 			},
 			{ id: 'export', label: 'Export this track…', icon: LucideUpload.icon },
+			...(this.transcription.available
+				? [
+						{
+							id: 'speakers',
+							label: 'Separate speakers…',
+							icon: LucideUsers.icon,
+							disabled:
+								track.locked || !track.cues.length || this.transcription.running(),
+						},
+					]
+				: []),
 			{ kind: 'separator' },
 			{
 				id: 'delete',
@@ -450,6 +464,7 @@ export class TimelineMenus {
 		else if (id === 'up') this.commands.moveTrack(track.id, -1);
 		else if (id === 'down') this.commands.moveTrack(track.id, 1);
 		else if (id === 'export') this.dialogs.export([track.id]);
+		else if (id === 'speakers') this.dialogs.separateSpeakers(track.id);
 		else if (id === 'delete') this.commands.deleteTrack(track.id);
 	}
 }

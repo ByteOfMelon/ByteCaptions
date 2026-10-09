@@ -79,6 +79,8 @@ export interface Cue {
 	karaoke?: boolean;
 	/** Style for already-sung words in karaoke. Defaults to the cue style in yellow. */
 	karaokeStyleId?: StyleId;
+	/** Speaker separation wasn't sure whose line this is (a Problems entry until checked). */
+	speakerUnsure?: boolean;
 }
 
 export interface TextRun {

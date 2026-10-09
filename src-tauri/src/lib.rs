@@ -3,6 +3,7 @@ mod gpu;
 mod jobs;
 mod media;
 mod models;
+mod speakers;
 mod youtube;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -17,6 +18,9 @@ pub fn run() {
 			media::media_peaks,
 			gpu::gpu_device,
 			models::models_installed,
+			speakers::speakers_installed,
+			speakers::speakers_download,
+			speakers::diarize,
 			models::model_download,
 			models::model_delete,
 			asr::transcribe,

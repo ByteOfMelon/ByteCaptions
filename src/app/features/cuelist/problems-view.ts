@@ -91,6 +91,8 @@ export class ProblemsView {
 				return 'Line too long';
 			case 'tooManyLines':
 				return 'Too many lines';
+			case 'speaker':
+				return 'Unsure speaker';
 		}
 	}
 
@@ -98,6 +100,7 @@ export class ProblemsView {
 		const fix = p.fix;
 		if (!fix) return null;
 		if (fix.kind === 'split') return `Split cue ${index}`;
+		if (fix.kind === 'confirmSpeaker') return fix.label;
 		if (p.kind === 'overlap') return `Trim cue ${index}`;
 		return `Extend to ${((fix.end - fix.start) / 1000).toFixed(1)} s`;
 	}
@@ -114,6 +117,8 @@ export class ProblemsView {
 		if (!fix || !cue) return;
 		if (fix.kind === 'setTiming')
 			this.store.apply(fix.label, edits.setTiming(p.cueId, fix.start, fix.end));
+		else if (fix.kind === 'confirmSpeaker')
+			this.store.apply('Confirm speaker', edits.confirmSpeaker([p.cueId]));
 		else
 			this.store.apply(
 				'Split cue',

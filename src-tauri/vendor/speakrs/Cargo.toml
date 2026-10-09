@@ -1,0 +1,71 @@
+# speakrs 0.5.0 (https://github.com/avencera/speakrs, Apache-2.0), vendored with the
+# ByteCaptions changes listed in PATCHES.md.
+
+[package]
+name = "speakrs"
+version = "0.5.0"
+edition = "2024"
+rust-version = "1.88"
+authors = ["Praveen Perera"]
+description = "Fast Rust speaker diarization with pyannote-level accuracy"
+license = "Apache-2.0"
+repository = "https://github.com/avencera/speakrs"
+publish = false
+
+[features]
+default = []
+# Run the ONNX models on the GPU through DirectML on Windows (ByteCaptions patch).
+directml = ["ort/directml"]
+_metrics = []
+coreml = ["dep:objc2", "dep:objc2-core-ml", "dep:objc2-foundation", "dep:block2"]
+cuda = ["ort/cuda"]
+load-dynamic = ["ort/load-dynamic", "dep:libloading"]
+migraphx = ["ort/migraphx"]
+
+[dependencies]
+crossbeam-channel = "0.5"
+kodama = "0.3.0"
+libloading = { version = "0.9.0", optional = true }
+nalgebra = "0.34"
+ndarray = "0.17.2"
+ndarray-npy = "0.10.0"
+ort = { version = "2.0.0-rc.12", features = ["ndarray"] }
+rayon = "1.11.0"
+thiserror = "2.0.18"
+tracing = "0.1.44"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+block2 = { version = "0.6", optional = true }
+objc2 = { version = "0.6", optional = true }
+objc2-core-ml = { version = "0.3", optional = true, features = [
+	"MLModel",
+	"MLMultiArray",
+	"MLModelConfiguration",
+	"MLDictionaryFeatureProvider",
+	"MLFeatureValue",
+	"MLFeatureProvider",
+	"MLPredictionOptions",
+	"alloc",
+	"block2",
+] }
+objc2-foundation = { version = "0.3", optional = true, features = [
+	"NSArray",
+	"NSDictionary",
+	"NSError",
+	"NSObject",
+	"NSString",
+	"NSURL",
+	"NSValue",
+	"NSSet",
+	"NSEnumerator",
+	"NSObjCRuntime",
+] }
+
+[dev-dependencies]
+approx = "0.5.1"
+serde_json = "1"
+
+[lints.rust]
+# The upstream `online` (Hugging Face download) feature is removed; ByteCaptions downloads
+# the models itself.
+unexpected_cfgs = "allow"

@@ -8,6 +8,12 @@ import { ProjectStore } from '../../state/project-store';
 import { LANGUAGES, MODELS, ModelId, Transcription } from '../../state/transcription';
 import { Button } from '../../ui/button/button';
 import { Playback } from '../player/playback';
+import { SpeakerRows } from '../speakers/speaker-rows';
+import {
+	SPEAKER_COUNTS,
+	SPEAKER_MODELS_SIZE,
+	SpeakerSeparation,
+} from '../../state/speaker-separation';
 import { Toggle } from '../../ui/controls/controls';
 import { Dialog, DialogRef } from '../../ui/dialog/dialog';
 import { Notice } from '../../ui/notice/notice';
@@ -25,6 +31,7 @@ import { Tooltip } from '../../ui/tooltip/tooltip';
 		Select,
 		Notice,
 		Tooltip,
+		SpeakerRows,
 		LucideCheck,
 		LucideCircle,
 		LucideLoaderCircle,
@@ -42,6 +49,19 @@ export class TranscribeDialog {
 	protected readonly Math = Math;
 
 	private readonly playback = inject(Playback);
+
+	private readonly speakers = inject(SpeakerSeparation);
+	protected readonly perSpeakerOption = [{ value: 'speakers', label: 'A new track per speaker' }];
+	protected readonly speakerCountOptions = SPEAKER_COUNTS.map((n) => ({
+		value: n ?? 0,
+		label: n ? String(n) : 'Auto',
+	}));
+	/** Mentions the one-off download until the speaker models are there. */
+	protected readonly speakerModelNote = computed(() =>
+		this.speakers.installed() === false
+			? `Downloads ${SPEAKER_MODELS_SIZE} the first time.`
+			: '',
+	);
 
 	protected readonly languageOptions = LANGUAGES.map((l) => ({ value: l, label: l }));
 	/** Tracks a range run can replace cues on. */

@@ -8,11 +8,13 @@ import { Cue, CueId, Ms, Project, Track, TrackId } from '../model/types';
 export type Severity = 'error' | 'warning';
 
 export type ProblemKind =
-	'overlap' | 'cps' | 'tooShort' | 'tooLong' | 'lineLength' | 'tooManyLines' | 'gap';
+	'overlap' | 'cps' | 'tooShort' | 'tooLong' | 'lineLength' | 'tooManyLines' | 'gap' | 'speaker';
 
 /** A quick fix the UI can offer. Applied by the editor through undoable edits. */
 export type ProblemFix =
-	{ kind: 'setTiming'; label: string; start: Ms; end: Ms } | { kind: 'split'; label: string };
+	| { kind: 'setTiming'; label: string; start: Ms; end: Ms }
+	| { kind: 'split'; label: string }
+	| { kind: 'confirmSpeaker'; label: string };
 
 export interface Problem {
 	kind: ProblemKind;
@@ -110,6 +112,13 @@ export function lintTrack(project: Project, track: Track): Problem[] {
 				'warning',
 				`Line is ${longest} characters (max ${s.maxCharsPerLine})`,
 			);
+		}
+
+		if (cue.speakerUnsure) {
+			add(cue, 'speaker', 'warning', `Might not be ${track.name}'s line`, {
+				kind: 'confirmSpeaker',
+				label: 'Mark as checked',
+			});
 		}
 	});
 	return out;

@@ -6,6 +6,7 @@ fn main() {
 		println!("cargo:rustc-link-arg=delayimp.lib");
 	}
 	google_client();
+	directml();
 	tauri_build::build()
 }
 
@@ -28,5 +29,26 @@ fn google_client() {
 		if let Some(v) = client.get(key).and_then(|v| v.as_str()) {
 			println!("cargo:rustc-env={var}={v}");
 		}
+	}
+}
+
+/// ort's `directml` feature puts DirectML.dll next to the built exe (target/<profile>), which
+/// the bundle can't name per profile; copy it to binaries/directml for tauri.windows.conf.json.
+/// On a clean checkout ort may not have run yet: build once more if Tauri says it's missing.
+fn directml() {
+	if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
+		return;
+	}
+	let target = std::path::Path::new("binaries/directml/DirectML.dll");
+	if target.is_file() {
+		return;
+	}
+	let out = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
+	// OUT_DIR is target/<profile>/build/app-<hash>/out.
+	let Some(profile_dir) = out.ancestors().nth(3) else { return };
+	let source = profile_dir.join("DirectML.dll");
+	if source.is_file() {
+		std::fs::create_dir_all("binaries/directml").unwrap();
+		std::fs::copy(source, target).unwrap();
 	}
 }

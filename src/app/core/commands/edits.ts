@@ -139,11 +139,24 @@ export function moveCues(ids: CueId[], deltaMs: Ms, toTrackId?: TrackId) {
 			if (target && target !== track) {
 				track.cues.splice(index, 1);
 				target.cues.push(cue);
+				// Moving a line to another speaker's track settles whose it is.
+				delete cue.speakerUnsure;
 			}
 			touched.add(track);
 			if (target) touched.add(target);
 		}
 		touched.forEach((t) => sortCues(t.cues));
+	};
+}
+
+/** Clear the unsure-speaker flag: the cues are on the right speaker's track. */
+export function confirmSpeaker(ids: CueId[]) {
+	return (p: P) => {
+		for (const id of ids) {
+			const { track, cue } = findCue(p, id);
+			assertUnlocked(track);
+			delete cue.speakerUnsure;
+		}
 	};
 }
 

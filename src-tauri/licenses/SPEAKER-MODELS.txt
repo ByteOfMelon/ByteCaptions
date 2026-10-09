@@ -1,0 +1,15 @@
+Speaker separation models
+
+ByteCaptions downloads these on first use from https://huggingface.co/avencera/speakrs-models
+(ONNX conversions by the speakrs project, https://github.com/avencera/speakrs, Apache-2.0).
+They are not bundled with the app.
+
+- segmentation-3.0: pyannote.audio speaker segmentation, by Hervé Bredin and contributors.
+  MIT License. https://huggingface.co/pyannote/segmentation-3.0
+- WeSpeaker ResNet34 (VoxCeleb) speaker embedding, from the WeSpeaker project, as packaged in
+  pyannote/speaker-diarization-community-1. CC BY 4.0.
+  https://huggingface.co/pyannote/speaker-diarization-community-1
+- PLDA parameters (plda_*.npy) from pyannote/speaker-diarization-community-1. CC BY 4.0.
+
+speakrs itself is built into ByteCaptions under the Apache License 2.0, with changes listed in
+vendor/speakrs/PATCHES.md of the source code.

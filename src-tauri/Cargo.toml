@@ -36,9 +36,13 @@ base64 = "0.22"
 getrandom = "0.3"
 tokio = { version = "1", features = ["net", "io-util", "time", "sync", "macros"] }
 url = "2"
+# Speaker separation (src/speakers.rs); vendored with GPL-safe maths, see vendor/speakrs/PATCHES.md.
+speakrs = { path = "vendor/speakrs" }
 keyring = { version = "3", features = ["windows-native", "apple-native", "linux-native-sync-persistent", "crypto-rust"] }
 
 # Transcription on the GPU through Vulkan (any vendor), falling back to the CPU; see src/gpu.rs.
 # Building needs the Vulkan SDK (VULKAN_SDK set by its installer).
 [target.'cfg(windows)'.dependencies]
 whisper-rs = { version = "0.16", features = ["raw-api", "vulkan"] }
+# Speaker embeddings on the GPU through DirectML (DirectML.dll ships next to the app).
+speakrs = { path = "vendor/speakrs", features = ["directml"] }

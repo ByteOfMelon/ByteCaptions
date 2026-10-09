@@ -16,12 +16,21 @@
 					[value]="job.options().language"
 					(valueChange)="job.setOptions({ language: $any($event) })"
 				/>
-				<bc-select
-					label="Put cues on"
-					[options]="targetOptions()"
-					[value]="job.options().target"
-					(valueChange)="job.setOptions({ target: $any($event) })"
-				/>
+				@if (job.separatesSpeakers()) {
+					<bc-select
+						label="Put cues on"
+						disabled
+						[options]="perSpeakerOption"
+						value="speakers"
+					/>
+				} @else {
+					<bc-select
+						label="Put cues on"
+						[options]="targetOptions()"
+						[value]="job.options().target"
+						(valueChange)="job.setOptions({ target: $any($event) })"
+					/>
+				}
 			</div>
 			@if (rangeNote(); as note) {
 				<span class="text-small text-faded range-note">{{ note }}</span>
@@ -83,6 +92,32 @@
 					>
 				</span>
 			</bc-toggle>
+			<!-- A range run redoes part of one track, so it can't split by speaker. -->
+			@if (!job.options().range) {
+				<div class="speakers-option">
+					<bc-toggle
+						labelStart
+						[checked]="job.options().separateSpeakers"
+						(checkedChange)="job.setOptions({ separateSpeakers: $event })"
+					>
+						<span class="option-text">
+							<span>Separate speakers</span>
+							<span class="text-small text-faded"
+								>Puts each person on their own track. {{ speakerModelNote() }}</span
+							>
+						</span>
+					</bc-toggle>
+					@if (job.options().separateSpeakers) {
+						<bc-select
+							class="speaker-count"
+							label="Speakers"
+							[options]="speakerCountOptions"
+							[value]="job.options().speakers ?? 0"
+							(valueChange)="job.setOptions({ speakers: +$any($event) || null })"
+						/>
+					}
+				</div>
+			}
 
 			@if (job.unused(); as u) {
 				<bc-notice
@@ -141,7 +176,14 @@
 				<div class="result">
 					<div class="result-head">
 						<span class="color" [style.background]="r.trackColor"></span>
-						@if (job.options().range && job.options().target !== 'new') {
+						@if (r.speakers; as sp) {
+							<span
+								>Split into {{ sp.rows.length }}
+								{{
+									sp.rows.length === 1 ? 'speaker track' : 'speaker tracks'
+								}}</span
+							>
+						} @else if (job.options().range && job.options().target !== 'new') {
 							<span
 								>{{
 									r.replaced ? 'Replaced the range' : 'Transcribed the range'
@@ -157,6 +199,9 @@
 							>
 						}
 					</div>
+					@if (r.speakers; as sp) {
+						<bc-speaker-rows [result]="sp" />
+					}
 					<div class="stats">
 						<div class="stat">
 							<span class="text-heading-2">{{ r.cues }}</span>
@@ -166,10 +211,19 @@
 							<span class="text-heading-2 warn">{{ r.lowConfidence }}</span>
 							<span class="text-small text-faded">low-confidence words</span>
 						</div>
-						<div class="stat">
-							<span class="text-heading-2 warn">{{ r.speedWarnings }}</span>
-							<span class="text-small text-faded">reading-speed warnings</span>
-						</div>
+						@if (r.speakers; as sp) {
+							<div class="stat">
+								<span class="text-heading-2 warn">{{ sp.unsure }}</span>
+								<span class="text-small text-faded"
+									>lines with an unsure speaker</span
+								>
+							</div>
+						} @else {
+							<div class="stat">
+								<span class="text-heading-2 warn">{{ r.speedWarnings }}</span>
+								<span class="text-small text-faded">reading-speed warnings</span>
+							</div>
+						}
 					</div>
 				</div>
 				<div dialogFooter>
@@ -201,6 +255,8 @@
 						<span class="text-small text-faded"
 							>Downloading the model. This only happens once.</span
 						>
+					} @else if (job.separating()) {
+						<span class="text-small text-faded">Working out who speaks when…</span>
 					} @else {
 						<span class="text-mono-small text-faded"
 							>{{ position() }} &nbsp;•&nbsp; {{ job.remaining() }}</span

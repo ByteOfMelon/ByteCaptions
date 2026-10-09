@@ -216,3 +216,12 @@
 .warn {
 	color: var(--color-warning);
 }
+
+.speakers-option {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+}
+.speaker-count {
+	max-width: 50%;
+}
