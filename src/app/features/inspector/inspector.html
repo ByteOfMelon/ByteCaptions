@@ -20,6 +20,22 @@
 			/>
 			<bc-style-fields [style]="s.style" (styleChange)="setStyle($event)" />
 			<bc-anchor-picker [position]="s.position" (positionChange)="setPosition($event)" />
+			<div class="karaoke">
+				<bc-toggle [checked]="s.karaoke" (checkedChange)="setKaraoke({ on: $event })">
+					Karaoke
+				</bc-toggle>
+				<p class="text-small text-faded">
+					Highlights each word as it’s spoken. Uses word timings.
+				</p>
+			</div>
+			@if (s.karaoke) {
+				<bc-select
+					label="Sung words"
+					[options]="karaokeColors"
+					[value]="s.karaokeColor"
+					(valueChange)="setKaraoke({ color: $any($event) })"
+				/>
+			}
 		}
 	</fieldset>
 } @else {

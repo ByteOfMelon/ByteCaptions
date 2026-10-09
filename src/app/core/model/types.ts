@@ -77,8 +77,8 @@ export interface Cue {
 	/** Word timings from transcription; enables karaoke and smart split. */
 	words?: WordTiming[];
 	karaoke?: boolean;
-	/** Style for already-sung words in karaoke. Defaults to the cue style in yellow. */
-	karaokeStyleId?: StyleId;
+	/** Colour of already-sung words in karaoke (#RRGGBB); yellow when unset. */
+	karaokeColor?: string;
 	/** Speaker separation wasn't sure whose line this is (a Problems entry until checked). */
 	speakerUnsure?: boolean;
 }

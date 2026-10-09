@@ -152,6 +152,27 @@ export function spreadCueWords(cueId: CueId) {
 	};
 }
 
+/**
+ * Karaoke on or off, and the colour of sung words. Turning it on for a cue without word
+ * timings spreads its words evenly first.
+ */
+export function setKaraoke(ids: CueId[], changes: { on?: boolean; color?: string }) {
+	return (p: P) => {
+		for (const id of ids) {
+			const { track, cue } = findCue(p, id);
+			if (track.locked) continue;
+			if (changes.color !== undefined) cue.karaokeColor = changes.color;
+			if (changes.on === false) delete cue.karaoke;
+			else if (changes.on) {
+				const words = splitWords(cueText(cue));
+				if (!words.length) continue;
+				cue.words ??= spreadWords(words, cue.start, cue.end);
+				cue.karaoke = true;
+			}
+		}
+	};
+}
+
 export function clearWords(cueId: CueId) {
 	return (p: P) => {
 		const { track, cue } = findCue(p, cueId);

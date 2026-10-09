@@ -5,8 +5,8 @@
  * follow YTSubConverter (github.com/arcusmaximus/YTSubConverter), studied as a
  * reference; this is an independent implementation.
  */
-import { joinWords, wordGap } from '../model/cue';
 import { newId } from '../model/defaults';
+import { karaokeRuns, karaokeSteps } from '../model/karaoke';
 import {
 	Anchor,
 	CaptionStyle,
@@ -179,28 +179,20 @@ export function exportSrv3(project: Project): { xml: string; stats: Srv3Stats } 
 		const runPen = (override?: Partial<CaptionStyle>) =>
 			pens.id(penAttrs({ ...style, ...override }));
 
-		if (cue.karaoke && cue.words?.length) {
-			const hl = (cue.karaokeStyleId && project.styles[cue.karaokeStyleId]) || {
-				...style,
-				textColor: '#FFFF00',
-			};
-			const sung = pens.id(penAttrs(hl));
-			const unsung = runPen();
-			const words = cue.words;
-			// One line per word: words up to i highlighted, the rest normal.
-			for (let i = 0; i < words.length; i++) {
-				const start = i === 0 ? cue.start : words[i].start;
-				const end = i + 1 < words.length ? words[i + 1].start : cue.end;
-				if (end <= start) continue;
-				const before = joinWords(words.slice(0, i + 1));
-				const after = joinWords(words.slice(i + 1));
-				const sections: Section[] = [{ text: before, pen: sung }];
-				if (after)
-					sections.push({
-						text: wordGap(words[i].text, words[i + 1].text) + after,
-						pen: unsung,
-					});
-				lines.push({ start, end, wp, ws, sections });
+		// Karaoke: one line per word, with the words sung so far in the karaoke colour.
+		const steps = karaokeSteps(cue);
+		if (steps) {
+			for (const step of steps) {
+				const sections = karaokeRuns(cue, step.sung)
+					.filter((r) => r.text.length > 0)
+					.map((r) => ({ text: r.text, pen: runPen(r.styleOverride) }));
+				lines.push({
+					start: step.start,
+					end: step.end,
+					wp,
+					ws,
+					sections: mergeSections(sections),
+				});
 			}
 			continue;
 		}

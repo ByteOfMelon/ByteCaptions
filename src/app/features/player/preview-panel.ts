@@ -25,6 +25,7 @@ import {
 import { cueText, resolvePosition, resolveStyle } from '../../core/model/cue';
 import { CaptionStyle, TextRun } from '../../core/model/types';
 import { TextFormat } from '../../state/text-format';
+import { karaokeRuns, sungAt } from '../../core/model/karaoke';
 import * as edits from '../../core/commands/edits';
 import { formatTimecode } from '../../core/time/timecode';
 import { Autofocus } from '../../ui/autofocus/autofocus';
@@ -147,7 +148,12 @@ export class PreviewPanel {
 				id: cue.id,
 				locked: track.locked,
 				selected: this.store.selection().has(cue.id),
-				lines: lines(cue.runs).map((line) =>
+				// Karaoke: words already sung take the karaoke colour.
+				lines: lines(
+					cue.karaoke && !plain
+						? karaokeRuns(cue, sungAt(cue, this.store.playhead()))
+						: cue.runs,
+				).map((line) =>
 					line.map((r) => ({
 						text: r.text,
 						style:

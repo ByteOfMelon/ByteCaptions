@@ -30,3 +30,12 @@ h2 {
 .empty {
 	margin: 0;
 }
+
+.karaoke {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+}
+.karaoke p {
+	margin: 0;
+}

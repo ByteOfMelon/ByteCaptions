@@ -1,6 +1,9 @@
 import { Component, computed, inject } from '@angular/core';
 import { resolvePosition, resolveStyle } from '../../core/model/cue';
 import { newId } from '../../core/model/defaults';
+import { setKaraoke } from '../../core/commands/edits';
+import { DEFAULT_KARAOKE_COLOR, KARAOKE_COLORS } from '../../core/model/karaoke';
+import { Toggle } from '../../ui/controls/controls';
 import { Position, StyleId } from '../../core/model/types';
 import { ProjectStore } from '../../state/project-store';
 import { TextFormat } from '../../state/text-format';
@@ -14,7 +17,7 @@ import { StyleChange, StyleFields } from './style-fields';
  */
 @Component({
 	selector: 'bc-inspector',
-	imports: [Select, StyleFields, AnchorPicker],
+	imports: [Select, StyleFields, AnchorPicker, Toggle],
 	templateUrl: './inspector.html',
 	styleUrl: './inspector.css',
 	// Using the Inspector keeps the text selected in the caption editor.
@@ -41,6 +44,8 @@ export class Inspector {
 			style: resolveStyle(p, first.track, first.cue),
 			position: resolvePosition(p, first.track, first.cue),
 			locked: sel.some((r) => r.track.locked),
+			karaoke: sel.every((r) => r.cue.karaoke),
+			karaokeColor: first.cue.karaokeColor ?? DEFAULT_KARAOKE_COLOR,
 		};
 	});
 
@@ -67,6 +72,19 @@ export class Inspector {
 		this.store.apply(`Change ${s.style.name} ${String(key)}`, (p) => {
 			(p.styles[s.styleId] as unknown as Record<string, unknown>)[key] = value;
 		});
+	}
+
+	protected readonly karaokeColors = KARAOKE_COLORS;
+
+	/** Karaoke on or off, or the sung-word colour, for every selected cue. */
+	protected setKaraoke(changes: { on?: boolean; color?: string }): void {
+		const ids = this.store.selectedCues().map((r) => r.cue.id);
+		const label = changes.color
+			? 'Sung word colour'
+			: changes.on
+				? 'Karaoke on'
+				: 'Karaoke off';
+		this.store.apply(label, setKaraoke(ids, changes));
 	}
 
 	/** Positions are per cue: reuse a matching one, or add it, and point the selection at it. */
