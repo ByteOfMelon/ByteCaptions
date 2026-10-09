@@ -9,6 +9,7 @@ import { Button } from '../../ui/button/button';
 import { Dialog, DialogRef } from '../../ui/dialog/dialog';
 import { Field, NumberField } from '../../ui/field/field';
 import { Select } from '../../ui/select/select';
+import { ShowEnd } from '../../ui/show-end/show-end';
 import { Tabs } from '../../ui/tabs/tabs';
 
 export type SettingsTab = 'general' | 'rules';
@@ -16,7 +17,6 @@ export type SettingsTab = 'general' | 'rules';
 const FRAME_RATES = [23.976, 24, 25, 29.97, 30, 48, 50, 59.94, 60];
 
 /** Project settings: name, frame rate and video (General), and the caption rules Problems checks. */
-import { ShowEnd } from '../../ui/show-end/show-end';
 @Component({
 	selector: 'bc-project-settings-dialog',
 	imports: [Dialog, Button, Field, NumberField, Select, ShowEnd, Tabs, LucideFolder],
