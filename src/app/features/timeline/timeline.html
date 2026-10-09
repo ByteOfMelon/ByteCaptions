@@ -159,18 +159,23 @@
 	</div>
 
 	<div class="lanes">
-		<canvas
-			#canvas
-			role="application"
-			aria-label="Timeline lanes"
-			[style.cursor]="cursor()"
-			(pointerdown)="onPointerDown($event)"
-			(pointermove)="onPointerMove($event)"
-			(pointerup)="onPointerUp($event)"
-			(pointercancel)="onPointerUp($event)"
-			(wheel)="onWheel($event)"
-			(contextmenu)="onContextMenu($event)"
-		></canvas>
+		<div class="canvas-area">
+			<canvas
+				#canvas
+				role="application"
+				aria-label="Timeline lanes"
+				[style.cursor]="cursor()"
+				(pointerdown)="onPointerDown($event)"
+				(pointermove)="onPointerMove($event)"
+				(pointerup)="onPointerUp($event)"
+				(pointercancel)="onPointerUp($event)"
+				(wheel)="onWheel($event)"
+				(contextmenu)="onContextMenu($event)"
+			></canvas>
+		</div>
+		<div #hscroll class="hscroll" tabindex="-1" (scroll)="onHScroll()">
+			<div class="hscroll-content" [style.width.px]="scrollWidth()"></div>
+		</div>
 		@if (hud(); as h) {
 			<div
 				class="hud text-small"

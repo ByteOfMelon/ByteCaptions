@@ -4,6 +4,7 @@ import {
 	Directive,
 	ElementRef,
 	afterNextRender,
+	afterRenderEffect,
 	computed,
 	effect,
 	inject,
@@ -56,6 +57,8 @@ const SNAP_PX = 8;
 /** Zoom range in pixels per second; the slider maps 0–100 logarithmically onto it. */
 const MIN_PX_PER_S = 2;
 const MAX_PX_PER_S = 800;
+/** Chrome stops laying out elements wider than ~33M px. */
+const MAX_SCROLL_PX = 10_000_000;
 
 type Hit =
 	| { kind: 'ruler' }
@@ -135,6 +138,7 @@ export class Timeline {
 	protected readonly ui = inject(EditorUi);
 	private readonly host = inject(ElementRef<HTMLElement>);
 	private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
+	private readonly hscroll = viewChild.required<ElementRef<HTMLElement>>('hscroll');
 
 	/** Zoom slider position, 0–100. */
 	protected readonly zoom = signal(56);
@@ -167,6 +171,14 @@ export class Timeline {
 		const min = this.minPxPerS();
 		return (min * Math.pow(MAX_PX_PER_S / min, this.zoom() / 100)) / 1000;
 	});
+	/** Latest view start: scrolling may go half a screen past the end. */
+	private readonly maxStart = computed(() =>
+		Math.max(0, this.store.duration() - this.size().width / this.pxPerMs() / 2),
+	);
+	/** Scrollbar content width; capped below the browser's element size limit (positions map proportionally). */
+	protected readonly scrollWidth = computed(() =>
+		Math.min(MAX_SCROLL_PX, this.maxStart() * this.pxPerMs() + this.size().width),
+	);
 	private readonly maxScrollY = computed(() =>
 		Math.max(0, contentHeight(this.store.project().tracks.length) - this.size().height),
 	);
@@ -245,6 +257,16 @@ export class Timeline {
 				trim: this.trim(),
 				audio: this.audio.waveform(),
 			});
+		});
+
+		// Keep the scrollbar on the view (after render, so its content width is current).
+		afterRenderEffect(() => {
+			const el = this.hscroll().nativeElement;
+			this.scrollWidth();
+			const range = el.scrollWidth - el.clientWidth;
+			const max = this.maxStart();
+			const left = max && range > 0 ? (this.viewStart() / max) * range : 0;
+			if (Math.abs(el.scrollLeft - left) > 1) el.scrollLeft = left;
 		});
 
 		this.ui.zoomTimeline = (step) => this.zoomStep(step);
@@ -612,11 +634,16 @@ export class Timeline {
 		if (e.shiftKey && !e.deltaX) return this.scrollBy(e.deltaY);
 		const delta =
 			(Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) / this.pxPerMs();
-		const maxStart = Math.max(
-			0,
-			this.store.duration() - this.size().width / this.pxPerMs() / 2,
-		);
-		this.viewStart.set(Math.max(0, Math.min(maxStart, this.viewStart() + delta)));
+		this.viewStart.set(Math.max(0, Math.min(this.maxStart(), this.viewStart() + delta)));
+	}
+
+	protected onHScroll(): void {
+		const el = this.hscroll().nativeElement;
+		const range = el.scrollWidth - el.clientWidth;
+		if (range <= 0) return;
+		const ms = (el.scrollLeft / range) * this.maxStart();
+		// Ignore the echo of setting scrollLeft from the view.
+		if (Math.abs(ms - this.viewStart()) * this.pxPerMs() >= 1) this.viewStart.set(ms);
 	}
 
 	/** Vertical scroll of the track lanes; headers follow via a transform. */
