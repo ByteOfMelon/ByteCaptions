@@ -1,6 +1,7 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { LucideLoaderCircle } from '@lucide/angular';
 import { TrackId } from '../../core/model/types';
+import { EditorUi } from '../../state/editor-ui';
 import { ProjectStore } from '../../state/project-store';
 import {
 	SPEAKER_COUNTS,
@@ -13,7 +14,6 @@ import { Button } from '../../ui/button/button';
 import { Dialog, DialogRef } from '../../ui/dialog/dialog';
 import { Notice } from '../../ui/notice/notice';
 import { Select } from '../../ui/select/select';
-import { EditorUi } from '../../state/editor-ui';
 import { SpeakerRows } from './speaker-rows';
 
 type Phase = 'setup' | 'running' | 'done' | 'error';
