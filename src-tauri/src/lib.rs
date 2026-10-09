@@ -2,6 +2,7 @@ mod asr;
 mod gpu;
 mod jobs;
 mod media;
+mod media_server;
 mod models;
 mod speakers;
 mod youtube;
@@ -16,6 +17,7 @@ pub fn run() {
 		.manage(youtube::YouTube::default())
 		.invoke_handler(tauri::generate_handler![
 			media::media_peaks,
+			media_server::media_server,
 			gpu::gpu_device,
 			models::models_installed,
 			speakers::speakers_installed,

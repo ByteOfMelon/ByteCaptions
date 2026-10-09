@@ -1,4 +1,4 @@
-import { convertFileSrc, isTauri } from '@tauri-apps/api/core';
+import { convertFileSrc, invoke, isTauri } from '@tauri-apps/api/core';
 import { ask, message, open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialog';
 import { exists, readTextFile, stat, writeTextFile } from '@tauri-apps/plugin-fs';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -51,6 +51,22 @@ export function stripExtension(name: string): string {
 	return name.replace(/\.[^.]+$/, '');
 }
 
+/**
+ * Linux only: the app's local media server (see src-tauri/src/media_server.rs), because
+ * WebKitGTK's player can't play asset:// URLs. Null elsewhere, where asset:// is used.
+ */
+let mediaServer: string | null = null;
+
+/** Look up the media server once at startup, before any video is opened. */
+export async function initMediaUrls(): Promise<void> {
+	if (isDesktop) mediaServer = await invoke<string | null>('media_server').catch(() => null);
+}
+
+/** A URL the preview's <video> can play for a local file. */
+function localMediaUrl(path: string): string {
+	return mediaServer ? mediaServer + encodeURIComponent(path) : convertFileSrc(path);
+}
+
 export function fromPath(path: string): PickedFile {
 	return {
 		name: basename(path),
@@ -61,7 +77,7 @@ export function fromPath(path: string): PickedFile {
 				(s) => s.size,
 				() => null,
 			),
-		mediaUrl: () => convertFileSrc(path),
+		mediaUrl: () => localMediaUrl(path),
 	};
 }
 
