@@ -1,6 +1,6 @@
-import { sampleProject } from '../testing/fixtures';
-import { createProject } from '../model/defaults';
 import { cueText } from '../model/cue';
+import { createProject } from '../model/defaults';
+import { sampleProject } from '../testing/fixtures';
 import { exportSrv3, fromYtCoord, fromYtSize, importSrv3, toYtCoord, toYtSize } from './srv3';
 
 describe('SRV3 coordinate and size corrections', () => {

@@ -1,9 +1,9 @@
-import { sampleProject } from '../testing/fixtures';
 import { createCue, createProject } from '../model/defaults';
+import { styleRange } from '../model/runs';
+import { sampleProject } from '../testing/fixtures';
+import { sniffFormat } from './index';
 import { exportSbv, exportSrt, importSbv, importSrt, importVtt } from './plain';
 import { exportVtt } from './vtt';
-import { styleRange } from '../model/runs';
-import { sniffFormat } from './index';
 
 describe('SRT', () => {
 	it('exports all visible tracks in time order', () => {
