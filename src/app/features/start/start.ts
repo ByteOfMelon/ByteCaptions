@@ -1,7 +1,7 @@
 import { Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { LucideCaptions, LucideFilm, LucideFolderOpen, LucideUpload } from '@lucide/angular';
-import { version } from '../../../../package.json';
+import { APP_VERSION } from '../../version';
 import { formatBytes, formatLength } from '../../core/units/units';
 import { FileDrop, dropKind } from '../../state/file-drop';
 import { PickedFile, confirmAction, WEBSITE, openExternal, probeVideo } from '../../state/file-io';
@@ -34,7 +34,7 @@ export class Start implements OnDestroy {
 	private readonly drop = inject(FileDrop);
 	private readonly recovery = inject(Recovery);
 	private readonly dialogs = inject(Dialogs);
-	protected readonly version = version;
+	protected readonly version = APP_VERSION;
 	protected readonly website = WEBSITE;
 	protected readonly error = this.files.error;
 

@@ -11,7 +11,7 @@ import {
 import { getTauriVersion } from '@tauri-apps/api/app';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { message } from '@tauri-apps/plugin-dialog';
-import { version } from '../../../../package.json';
+import { APP_VERSION } from '../../version';
 import { EditorUi } from '../../state/editor-ui';
 import { WEBSITE, openExternal } from '../../state/file-io';
 import { PanelLayout } from '../../state/panel-layout';
@@ -391,7 +391,7 @@ export class AppMenu {
 		].filter(Boolean);
 		await message(
 			[
-				`ByteCaptions ${version}`,
+				`ByteCaptions ${APP_VERSION}`,
 				'The open-source video editing-style subtitle editor',
 				'',
 				'Made by Michael Webb/Byte of Melon',
