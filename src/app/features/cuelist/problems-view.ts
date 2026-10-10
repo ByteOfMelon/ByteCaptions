@@ -41,6 +41,7 @@ export class ProblemsView {
 		const f = this.filter();
 		const fps = this.store.project().fps;
 		const ignored = this.ignored();
+
 		return this.store
 			.problems()
 			.filter((p) => (f === ALL || p.trackId === f) && !ignored.has(problemKey(p)))
@@ -48,6 +49,7 @@ export class ProblemsView {
 			.map((p) => {
 				const ref = this.store.find(p.cueId)!;
 				const other = p.otherCueId && this.store.find(p.otherCueId);
+
 				return {
 					problem: p,
 					key: problemKey(p),
@@ -65,6 +67,7 @@ export class ProblemsView {
 	/** The rules these checks use */
 	protected readonly rules = computed(() => {
 		const r = this.store.project().settings;
+
 		return `${r.maxCharsPerLine} chars • ${r.maxLines} ${r.maxLines === 1 ? 'line' : 'lines'} • ${r.maxCps} cps • ${r.minDurationMs / 1000}–${r.maxDurationMs / 1000} s`;
 	});
 
@@ -76,6 +79,7 @@ export class ProblemsView {
 	private title(p: Problem): string {
 		const ref = this.store.find(p.cueId)!;
 		const dur = ((ref.cue.end - ref.cue.start) / 1000).toFixed(1);
+
 		switch (p.kind) {
 			case 'overlap':
 				return `Overlap on ${ref.track.name}`;
@@ -100,8 +104,11 @@ export class ProblemsView {
 		const fix = p.fix;
 
 		if (!fix) return null;
+
 		if (fix.kind === 'split') return `Split cue ${index}`;
+
 		if (fix.kind === 'confirmSpeaker') return fix.label;
+
 		if (p.kind === 'overlap') return `Trim cue ${index}`;
 
 		return `Extend to ${((fix.end - fix.start) / 1000).toFixed(1)} s`;
@@ -111,6 +118,7 @@ export class ProblemsView {
 		this.store.select(p.cueId);
 
 		const cue = this.store.find(p.cueId)?.cue;
+
 		if (cue) this.playback.seek(cue.start);
 	}
 

@@ -237,10 +237,12 @@ export class SeparateSpeakersDialog {
 	);
 	protected readonly downloadShare = computed(() => {
 		const d = this.download();
+
 		return d && d.total ? Math.min(1, d.received / d.total) : 0;
 	});
 	protected readonly detail = computed(() => {
 		const d = this.download();
+
 		return d
 			? `${formatBytes(d.received)} of ${d.total ? formatBytes(d.total) : SPEAKER_MODELS_SIZE}`
 			: '';
@@ -258,12 +260,15 @@ export class SeparateSpeakersDialog {
 
 	protected async start(): Promise<void> {
 		const before = this.store.track(this.trackId());
+
 		if (!before) return;
+
 		this.phase.set('running');
 		this.stopping.set(false);
 		this.download.set(null);
 		this.abort = new AbortController();
 		const started = performance.now();
+
 		try {
 			const turns = await this.separation.turns(this.speakers(), this.abort.signal, (e) => {
 				if (e.type === 'download')
@@ -272,8 +277,10 @@ export class SeparateSpeakersDialog {
 			});
 			// The track may have been edited meanwhile; split what it holds now.
 			const track = this.store.track(this.trackId());
+
 			if (!track)
 				throw new Error(`The track is gone|${before.name} was deleted while this ran.`);
+
 			const split = this.separation.split(track, turns, !this.speakers());
 			this.store.apply('Separate speakers', SpeakerSeparation.replace(track.id, split));
 			this.result.set(SpeakerSeparation.result(split));
@@ -282,8 +289,10 @@ export class SeparateSpeakersDialog {
 		} catch (err) {
 			if (isStopped(err)) {
 				this.phase.set('setup');
+
 				return;
 			}
+
 			this.error.set(jobErrorText(err));
 			this.phase.set('error');
 		} finally {

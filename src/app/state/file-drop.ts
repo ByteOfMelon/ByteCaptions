@@ -6,8 +6,11 @@ export type DropKind = 'video' | 'project' | 'captions' | 'other';
 
 export function dropKind(name: string, mimeType = ''): DropKind {
 	if (mimeType.startsWith('video/') || /\.(mp4|mov|mkv|webm)$/i.test(name)) return 'video';
+
 	if (/\.bcproj$/i.test(name)) return 'project';
+
 	if (/\.(srv3|ytt|srt|vtt|sbv)$/i.test(name)) return 'captions';
+
 	return 'other';
 }
 
@@ -43,6 +46,7 @@ export class FileDrop {
 				this.hover.set(null);
 			} else if (e.type === 'drop') {
 				this.hover.set(null);
+
 				if (e.paths[0]) this.handler?.(fromPath(e.paths[0]));
 			}
 		});
@@ -52,7 +56,9 @@ export class FileDrop {
 		const hasFiles = (e: DragEvent) => !!e.dataTransfer?.types.includes('Files');
 		addEventListener('dragenter', (e) => {
 			if (!hasFiles(e)) return;
+
 			e.preventDefault();
+
 			if (this.depth++ === 0) {
 				const type = e.dataTransfer!.items[0]?.type ?? '';
 				this.hover.set({ file: null, kind: type.startsWith('video/') ? 'video' : null });
@@ -60,6 +66,7 @@ export class FileDrop {
 		});
 		addEventListener('dragover', (e) => {
 			if (!hasFiles(e)) return;
+
 			e.preventDefault();
 			e.dataTransfer!.dropEffect = this.handler ? 'copy' : 'none';
 		});
@@ -68,9 +75,11 @@ export class FileDrop {
 		});
 		addEventListener('drop', (e) => {
 			if (!hasFiles(e)) return;
+
 			e.preventDefault();
 			this.reset();
 			const file = e.dataTransfer!.files[0];
+
 			if (file) this.handler?.(fromFile(file));
 		});
 	}

@@ -82,14 +82,17 @@ export class Tabs<T = string> {
 
 	protected move(i: number, dir: 1 | -1, e: Event): void {
 		const tabs = this.tabs();
+
 		for (let j = 1; j <= tabs.length; j++) {
 			const next = tabs[(i + dir * j + tabs.length) % tabs.length];
+
 			if (!next.disabled) {
 				this.value.set(next.value);
 				const host = (e.target as HTMLElement).parentElement;
 				queueMicrotask(() =>
 					host?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus(),
 				);
+
 				return;
 			}
 		}

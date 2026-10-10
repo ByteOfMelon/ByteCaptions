@@ -67,6 +67,7 @@ const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
 // A build for another target than the machine's: npm run fetch:ffmpeg -- linux-x64
 const key = process.argv[2] ?? `${process.platform}-${process.arch}`;
 const build = BUILDS[key];
+
 if (!build) {
 	console.error(`No pinned ffmpeg build for ${key} yet; add one to scripts/fetch-ffmpeg.mjs.`);
 	process.exit(1);
@@ -82,23 +83,31 @@ if (existsSync(target) && sha256(readFileSync(target)) === build.exeSha256) {
 
 console.log(`Downloading ${build.url}`);
 const res = await fetch(build.url);
+
 if (!res.ok) throw new Error(`Download failed: ${res.status} ${res.statusText}`);
+
 const zip = Buffer.from(await res.arrayBuffer());
+
 if (sha256(zip) !== build.zipSha256) throw new Error('Downloaded archive has the wrong checksum.');
 
 const work = mkdtempSync(join(tmpdir(), 'bc-ffmpeg-'));
+
 try {
 	const zipPath = join(work, 'ffmpeg-archive');
 	writeFileSync(zipPath, zip);
 	// Extract just the one binary.
 	execFileSync(tar, ['-xf', zipPath, '-C', work, build.member]);
 	const exe = join(work, build.member);
+
 	if (sha256(readFileSync(exe)) !== build.exeSha256)
 		throw new Error('Extracted ffmpeg has the wrong checksum.');
+
 	mkdirSync(dirname(target), { recursive: true });
 	// Copy, not rename: the temp folder can be on another drive (as on CI).
 	copyFileSync(exe, target);
+
 	if (process.platform !== 'win32') chmodSync(target, 0o755);
+
 	console.log(`ffmpeg ready: ${target}`);
 } finally {
 	rmSync(work, { recursive: true, force: true });

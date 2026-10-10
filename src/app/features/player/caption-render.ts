@@ -36,12 +36,14 @@ export const EDGE_LABEL: Record<EdgeType, string> = {
 
 function rgba(hex: string, alpha: number): string {
 	const n = parseInt(hex.replace('#', ''), 16);
+
 	return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
 /** Text-shadow for an edge type; `u` is the edge unit in px (scales with player size). */
 export function edgeShadow(edge: EdgeType, color: string, u = 1): string {
 	const c = color;
+
 	switch (edge) {
 		case 'hardShadow':
 			return `${c} ${u}px ${u}px 0, ${c} ${1.5 * u}px ${1.5 * u}px 0, ${c} ${2 * u}px ${2 * u}px 0`;
@@ -82,6 +84,7 @@ export function ytSafeArea(percent: number): number {
 export function captionWindowStyle(p: Position): Record<string, string> {
 	const ax = (p.anchor % 3) * 50;
 	const ay = Math.floor(p.anchor / 3) * 50;
+
 	return {
 		left: `${ytSafeArea(p.x)}%`,
 		top: `${ytSafeArea(p.y)}%`,

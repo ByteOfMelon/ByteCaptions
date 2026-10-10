@@ -22,6 +22,7 @@ export const appConfig: ApplicationConfig = {
 		provideAppInitializer(() => {
 			const recovery = inject(Recovery);
 			const youtube = inject(YouTube);
+
 			return Promise.all([initMediaUrls(), youtube.init()]).then(() => recovery.resume());
 		}),
 		provideRouter(routes),

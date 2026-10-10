@@ -49,18 +49,24 @@ if (existsSync(target) && sha256(readFileSync(target)) === DLL_SHA256) {
 
 console.log(`Downloading ${URL}`);
 const res = await fetch(URL);
+
 if (!res.ok) throw new Error(`Download failed: ${res.status} ${res.statusText}`);
+
 const zip = Buffer.from(await res.arrayBuffer());
+
 if (sha256(zip) !== ZIP_SHA256) throw new Error('Downloaded zip has the wrong checksum.');
 
 const work = mkdtempSync(join(tmpdir(), 'bc-vulkan-'));
+
 try {
 	const zipPath = join(work, 'vulkan.zip');
 	writeFileSync(zipPath, zip);
 	execFileSync(tar, ['-xf', zipPath, '-C', work, MEMBER]);
 	const dll = join(work, MEMBER);
+
 	if (sha256(readFileSync(dll)) !== DLL_SHA256)
 		throw new Error('Extracted vulkan-1.dll has the wrong checksum.');
+
 	mkdirSync(dirname(target), { recursive: true });
 	// Copy, not rename: the temp folder can be on another drive (as on CI).
 	copyFileSync(dll, target);

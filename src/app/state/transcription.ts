@@ -147,6 +147,7 @@ export interface TranscriptionEngine {
 /** A cue is in a range when its middle is, as for the other in/out range operations. */
 function inside(c: { start: Ms; end: Ms }, r: { start: Ms; end: Ms }): boolean {
 	const mid = (c.start + c.end) / 2;
+
 	return mid >= r.start && mid < r.end;
 }
 
@@ -163,6 +164,7 @@ function clipToRange(cues: Cue[], r: { start: Ms; end: Ms }): Cue[] {
 			const words = c.words
 				?.filter((w) => inside(w, { start, end }))
 				.map((w) => ({ ...w, start: Math.max(w.start, start), end: Math.min(w.end, end) }));
+
 			return { ...c, start, end, ...(words && { words }) };
 		});
 }
@@ -234,6 +236,7 @@ export class Transcription {
 	/** Length of what's transcribed: the range, or the whole video. */
 	readonly durationMs = computed(() => {
 		const r = this.options().range;
+
 		return r ? r.end - r.start : this.store.duration();
 	});
 	/** Model download progress while the download step runs; null otherwise. */
@@ -245,12 +248,15 @@ export class Transcription {
 	/** This run puts each speaker on their own track. */
 	readonly separatesSpeakers = computed(() => {
 		const o = this.options();
+
 		return o.separateSpeakers && !o.range;
 	});
 	/** Fraction done: of the download while downloading, else of the media. */
 	readonly progress = computed(() => {
 		const d = this.download();
+
 		if (d) return d.total ? Math.min(1, d.received / d.total) : 0;
+
 		return Math.min(1, this.mediaMs() / Math.max(1, this.durationMs()));
 	});
 	readonly running = computed(() => this.phase() === 'running');
@@ -258,9 +264,13 @@ export class Transcription {
 	/** Name for a new track: "Transcript", then "Transcript 2", "Transcript 3"… */
 	readonly nextTrackName = computed(() => {
 		const names = new Set(this.store.project().tracks.map((t) => t.name));
+
 		if (!names.has('Transcript')) return 'Transcript';
+
 		let n = 2;
+
 		while (names.has(`Transcript ${n}`)) n++;
+
 		return `Transcript ${n}`;
 	});
 	/** The new track's name for the job that's running or just finished. */
@@ -278,6 +288,7 @@ export class Transcription {
 					? `Range on ${name}`
 					: `Add to ${name}`;
 		const language = LANGUAGE_CODES[o.language] ? o.language : 'Any language';
+
 		return `${model.name} model • ${language} • ${target}`;
 	});
 
@@ -285,12 +296,14 @@ export class Transcription {
 	readonly remaining = computed(() => {
 		const model = MODELS.find((m) => m.id === this.options().model)!;
 		const left = (this.durationMs() - this.mediaMs()) * this.speed(model);
+
 		return `${roughly(left).toLowerCase()} left`;
 	});
 
 	/** Setup subtitle: where transcription runs. */
 	readonly privacyNote = computed(() => {
 		const gpu = this.gpu();
+
 		return `Runs on this computer${gpu ? `'s ${gpu}` : ''}. Your video is never uploaded.`;
 	});
 
@@ -304,6 +317,7 @@ export class Transcription {
 
 	isDownloaded(model: ModelId): boolean {
 		this.downloads();
+
 		return !!this.engine?.isDownloaded(model);
 	}
 
@@ -312,7 +326,9 @@ export class Transcription {
 		this.downloads();
 		const offered = new Set(MODELS.filter((m) => !m.hidden).map((m) => m.whisper));
 		const models = [...(this.engine?.downloaded() ?? [])].filter(([n]) => !offered.has(n));
+
 		if (!models.length) return null;
+
 		return {
 			names: models.map(([n]) => n),
 			size: formatBytes(models.reduce((sum, [, b]) => sum + b, 0)),
@@ -331,8 +347,10 @@ export class Transcription {
 	/** Delete downloaded models by whisper name, to free up space. */
 	async deleteModels(names: string[]): Promise<void> {
 		if (!this.engine) return;
+
 		this.deleting.set(true);
 		this.deleteError.set(null);
+
 		try {
 			for (const name of names) await this.engine.delete(name);
 		} catch (e) {
@@ -344,6 +362,7 @@ export class Transcription {
 
 	estimate(model: ModelInfo): string {
 		const what = this.options().range ? 'range' : 'video';
+
 		return `${roughly(this.durationMs() * this.speed(model))} for this ${what}.`;
 	}
 
@@ -353,6 +372,7 @@ export class Transcription {
 
 	reset(): void {
 		if (this.running()) return;
+
 		this.phase.set('setup');
 		this.error.set(null);
 		this.result.set(null);
@@ -360,6 +380,7 @@ export class Transcription {
 
 	async start(): Promise<void> {
 		if (!this.engine) return;
+
 		const opts = this.options();
 		const model = MODELS.find((m) => m.id === opts.model)!;
 		this.trackName.set(this.nextTrackName());
@@ -401,20 +422,28 @@ export class Transcription {
 			this.steps.update((steps) =>
 				steps.map((s) => (s.id === step ? { ...s, status, detail } : s)),
 			);
+
 		try {
 			const cues = await this.engine.run(opts, this.durationMs(), signal, (e) => {
 				if (e.type === 'download') {
 					this.download.set({ received: e.received, total: e.total });
+
 					return;
 				}
+
 				if (e.type === 'progress') {
 					this.mediaMs.set(e.mediaMs);
+
 					if (e.line) this.lines.update((l) => [...l, e.line!].slice(-3));
+
 					return;
 				}
+
 				if (e.step === 'download' && e.status !== 'running') this.download.set(null);
+
 				if (e.status === 'running' && !stepStarted.has(e.step))
 					stepStarted.set(e.step, performance.now());
+
 				// Finished compute steps show how long they took.
 				const took =
 					e.status === 'done' && !e.detail && stepStarted.has(e.step)
@@ -429,10 +458,12 @@ export class Transcription {
 				);
 			});
 			let turns: SpeakerTurn[] | null = null;
+
 			if (this.separatesSpeakers() && cues.length) {
 				const started = performance.now();
 				setStep('speakers', 'running', '');
 				this.separating.set(true);
+
 				try {
 					turns = await this.speakerSeparation.turns(opts.speakers, signal, (e) => {
 						if (e.type === 'download') {
@@ -449,16 +480,21 @@ export class Transcription {
 					});
 				} catch (err) {
 					if (!isStopped(err)) setStep('speakers', 'error', '');
+
 					throw err;
 				}
+
 				setStep('speakers', 'done', formatSpan(performance.now() - started));
 			}
+
 			this.finish(cues, turns);
 		} catch (err) {
 			if (isStopped(err)) {
 				this.phase.set('setup');
+
 				return;
 			}
+
 			this.error.set(jobErrorText(err));
 			// The step that was running is the one that failed.
 			this.steps.update((steps) =>
@@ -476,6 +512,7 @@ export class Transcription {
 
 	stop(): void {
 		if (!this.abort) return;
+
 		this.stopping.set(true);
 		this.abort.abort();
 	}
@@ -486,24 +523,31 @@ export class Transcription {
 	 */
 	private freeSpan(target: TranscribeOptions['target'], range: { start: Ms; end: Ms }) {
 		let { start, end } = range;
+
 		if (target === 'new') return { start, end };
+
 		for (const c of this.store.track(target)?.cues ?? []) {
 			if (inside(c, range)) continue;
+
 			if (c.start < range.start) start = Math.max(start, c.end);
 			else end = Math.min(end, c.start);
 		}
+
 		return { start, end };
 	}
 
 	private finish(cues: Cue[], turns: SpeakerTurn[] | null): void {
 		const opts = this.options();
+
 		if (opts.range) cues = clipToRange(cues, this.freeSpan(opts.target, opts.range));
+
 		let trackId = opts.target;
 		let trackName: string;
 		let trackColor: string;
 		let replaced = 0;
 		let speakers: SpeakerResult | undefined;
 		let trackIds: TrackId[] = [];
+
 		if (turns) {
 			const track = createTrack(this.trackName(), this.files.nextTrackColor());
 			track.cues = cues;
@@ -529,18 +573,23 @@ export class Transcription {
 			replaced = t.cues.filter(inRange).length;
 			this.store.apply(range ? 'Auto-transcribe range' : 'Auto-transcribe', (p) => {
 				const target = p.tracks.find((x) => x.id === opts.target)!;
+
 				if (range) target.cues = target.cues.filter((c) => !inRange(c));
+
 				target.cues.push(...cues);
 				target.cues.sort((a, b) => a.start - b.start);
 			});
 		}
+
 		const lowConfidence = opts.flagLowConfidence
 			? cues.reduce(
 					(n, c) => n + (c.words?.filter((w) => (w.confidence ?? 1) < 0.5).length ?? 0),
 					0,
 				)
 			: 0;
+
 		if (!trackIds.length) trackIds = [trackId as TrackId];
+
 		const speedWarnings = this.store
 			.problems()
 			.filter((p) => trackIds.includes(p.trackId) && p.kind === 'cps').length;

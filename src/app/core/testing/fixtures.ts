@@ -54,5 +54,6 @@ export function sampleProject(): Project {
 	];
 
 	p.tracks.push(sign, lyrics);
+
 	return p;
 }

@@ -13,6 +13,7 @@ function estimateWords(cue: Cue): WordTiming[] {
 		.filter(Boolean);
 	const total = words.reduce((n, w) => n + w.length + 1, 0);
 	let t = cue.start;
+
 	return words.map((text) => {
 		const d = ((text.length + 1) / total) * (cue.end - cue.start);
 		const w: WordTiming = {
@@ -22,6 +23,7 @@ function estimateWords(cue: Cue): WordTiming[] {
 			confidence: LOW_CONFIDENCE.has(text) ? 0.42 : 0.95,
 		};
 		t += d;
+
 		return w;
 	});
 }
@@ -29,6 +31,7 @@ function estimateWords(cue: Cue): WordTiming[] {
 /** HH:MM:SS:FF at 60 fps → ms. */
 function tc(s: string): number {
 	const [h, m, sec, f] = s.split(':').map(Number);
+
 	return Math.round(((h * 60 + m) * 60 + sec) * 1000 + (f * 1000) / 60);
 }
 
@@ -93,6 +96,7 @@ export function demoProject(): Project {
 	dialogue.color = '#4a6fa5';
 	dialogue.cues = DIALOGUE.map(([a, b, text], i) => {
 		const cue = { ...createCue(tc(a), tc(b), text), id: `d${i + 1}` };
+
 		return { ...cue, words: estimateWords(cue) };
 	});
 
@@ -105,5 +109,6 @@ export function demoProject(): Project {
 	}));
 
 	p.tracks.push(sfx);
+
 	return p;
 }

@@ -30,6 +30,7 @@ export interface Palette {
 export function readPalette(el: Element): Palette {
 	const s = getComputedStyle(el);
 	const v = (name: string) => s.getPropertyValue(name).trim();
+
 	return {
 		bg: v('--color-bg'),
 		panel: v('--color-panel'),
@@ -96,6 +97,7 @@ const MIN_LABEL_PX = 200;
 
 function paintWaveform(ctx: CanvasRenderingContext2D, input: PaintInput, mid: number): void {
 	const { view: v, palette: c, audio } = input;
+
 	if (audio.status !== 'ready') {
 		const label =
 			audio.status === 'loading'
@@ -103,6 +105,7 @@ function paintWaveform(ctx: CanvasRenderingContext2D, input: PaintInput, mid: nu
 				: audio.status === 'error'
 					? audio.message
 					: null;
+
 		if (label) {
 			ctx.fillStyle = audio.status === 'error' ? c.danger : c.faded;
 			ctx.fillText(label, 8, mid);
@@ -110,19 +113,26 @@ function paintWaveform(ctx: CanvasRenderingContext2D, input: PaintInput, mid: nu
 			ctx.fillStyle = c.border;
 			ctx.fillRect(0, Math.round(mid), Math.max(0, msToX(v, input.duration)), 1);
 		}
+
 		return;
 	}
+
 	const { peaks } = audio;
 	const perMs = PEAKS_PER_SECOND / 1000;
 	const full = AUDIO_H - 8;
 	ctx.fillStyle = c.border;
+
 	// One 2px bar every 3px, showing the loudest peak in its time slice.
 	for (let x = 0; x < v.width; x += 3) {
 		const i0 = Math.max(0, Math.floor(xToMs(v, x) * perMs));
+
 		if (i0 >= peaks.length) break;
+
 		const i1 = Math.min(peaks.length, Math.max(i0 + 1, Math.ceil(xToMs(v, x + 3) * perMs)));
 		let loudest = 0;
+
 		for (let i = i0; i < i1; i++) if (peaks[i] > loudest) loudest = peaks[i];
+
 		// Square root so quiet speech is still visible next to loud music.
 		const h = Math.max(1, Math.sqrt(loudest / 255) * full);
 		ctx.fillRect(x, mid - h / 2, 2, h);
@@ -151,15 +161,19 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 	const major = STEPS.find((s) => s * v.pxPerMs >= MIN_LABEL_PX) ?? STEPS.at(-1)!;
 	const minor = major / (String(major)[0] === '2' ? 4 : 5);
 	ctx.fillStyle = c.border;
+
 	for (let t = Math.floor(t0 / minor) * minor; t <= t1; t += minor) {
 		const x = Math.round(msToX(v, t));
 		const isMajor = Math.round(t / minor) % Math.round(major / minor) === 0;
+
 		if (isMajor) ctx.fillRect(x, 14, 1, 10);
 		else ctx.fillRect(x, 19, 1, 5);
 	}
+
 	ctx.fillStyle = c.faded;
 	ctx.font = '12px "Space Mono", monospace';
 	ctx.textBaseline = 'top';
+
 	for (let t = Math.floor(t0 / major) * major; t <= t1; t += major) {
 		const label = input.msLabels ? formatClock(t) : formatTimecode(t, input.fps);
 		ctx.fillText(label, Math.round(msToX(v, t)) + 4, 2);
@@ -176,18 +190,22 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 	ctx.fillStyle = c.panel;
 	tracks.forEach((_, i) => ctx.fillRect(0, laneY(i) - v.scrollY, v.width, LANE_H));
 	ctx.fillRect(0, ay, v.width, AUDIO_H);
+
 	if (range) {
 		ctx.fillStyle = c.brand;
 		ctx.globalAlpha = 0.08;
 		ctx.fillRect(range.x0, LANES_TOP, range.x1 - range.x0, v.height - LANES_TOP);
 		ctx.globalAlpha = 1;
 	}
+
 	ctx.font = '500 12px "Inter Variable", Inter, sans-serif';
 	ctx.textBaseline = 'middle';
 	tracks.forEach((track, i) => {
 		const y = laneY(i) - v.scrollY;
+
 		for (const cue of track.cues) {
 			if (cue.end < t0 || cue.start > t1) continue;
+
 			paintCue(ctx, input, track, cue, y + CUE_INSET);
 		}
 	});
@@ -246,6 +264,7 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 
 	// Playhead: line plus a handle in the ruler
 	const px = Math.round(msToX(v, input.playhead));
+
 	if (px >= -6 && px <= v.width + 6) {
 		ctx.fillStyle = c.brand;
 		ctx.fillRect(px - 1, 6, 2, v.height - 6);
@@ -257,9 +276,12 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 /** Markers: a flag on the ruler and a faint line down the lanes; the selected one brighter. */
 function paintMarkers(ctx: CanvasRenderingContext2D, input: PaintInput): void {
 	const { view: v, palette: c } = input;
+
 	for (const m of input.markers) {
 		const x = Math.round(msToX(v, m.at));
+
 		if (x < -6 || x > v.width + 6) continue;
+
 		ctx.fillStyle = m.color;
 		ctx.globalAlpha = m.selected ? 0.8 : 0.35;
 		ctx.fillRect(x, RULER_H, 1, v.height - RULER_H);
@@ -273,6 +295,7 @@ function paintMarkers(ctx: CanvasRenderingContext2D, input: PaintInput): void {
 		ctx.lineTo(x - 5, 19);
 		ctx.closePath();
 		ctx.fill();
+
 		if (m.selected) {
 			ctx.strokeStyle = c.text;
 			ctx.lineWidth = 1.5;
@@ -299,6 +322,7 @@ function paintCue(
 	ctx.fill();
 
 	const tapping = input.tapping?.cueId === cue.id ? input.tapping : null;
+
 	if (tapping?.tappedUntil != null) {
 		// Tap to time: the part already tapped is shaded.
 		ctx.save();
@@ -309,6 +333,7 @@ function paintCue(
 		ctx.fillRect(x0, y, Math.max(0, msToX(v, tapping.tappedUntil) - x0), h);
 		ctx.restore();
 	}
+
 	if ((input.selection.has(cue.id) || tapping) && cue.words?.length && w > 40)
 		paintWords(ctx, input, cue, y, h, tapping);
 	else if (w > 24) {
@@ -320,6 +345,7 @@ function paintCue(
 		ctx.fillText(cueText(cue).replace(/\n/g, ' '), Math.max(x0, 0) + 8, y + h / 2);
 		ctx.restore();
 	}
+
 	ctx.globalAlpha = 1;
 
 	const problems = input.problems.get(cue.id);
@@ -330,6 +356,7 @@ function paintCue(
 			: problems?.length
 				? c.warning
 				: null;
+
 	if (stroke && w > 4) {
 		ctx.strokeStyle = stroke;
 		ctx.lineWidth = 2;
@@ -339,6 +366,7 @@ function paintCue(
 
 	// Trimming: brand handle on the dragged edge, dashed line where it started.
 	const trim = input.trim;
+
 	if (trim?.cueId === cue.id) {
 		const ex = trim.edge === 'start' ? x0 : x1 - 4;
 		ctx.fillStyle = c.brand;
@@ -391,14 +419,18 @@ function paintWords(
 	words.forEach((word, i) => {
 		const x0 = Math.max(left, msToX(v, word.start));
 		const x1 = Math.min(right, msToX(v, words[i + 1]?.start ?? cue.end));
+
 		if (i > 0) {
 			const dragged = input.wordEdge?.cueId === cue.id && input.wordEdge.index === i;
 			ctx.fillStyle = c.onTrack;
 			ctx.globalAlpha = base * (dragged ? 1 : 0.35);
+
 			if (dragged) ctx.fillRect(Math.round(x0) - 1, y, 2, h);
 			else ctx.fillRect(Math.round(x0), y + 8, 1, h - 16);
 		}
+
 		if (x1 - x0 < 12) return;
+
 		const pending = tapping && (tapping.tappedUntil ?? -Infinity) < word.start;
 		ctx.save();
 		ctx.beginPath();

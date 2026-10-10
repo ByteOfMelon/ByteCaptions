@@ -59,22 +59,26 @@ export class EditorCommands {
 	/** The single selected cue, if it's on an unlocked track (for word timing) */
 	private editableCue(): CueRef | null {
 		const sel = this.store.selectedCues();
+
 		return sel.length === 1 && !sel[0].track.locked ? sel[0] : null;
 	}
 
 	/** Spread words out evenly */
 	spreadWords(): void {
 		const r = this.editableCue();
+
 		if (r) this.store.apply('Spread words evenly', spreadCueWords(r.cue.id));
 	}
 
 	tapToTime(): void {
 		const r = this.editableCue();
+
 		if (r) this.tapping.start(r.cue.id);
 	}
 
 	clearWords(): void {
 		const r = this.editableCue();
+
 		if (r?.cue.words) this.store.apply('Clear word timings', clearWords(r.cue.id));
 	}
 
@@ -82,13 +86,18 @@ export class EditorCommands {
 	merge(): void {
 		const sel = this.store.selectedCues();
 		let ids = sel.map((r) => r.cue.id);
+
 		if (sel.length === 1) {
 			const { track, cue } = sel[0];
 			const next = track.cues[track.cues.findIndex((c) => c.id === cue.id) + 1];
+
 			if (!next) return;
+
 			ids = [cue.id, next.id];
 		}
+
 		if (ids.length < 2) return;
+
 		this.store.apply('Merge cues', mergeCues(ids));
 		this.store.select(ids[0]);
 	}
@@ -98,7 +107,9 @@ export class EditorCommands {
 			.selectedCues()
 			.filter((r) => !r.track.locked)
 			.map((r) => r.cue.id);
+
 		if (!ids.length) return;
+
 		this.store.apply(
 			ids.length > 1 ? `Delete ${ids.length} cues` : 'Delete cue',
 			deleteCues(ids),
@@ -112,7 +123,9 @@ export class EditorCommands {
 			.selectedCues()
 			.filter((r) => !r.track.locked)
 			.map((r) => r.cue.id);
+
 		if (!ids.length) return;
+
 		this.store.apply(
 			ids.length > 1 ? `Ripple delete ${ids.length} cues` : 'Ripple delete cue',
 			rippleDeleteCues(ids),
@@ -123,6 +136,7 @@ export class EditorCommands {
 	setStartToPlayhead(): void {
 		const r = this.store.primary();
 		const t = this.store.playhead();
+
 		if (r && !r.track.locked && t < r.cue.end)
 			this.store.apply('Set start', setTiming(r.cue.id, t, r.cue.end));
 	}
@@ -130,6 +144,7 @@ export class EditorCommands {
 	setEndToPlayhead(): void {
 		const r = this.store.primary();
 		const t = this.store.playhead();
+
 		if (r && !r.track.locked && t > r.cue.start)
 			this.store.apply('Set end', setTiming(r.cue.id, r.cue.start, t));
 	}
@@ -137,7 +152,9 @@ export class EditorCommands {
 	/** Nudge selected cues by whole frames (Alt+← / Alt+→). */
 	nudge(frames: number): void {
 		const sel = this.store.selectedCues().filter((r) => !r.track.locked);
+
 		if (!sel.length) return;
+
 		const d = Math.round((frames * 1000) / this.store.project().fps);
 		this.store.apply('Nudge', (p) => {
 			for (const r of sel)
@@ -154,7 +171,9 @@ export class EditorCommands {
 		const flagged = this.store
 			.allCues()
 			.filter((r) => this.store.problemsByCue().has(r.cue.id));
+
 		if (!flagged.length) return;
+
 		const current = this.store.primary()?.cue.start ?? this.store.playhead();
 		const target =
 			dir > 0
@@ -173,8 +192,11 @@ export class EditorCommands {
 	/** Track new cues go to: the selected cue's, else the first unlocked one. */
 	private targetTrack(trackId?: TrackId): TrackId | undefined {
 		if (trackId) return trackId;
+
 		const p = this.store.primary();
+
 		if (p && !p.track.locked) return p.track.id;
+
 		return this.store.project().tracks.find((t) => !t.locked)?.id;
 	}
 
@@ -183,13 +205,16 @@ export class EditorCommands {
 		copy.start += offset;
 		copy.end += offset;
 		copy.words?.forEach((w) => ((w.start += offset), (w.end += offset)));
+
 		return copy;
 	}
 
 	/** Add an empty two-second cue and select it. */
 	newCueAt(atMs: Ms = this.store.playhead(), trackId?: TrackId): void {
 		const id = this.targetTrack(trackId);
+
 		if (!id || this.store.track(id)?.locked) return;
+
 		const cue = createCue(Math.round(atMs), Math.round(atMs) + 2000, '');
 		this.store.apply('New cue', addCue(id, cue));
 		this.store.select(cue.id);
@@ -197,7 +222,9 @@ export class EditorCommands {
 
 	copy(): void {
 		const sel = this.store.selectedCues();
+
 		if (!sel.length) return;
+
 		const t0 = Math.min(...sel.map((r) => r.cue.start));
 		this.clipboard = sel.map((r) => this.freshCopy(r.cue, -t0));
 	}
@@ -209,7 +236,9 @@ export class EditorCommands {
 			.selectedCues()
 			.filter((r) => !r.track.locked)
 			.map((r) => r.cue.id);
+
 		if (!ids.length) return;
+
 		this.store.apply(ids.length > 1 ? `Cut ${ids.length} cues` : 'Cut cue', deleteCues(ids));
 		this.store.clearSelection();
 	}
@@ -220,7 +249,9 @@ export class EditorCommands {
 
 	paste(atMs: Ms = this.store.playhead(), trackId?: TrackId): void {
 		const id = this.targetTrack(trackId);
+
 		if (!id || !this.clipboard.length || this.store.track(id)?.locked) return;
+
 		const cues = this.clipboard.map((c) => this.freshCopy(c, Math.round(atMs)));
 		this.store.apply(cues.length > 1 ? `Paste ${cues.length} cues` : 'Paste cue', (p) => {
 			for (const c of cues) addCue(id, c)(p);
@@ -231,7 +262,9 @@ export class EditorCommands {
 	/** Copies of the selection placed right after it, on the same tracks. */
 	duplicateSelected(): void {
 		const sel = this.store.selectedCues().filter((r) => !r.track.locked);
+
 		if (!sel.length) return;
+
 		const t0 = Math.min(...sel.map((r) => r.cue.start));
 		const t1 = Math.max(...sel.map((r) => r.cue.end));
 		const copies = sel.map((r) => ({ track: r.track.id, cue: this.freshCopy(r.cue, t1 - t0) }));
@@ -244,6 +277,7 @@ export class EditorCommands {
 	/** Ctrl+A: the selected cue's track, or the first unlocked one when nothing is selected. */
 	selectAllOnTrack(trackId = this.targetTrack()): void {
 		const t = trackId ? this.store.track(trackId) : undefined;
+
 		if (t) this.store.selection.set(new Set(t.cues.map((c) => c.id)));
 	}
 
@@ -252,10 +286,13 @@ export class EditorCommands {
 		const name = this.store.project().styles[styleId]?.name ?? 'preset';
 		this.store.apply(`Set style to ${name}`, (p) => {
 			const set = new Set(ids);
+
 			for (const t of p.tracks) {
 				if (t.locked) continue;
+
 				for (const c of t.cues) {
 					if (!set.has(c.id)) continue;
+
 					if (styleId === t.defaultStyleId) delete c.styleId;
 					else c.styleId = styleId;
 				}
@@ -271,6 +308,7 @@ export class EditorCommands {
 	/** Shift cues by `deltaMs` keeping their spacing (clamped at 0). */
 	shiftTiming(ids: CueId[], deltaMs: Ms): void {
 		if (!deltaMs) return;
+
 		const rows = this.store.allCues().filter((r) => ids.includes(r.cue.id));
 		const minStart = Math.min(...rows.map((r) => r.cue.start));
 		this.store.apply('Shift timing', moveCues(ids, Math.max(-minStart, deltaMs)));
@@ -284,9 +322,12 @@ export class EditorCommands {
 	 */
 	rangeCues(): CueRef[] {
 		const r = this.playback.range();
+
 		if (!r) return [];
+
 		return this.store.allCues().filter((x) => {
 			const mid = (x.cue.start + x.cue.end) / 2;
+
 			return !x.track.locked && mid >= r.start && mid < r.end;
 		});
 	}
@@ -301,16 +342,22 @@ export class EditorCommands {
 	 */
 	deleteRange(ripple: boolean): void {
 		const r = this.playback.range();
+
 		if (!r) return;
+
 		const ids = this.rangeCues().map((x) => x.cue.id);
+
 		if (!ripple && !ids.length) return;
+
 		const n = ids.length;
 		const what = n === 1 ? '1 cue' : `${n} cues`;
 		this.store.apply(ripple ? 'Ripple delete range' : `Delete ${what} in range`, (p) => {
 			deleteCues(ids)(p);
+
 			if (ripple) shiftAfter(r.end, r.start - r.end)(p);
 		});
 		this.store.clearSelection();
+
 		if (ripple) {
 			this.playback.clearRange();
 			this.playback.seek(r.start);
@@ -321,11 +368,14 @@ export class EditorCommands {
 	newTrack(afterId?: TrackId): TrackId {
 		const p = this.store.project();
 		let n = p.tracks.length + 1;
+
 		while (p.tracks.some((t) => t.name === `Track ${n}`)) n++;
+
 		const colors = trackColors();
 		const track = createTrack(`Track ${n}`, colors[p.tracks.length % colors.length]);
 		const after = p.tracks.findIndex((t) => t.id === afterId);
 		this.store.apply('New track', addTrack(track, after < 0 ? undefined : after + 1));
+
 		return track.id;
 	}
 
@@ -334,7 +384,9 @@ export class EditorCommands {
 		const tracks = this.store.project().tracks;
 		const from = tracks.findIndex((t) => t.id === trackId);
 		const to = from + by;
+
 		if (from < 0 || to < 0 || to >= tracks.length) return;
+
 		const name = tracks[from].name;
 		this.store.apply(`Move ${name} ${by < 0 ? 'up' : 'down'}`, reorderTrack(trackId, to));
 	}
@@ -342,7 +394,9 @@ export class EditorCommands {
 	duplicateTrack(trackId: TrackId): void {
 		const p = this.store.project();
 		const src = p.tracks.find((t) => t.id === trackId);
+
 		if (!src) return;
+
 		const copy = {
 			...structuredClone(src),
 			id: newId('trk'),
@@ -358,7 +412,9 @@ export class EditorCommands {
 
 	deleteTrack(trackId: TrackId): void {
 		const t = this.store.track(trackId);
+
 		if (!t) return;
+
 		this.store.apply(`Delete ${t.name}`, removeTrack(trackId));
 		const gone = new Set(t.cues.map((c) => c.id));
 		this.store.selection.set(
@@ -369,6 +425,7 @@ export class EditorCommands {
 	renameTrack(trackId: TrackId, name: string): void {
 		const t = this.store.track(trackId);
 		const clean = name.trim();
+
 		if (t && clean && clean !== t.name)
 			this.store.apply(`Rename ${t.name}`, updateTrack(trackId, { name: clean }));
 	}

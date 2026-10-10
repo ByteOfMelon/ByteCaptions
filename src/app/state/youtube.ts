@@ -151,13 +151,16 @@ export class YouTube {
 	/** Run at start-up, so menus know whether to offer YouTube before they're built. */
 	async init(): Promise<void> {
 		if (!isDesktop) return;
+
 		const ok = await invoke<boolean>('youtube_available').catch(() => false);
 		this.available.set(ok);
+
 		if (ok) void this.refreshAccount();
 	}
 
 	async refreshAccount(): Promise<void> {
 		this.accountError.set(null);
+
 		try {
 			this.setAccount(await invoke<YtAccount | null>('youtube_account'));
 		} catch (e) {
@@ -172,6 +175,7 @@ export class YouTube {
 			this.nextPage = undefined;
 			this.hasMoreVideos.set(false);
 		}
+
 		this.account.set(a);
 	}
 
@@ -179,12 +183,16 @@ export class YouTube {
 	async signIn(): Promise<boolean> {
 		this.signingIn.set(true);
 		this.accountError.set(null);
+
 		try {
 			this.setAccount(await invoke<YtAccount | null>('youtube_sign_in'));
+
 			return !!this.account();
 		} catch (e) {
 			const err = asError(e);
+
 			if (err.kind !== 'cancelled') this.accountError.set(err);
+
 			return false;
 		} finally {
 			this.signingIn.set(false);
@@ -203,9 +211,12 @@ export class YouTube {
 	/** Load the next page of uploads (the first page on the first call). */
 	async loadVideos(): Promise<void> {
 		const account = this.account();
+
 		if (!account || this.loadingVideos() || this.nextPage === null) return;
+
 		this.loadingVideos.set(true);
 		this.videosError.set(null);
+
 		try {
 			const page = await invoke<{
 				videos: YtVideo[];
@@ -239,10 +250,13 @@ export class YouTube {
 	/** The loaded video closest to `ms` long, if one is within a second and a half. */
 	matchByLength(ms: Ms): YtVideo | null {
 		let best: YtVideo | null = null;
+
 		for (const v of this.videos()) {
 			const d = Math.abs(v.durationMs - ms);
+
 			if (d <= SAME_LENGTH_MS && (!best || d < Math.abs(best.durationMs - ms))) best = v;
 		}
+
 		return best;
 	}
 
@@ -252,6 +266,7 @@ export class YouTube {
 
 	reset(): void {
 		if (this.running()) return;
+
 		this.phase.set('setup');
 		this.error.set(null);
 		this.result.set(null);
@@ -259,6 +274,7 @@ export class YouTube {
 
 	async upload(opts: UploadOptions): Promise<void> {
 		if (this.running()) return;
+
 		const started = performance.now();
 		const project = combineTracks(this.store.project(), new Set(opts.trackIds));
 		const cues = project.tracks.reduce((n, t) => n + t.cues.length, 0);
@@ -290,6 +306,7 @@ export class YouTube {
 				this.step('check', 'running', '');
 			}
 		};
+
 		try {
 			const caption = await invoke<YtCaption>('youtube_upload', {
 				videoId: opts.video.id,
@@ -316,6 +333,7 @@ export class YouTube {
 			this.step(failed, 'error', err.kind === 'signed-out' ? 'Signed out' : 'Failed');
 			this.error.set(err);
 			this.phase.set('error');
+
 			if (err.kind === 'signed-out') this.setAccount(null);
 		}
 	}
@@ -333,5 +351,6 @@ function joinNames(names: string[]): string {
 
 function formatSeconds(ms: Ms): string {
 	const s = Math.max(1, Math.round(ms / 1000));
+
 	return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${s % 60} s`;
 }

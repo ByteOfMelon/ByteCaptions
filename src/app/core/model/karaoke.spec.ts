@@ -16,6 +16,7 @@ function song(): Cue {
 		],
 	};
 	cue.runs = styleRange(cue.runs, 0, 3, { bold: true });
+
 	return cue;
 }
 

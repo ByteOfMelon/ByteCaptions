@@ -27,7 +27,9 @@ export function joinWords(words: readonly { text: string }[]): string {
 /** Width in half-width columns, for line lengths: full-width characters count as two */
 export function textWidth(text: string): number {
 	let width = 0;
+
 	for (const c of text) width += WIDE.test(c) ? 2 : 1;
+
 	return width;
 }
 
@@ -37,6 +39,7 @@ export function sortCues(cues: Cue[]): void {
 
 export function visibleTracks(project: Project): Track[] {
 	const soloed = project.tracks.filter((t) => t.solo);
+
 	return (soloed.length ? soloed : project.tracks).filter((t) => !t.muted);
 }
 

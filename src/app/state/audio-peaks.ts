@@ -31,30 +31,39 @@ export class AudioPeaks {
 	 */
 	readonly silenceEdges = computed(() => {
 		const w = this.waveform();
+
 		if (w.status !== 'ready') return [];
+
 		const peaks = w.peaks;
 		const quiet = Math.max(1, peaks.reduce((m, p) => Math.max(m, p), 0) * QUIET);
 		const step = 1000 / PEAKS_PER_SECOND;
 		const edges: number[] = [];
 		let from = -1;
+
 		for (let i = 0; i <= peaks.length; i++) {
 			const silent = i < peaks.length && peaks[i] < quiet;
+
 			if (silent && from < 0) from = i;
 			else if (!silent && from >= 0) {
 				if ((i - from) * step >= MIN_SILENCE_MS) edges.push(from * step, i * step);
+
 				from = -1;
 			}
 		}
+
 		return edges;
 	});
 
 	constructor() {
 		effect(() => {
 			const path = this.media.path();
+
 			if (!isDesktop || !path) {
 				this.waveform.set({ status: 'none' });
+
 				return;
 			}
+
 			this.waveform.set({ status: 'loading' });
 			invoke<ArrayBuffer>('media_peaks', { path }).then(
 				(buf) => {

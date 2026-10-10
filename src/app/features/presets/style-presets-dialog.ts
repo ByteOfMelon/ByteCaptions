@@ -86,6 +86,7 @@ export class StylePresetsDialog implements OnInit {
 	/** Cues per preset, honoring per-cue overrides of the track default. */
 	private readonly usage = computed(() => {
 		const byStyle = new Map<StyleId, Map<string, number>>();
+
 		for (const t of this.store.project().tracks)
 			for (const c of t.cues) {
 				const id = c.styleId ?? t.defaultStyleId;
@@ -93,6 +94,7 @@ export class StylePresetsDialog implements OnInit {
 				tracks.set(t.id, (tracks.get(t.id) ?? 0) + 1);
 				byStyle.set(id, tracks);
 			}
+
 		return byStyle;
 	});
 
@@ -101,6 +103,7 @@ export class StylePresetsDialog implements OnInit {
 			const tracks = [...(this.usage().get(id)?.keys() ?? [])]
 				.map((tid) => this.store.track(tid)?.name)
 				.filter(Boolean);
+
 			return {
 				id,
 				style,
@@ -112,6 +115,7 @@ export class StylePresetsDialog implements OnInit {
 	protected readonly subtitle = computed(() => {
 		const n = this.list().length;
 		const used = this.list().filter((p) => this.usage().has(p.id)).length;
+
 		return `${n} preset${n === 1 ? '' : 's'} • ${used} in use`;
 	});
 
@@ -119,8 +123,10 @@ export class StylePresetsDialog implements OnInit {
 
 	protected readonly tracksUsing = computed(() => {
 		const total = this.store.cueCount();
+
 		return [...(this.usage().get(this.selectedId()) ?? new Map()).entries()].map(([tid, n]) => {
 			const t = this.store.track(tid)!;
+
 			return {
 				id: tid,
 				name: t.name,
@@ -135,6 +141,7 @@ export class StylePresetsDialog implements OnInit {
 		const track = this.store
 			.project()
 			.tracks.find((t) => t.defaultStyleId === this.selectedId());
+
 		return track?.defaultPositionId ?? DEFAULT_POSITION_ID;
 	});
 	protected readonly position = computed(() => this.positions()[this.positionId()]);
@@ -143,6 +150,7 @@ export class StylePresetsDialog implements OnInit {
 		const s = this.current();
 		// The preview frame is 270px tall; YouTube sizes captions from player height.
 		const fontPx = 270 * 0.0533 * s.scale;
+
 		return { ...captionTextStyle(s, Math.max(1, fontPx / 18)), 'font-size': `${fontPx}px` };
 	});
 	protected readonly windowCss = computed(() => captionWindowStyle(this.position()));
@@ -160,13 +168,17 @@ export class StylePresetsDialog implements OnInit {
 		this.nameDraft.set(null);
 		// Sample text: a real cue that uses this preset, so the preview is representative.
 		const primary = this.store.primary();
+
 		if (primary && (primary.cue.styleId ?? primary.track.defaultStyleId) === id)
 			return this.sample.set(cueText(primary.cue).replace(/\n/g, ' '));
+
 		const p = this.store.project();
+
 		for (const t of p.tracks)
 			for (const c of t.cues)
 				if ((c.styleId ?? t.defaultStyleId) === id)
 					return this.sample.set(cueText(c).split('\n').at(-1)!);
+
 		this.sample.set('Sample caption text');
 	}
 
@@ -180,6 +192,7 @@ export class StylePresetsDialog implements OnInit {
 
 	protected rename(name: string): void {
 		if (!name.trim()) return;
+
 		this.nameDraft.set(null);
 		this.updateStyle({ key: 'name', value: name.trim() });
 	}
@@ -209,9 +222,12 @@ export class StylePresetsDialog implements OnInit {
 	/** Cues and tracks on a deleted preset fall back to the default preset when saved. */
 	protected remove(): void {
 		const id = this.selectedId();
+
 		if (id === DEFAULT_STYLE_ID) return;
+
 		this.styles.update((all) => {
 			const { [id]: _removed, ...rest } = all;
+
 			return rest;
 		});
 		this.dirty.set(true);
@@ -225,12 +241,15 @@ export class StylePresetsDialog implements OnInit {
 			this.store.apply('Edit style presets', (p) => {
 				p.styles = structuredClone(styles);
 				p.positions = structuredClone(positions);
+
 				for (const t of p.tracks) {
 					if (!styles[t.defaultStyleId]) t.defaultStyleId = DEFAULT_STYLE_ID;
+
 					for (const c of t.cues) if (c.styleId && !styles[c.styleId]) delete c.styleId;
 				}
 			});
 		}
+
 		this.ref.close();
 	}
 }

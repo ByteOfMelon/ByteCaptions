@@ -47,6 +47,7 @@ export class Markers {
 			const ids = new Set(this.list().map((m) => m.id));
 			untracked(() => {
 				if (this.selected() && !ids.has(this.selected()!)) this.selected.set(null);
+
 				if (this.editing() && !ids.has(this.editing()!)) this.editing.set(null);
 			});
 		});
@@ -71,7 +72,9 @@ export class Markers {
 		const fps = this.store.project().fps;
 		const at = snapToFrame(ms, fps);
 		const existing = this.list().find((m) => Math.abs(m.at - at) < 500 / fps);
+
 		if (existing) return this.edit(existing.id);
+
 		const marker = createMarker(at);
 		this.store.apply('Add marker', addMarker(marker));
 		this.edit(marker.id);
@@ -80,7 +83,9 @@ export class Markers {
 	/** Select a marker and move the playhead to it. */
 	select(id: MarkerId): void {
 		const m = this.find(id);
+
 		if (!m) return;
+
 		this.selected.set(id);
 		this.playback.seek(m.at);
 	}
@@ -93,11 +98,13 @@ export class Markers {
 	/** No-ops when nothing changed or the marker is gone (e.g. undone while being edited). */
 	setNote(id: MarkerId, note: string): void {
 		const m = this.find(id);
+
 		if (m && m.note !== note) this.store.apply('Edit marker note', updateMarker(id, { note }));
 	}
 
 	setColor(id: MarkerId, color: MarkerColor): void {
 		const m = this.find(id);
+
 		if (m && m.color !== color) this.store.apply('Marker color', updateMarker(id, { color }));
 	}
 
@@ -117,6 +124,7 @@ export class Markers {
 			dir > 0
 				? list.find((m) => m.at > t + 1)
 				: [...list].reverse().find((m) => m.at < t - 1);
+
 		if (m) this.select(m.id);
 	}
 

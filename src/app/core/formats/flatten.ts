@@ -13,6 +13,7 @@ export interface FlatCue {
 /** All visible cues across tracks, sorted by start time */
 export function flatten(project: Project): FlatCue[] {
 	const out: FlatCue[] = [];
+
 	for (const track of visibleTracks(project)) {
 		for (const cue of track.cues) {
 			out.push({
@@ -24,6 +25,7 @@ export function flatten(project: Project): FlatCue[] {
 			});
 		}
 	}
+
 	return out.sort((a, b) => a.cue.start - b.cue.start || a.cue.end - b.cue.end);
 }
 

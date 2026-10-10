@@ -13,6 +13,7 @@ export class Autofocus {
 			inject<ElementRef<HTMLInputElement | HTMLTextAreaElement>>(ElementRef).nativeElement;
 		afterNextRender(() => {
 			el.focus();
+
 			if (this.selectAll()) el.select?.();
 		});
 	}

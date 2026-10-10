@@ -29,7 +29,9 @@ export interface Problem {
 /** Characters per second, ignoring line breaks */
 export function readingSpeed(cue: Cue): number {
 	const seconds = (cue.end - cue.start) / 1000;
+
 	if (seconds <= 0) return Infinity;
+
 	return cueText(cue).replace(/\n/g, '').length / seconds;
 }
 
@@ -73,6 +75,7 @@ export function lintTrack(project: Project, track: Track): Problem[] {
 		}
 
 		const cps = readingSpeed(cue);
+
 		if (text.trim() && cps > s.maxCps) {
 			const neededEnd =
 				cue.start + Math.ceil((text.replace(/\n/g, '').length / s.maxCps) * 1000);
@@ -113,11 +116,14 @@ export function lintTrack(project: Project, track: Track): Problem[] {
 		}
 
 		const lines = text.split('\n');
+
 		if (lines.length > s.maxLines) {
 			add(cue, 'tooManyLines', 'warning', `${lines.length} lines (max ${s.maxLines})`);
 		}
+
 		// Full-width characters (Chinese, Japanese, Korean) count as two
 		const longest = Math.max(...lines.map((l) => textWidth(l)));
+
 		if (longest > s.maxCharsPerLine) {
 			add(
 				cue,
@@ -134,6 +140,7 @@ export function lintTrack(project: Project, track: Track): Problem[] {
 			});
 		}
 	});
+
 	return out;
 }
 

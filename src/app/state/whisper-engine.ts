@@ -55,6 +55,7 @@ export class WhisperEngine implements TranscriptionEngine {
 			return await invoke<string | null>('gpu_device');
 		} catch (e) {
 			console.warn('Could not check for a GPU', e);
+
 			return null;
 		}
 	}
@@ -83,13 +84,16 @@ export class WhisperEngine implements TranscriptionEngine {
 		emit: (e: EngineEvent) => void,
 	): Promise<Cue[]> {
 		const path = this.mediaPath();
+
 		if (!path)
 			throw new Error(
 				"There's no video to transcribe|Link the project's video first (drop it on the editor), then try again.",
 			);
+
 		const model = MODELS.find((m) => m.id === opts.model)!;
 		const cancel = () => void invoke('job_cancel');
 		signal.addEventListener('abort', cancel);
+
 		try {
 			// The speech detector comes along with whichever Whisper model is downloaded first.
 			for (const name of [model.whisper, VAD_MODEL].filter((n) => !this.installed.has(n))) {
@@ -101,15 +105,20 @@ export class WhisperEngine implements TranscriptionEngine {
 					emit({ type: 'step', step: 'download', status: 'running', detail: last });
 					emit({ type: 'download', received: p.received, total: p.total });
 				};
+
 				try {
 					await invoke('model_download', { name, onProgress: progress });
 				} catch (e) {
 					if (wasCancelled(e, signal)) throw stopped();
+
 					emit({ type: 'step', step: 'download', status: 'error', detail: last });
+
 					throw new Error(`Model download failed|${e}`);
 				}
+
 				await this.refresh();
 			}
+
 			emit({ type: 'step', step: 'download', status: 'done', detail: model.size });
 
 			emit({ type: 'step', step: 'extract', status: 'running', detail: '' });
@@ -126,6 +135,7 @@ export class WhisperEngine implements TranscriptionEngine {
 							detail: formatLength(e.durationMs),
 						});
 						emit({ type: 'step', step: 'transcribe', status: 'running', detail: '0%' });
+
 						return;
 					case 'progress':
 						emit({ type: 'progress', mediaMs: (e.percent / 100) * duration });
@@ -135,6 +145,7 @@ export class WhisperEngine implements TranscriptionEngine {
 							status: 'running',
 							detail: `${e.percent}%`,
 						});
+
 						return;
 					case 'segment':
 						if (e.text)
@@ -146,6 +157,7 @@ export class WhisperEngine implements TranscriptionEngine {
 				}
 			};
 			let words: WordTiming[];
+
 			try {
 				({ words } = await invoke<{ words: WordTiming[]; language: string }>('transcribe', {
 					path,
@@ -157,22 +169,28 @@ export class WhisperEngine implements TranscriptionEngine {
 				}));
 			} catch (e) {
 				if (wasCancelled(e, signal)) throw stopped();
+
 				throw new Error(`Transcription failed|${e}`);
 			}
+
 			if (signal.aborted) throw stopped();
+
 			emit({ type: 'progress', mediaMs: duration });
 			emit({ type: 'step', step: 'transcribe', status: 'done', detail: '' });
 
 			// Whisper times each word as it transcribes; this step just groups them into cues.
 			emit({ type: 'step', step: 'align', status: 'running', detail: '' });
 			const cues = segmentWords(words, this.settings());
+
 			if (!opts.wordTimings) for (const c of cues) delete c.words;
+
 			emit({
 				type: 'step',
 				step: 'align',
 				status: 'done',
 				detail: opts.wordTimings ? '' : 'Skipped',
 			});
+
 			return cues;
 		} finally {
 			signal.removeEventListener('abort', cancel);

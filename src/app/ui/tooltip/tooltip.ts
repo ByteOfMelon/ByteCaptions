@@ -39,22 +39,28 @@ export class Tooltip implements OnDestroy {
 
 	private render(): void {
 		this.hide();
+
 		if (!this.text()) return;
+
 		const el = document.createElement('div');
 		el.className = 'bc-tooltip';
 		el.role = 'tooltip';
 		el.textContent = this.text();
+
 		for (const k of keyCaps(this.keys() ?? '')) {
 			const kbd = document.createElement('kbd');
 			kbd.textContent = k;
 			el.append(kbd);
 		}
+
 		document.body.append(el);
 		const r = this.host.nativeElement.getBoundingClientRect();
 		const t = el.getBoundingClientRect();
 		const gap = 4;
 		let top = r.top - t.height - gap;
+
 		if (top < gap) top = r.bottom + gap;
+
 		const left = Math.min(
 			Math.max(gap, r.left + r.width / 2 - t.width / 2),
 			innerWidth - t.width - gap,
@@ -90,7 +96,9 @@ export class ErrorTip implements OnDestroy {
 	constructor() {
 		effect(() => {
 			const message = this.message();
+
 			if (!message) return this.remove();
+
 			if (!this.el) {
 				this.el = document.createElement('div');
 				this.el.className = 'bc-tooltip error';
@@ -100,6 +108,7 @@ export class ErrorTip implements OnDestroy {
 				addEventListener('scroll', this.place, true);
 				addEventListener('resize', this.place);
 			}
+
 			this.el.textContent = message;
 			this.position();
 		});
@@ -111,6 +120,7 @@ export class ErrorTip implements OnDestroy {
 
 	private position(): void {
 		if (!this.el) return;
+
 		const r = this.host.nativeElement.getBoundingClientRect();
 		const t = this.el.getBoundingClientRect();
 		const gap = 8;

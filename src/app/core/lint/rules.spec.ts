@@ -4,6 +4,7 @@ import { lintProject, readingSpeed } from './rules';
 function project(...cues: ReturnType<typeof createCue>[]) {
 	const p = createProject();
 	p.tracks[0].cues = cues;
+
 	return p;
 }
 

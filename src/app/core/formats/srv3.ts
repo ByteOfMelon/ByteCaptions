@@ -82,16 +82,24 @@ type Attrs = [string, string | number][];
 function penAttrs(s: CaptionStyle): Attrs {
 	const a: Attrs = [];
 	const fs = FONTS.indexOf(s.font);
+
 	if (fs > 0) a.push(['fs', fs]);
+
 	a.push(['sz', toYtSize(s.scale)]);
+
 	if (s.offset !== 'regular') a.push(['of', OFFSETS.indexOf(s.offset)]);
+
 	if (s.bold) a.push(['b', 1]);
+
 	if (s.italic) a.push(['i', 1]);
+
 	if (s.underline) a.push(['u', 1]);
+
 	a.push(['fc', s.textColor.toUpperCase()]);
 	a.push(['fo', opacityToByte(s.textOpacity)]);
 	a.push(['bc', s.bgColor.toUpperCase()]);
 	a.push(['bo', opacityToByte(s.bgOpacity)]);
+
 	if (s.edge !== 'none') {
 		a.push(['et', EDGES.indexOf(s.edge)]);
 
@@ -99,6 +107,7 @@ function penAttrs(s: CaptionStyle): Attrs {
 		if (s.edgeColor.toUpperCase() !== DEFAULT_EDGE_COLOR)
 			a.push(['ec', s.edgeColor.toUpperCase()]);
 	}
+
 	return a;
 }
 
@@ -114,6 +123,7 @@ function wsAttrs(p: Position): Attrs {
 	const ju = p.align === 'left' ? 0 : p.align === 'right' ? 1 : 2;
 	const [pd, sd] =
 		p.direction === 'verticalRtl' ? [2, 0] : p.direction === 'verticalLtr' ? [2, 1] : [0, 0];
+
 	return [
 		['ju', ju],
 		['pd', pd],
@@ -128,11 +138,13 @@ class Table {
 	id(attrs: Attrs): number {
 		const key = JSON.stringify(attrs);
 		let id = this.ids.get(key);
+
 		if (id === undefined) {
 			id = this.rows.length;
 			this.ids.set(key, id);
 			this.rows.push(attrs);
 		}
+
 		return id;
 	}
 }
@@ -179,6 +191,7 @@ export function exportSrv3(project: Project): { xml: string; stats: Srv3Stats } 
 
 		// Karaoke steps. One line per word, with the words sung so far in the karaoke color
 		const steps = karaokeSteps(cue);
+
 		if (steps) {
 			for (const step of steps) {
 				const sections = karaokeRuns(cue, step.sung)
@@ -192,6 +205,7 @@ export function exportSrv3(project: Project): { xml: string; stats: Srv3Stats } 
 					sections: mergeSections(sections),
 				});
 			}
+
 			continue;
 		}
 
@@ -211,18 +225,22 @@ export function exportSrv3(project: Project): { xml: string; stats: Srv3Stats } 
 	out.push('</head>');
 	out.push('<body>');
 	let sectionCount = 0;
+
 	for (const line of lines) {
 		const s = writeLine(line);
+
 		if (s) {
 			out.push(s);
 			sectionCount += line.sections.length;
 		}
 	}
+
 	out.push('</body>');
 	out.push('</timedtext>');
 	const xml = out.join('\n') + '\n';
 	const elements =
 		lines.length + sectionCount + pens.rows.length + wps.rows.length + wss.rows.length;
+
 	return {
 		xml,
 		stats: {
@@ -236,26 +254,34 @@ export function exportSrv3(project: Project): { xml: string; stats: Srv3Stats } 
 
 function mergeSections(sections: Section[]): Section[] {
 	const out: Section[] = [];
+
 	for (const s of sections) {
 		const last = out.at(-1);
+
 		if (last && last.pen === s.pen) last.text += s.text;
 		else out.push({ ...s });
 	}
+
 	return out;
 }
 
 function writeLine(line: Line): string | null {
 	if (line.sections.length === 0) return null;
+
 	let t = Math.round(line.start);
 	let d = Math.round(line.end - line.start);
+
 	// The Android app ignores positioning (or hides the line) at t=0
 	if (t <= 0) {
 		d -= -t + 1;
 		t = 1;
 	}
+
 	if (d <= 0) return null;
+
 	const head = `<p t="${t}" d="${d}"`;
 	const pos = ` wp="${line.wp}" ws="${line.ws}"`;
+
 	if (line.sections.length === 1) {
 		return `${head} p="${line.sections[0].pen}"${pos}>${esc(line.sections[0].text)}</p>`;
 	}
@@ -264,25 +290,31 @@ function writeLine(line: Line): string | null {
 	const body = line.sections
 		.map((s, i) => `<s p="${s.pen}">${esc(s.text)}</s>${i === 0 ? ZWSP : ''}`)
 		.join('');
+
 	return `${head}${pos}>${body}</p>`;
 }
 
 // Import
 function int(el: Element, name: string): number | undefined {
 	const v = el.getAttribute(name);
+
 	if (v == null || v === '') return undefined;
+
 	const n = Number.parseInt(v, 10);
+
 	return Number.isNaN(n) ? undefined : n;
 }
 
 function color(el: Element, name: string, fallback: string): string {
 	const v = el.getAttribute(name);
+
 	return v && /^#[0-9a-f]{6}$/i.test(v) ? v.toUpperCase() : fallback;
 }
 
 function readPen(el: Element | undefined): CaptionStyle {
 	const g = (n: string) => (el ? int(el, n) : undefined);
 	const et = g('et') ?? 0;
+
 	return {
 		name: 'Imported',
 		font: FONTS[g('fs') ?? 0] ?? 'default',
@@ -305,8 +337,11 @@ function readPosition(wp: Element | undefined, ws: Element | undefined): Positio
 	const pd = ws ? (int(ws, 'pd') ?? 0) : 0;
 	const sd = ws ? (int(ws, 'sd') ?? 0) : 0;
 	let direction: TextDirection = 'horizontal';
+
 	if (pd === 2 || pd === 3) direction = sd === 0 ? 'verticalRtl' : 'verticalLtr';
+
 	const ap = (wp ? int(wp, 'ap') : undefined) ?? 7;
+
 	return {
 		name: 'Imported',
 		anchor: (ap >= 0 && ap <= 8 ? ap : 7) as Anchor,
@@ -319,37 +354,46 @@ function readPosition(wp: Element | undefined, ws: Element | undefined): Positio
 
 function styleKey(s: CaptionStyle): string {
 	const { name: _name, ...rest } = s;
+
 	return JSON.stringify(rest);
 }
 
 function diff(base: CaptionStyle, s: CaptionStyle): Partial<CaptionStyle> | undefined {
 	const out: Partial<CaptionStyle> = {};
 	let any = false;
+
 	for (const k of Object.keys(s) as (keyof CaptionStyle)[]) {
 		if (k !== 'name' && s[k] !== base[k]) {
 			(out as Record<string, unknown>)[k] = s[k];
 			any = true;
 		}
 	}
+
 	return any ? out : undefined;
 }
 
 export function importSrv3(src: string): ImportResult {
 	const doc = new DOMParser().parseFromString(src, 'application/xml');
+
 	if (doc.getElementsByTagName('parsererror').length) {
 		return { cues: [], warnings: ['File is not valid XML'] };
 	}
+
 	const root = doc.documentElement;
+
 	if (root.tagName !== 'timedtext' || root.getAttribute('format') !== '3') {
 		return { cues: [], warnings: ['Not an SRV3/YTT file (expected <timedtext format="3">)'] };
 	}
 
 	const byId = (tag: string) => {
 		const m = new Map<number, Element>();
+
 		for (const el of Array.from(doc.getElementsByTagName(tag))) {
 			const id = int(el, 'id');
+
 			if (id !== undefined) m.set(id, el);
 		}
+
 		return m;
 	};
 	const pens = byId('pen');
@@ -361,11 +405,13 @@ export function importSrv3(src: string): ImportResult {
 	const internStyle = (s: CaptionStyle) => {
 		const key = styleKey(s);
 		let id = styleIds.get(key);
+
 		if (!id) {
 			id = newId('style');
 			styleIds.set(key, id);
 			styles[id] = { ...s, name: `Imported ${styleIds.size}` };
 		}
+
 		return id;
 	};
 	const positions: Record<string, Position> = {};
@@ -373,50 +419,65 @@ export function importSrv3(src: string): ImportResult {
 	const internPos = (p: Position) => {
 		const key = JSON.stringify({ ...p, name: '' });
 		let id = posIds.get(key);
+
 		if (!id) {
 			id = newId('pos');
 			posIds.set(key, id);
 			positions[id] = { ...p, name: `Imported ${posIds.size}` };
 		}
+
 		return id;
 	};
 
 	const penOf = (el: Element) => {
 		const id = int(el, 'p');
+
 		return id === undefined ? undefined : pens.get(id);
 	};
 
 	const cues: Cue[] = [];
 	const warnings = new Set<string>();
 	const body = doc.getElementsByTagName('body')[0];
+
 	for (const p of Array.from(body?.getElementsByTagName('p') ?? [])) {
 		const t = int(p, 't') ?? 0;
 		const d = int(p, 'd') ?? 0;
+
 		if (d <= 0) continue;
+
 		const linePen = penOf(p);
 
 		const parts: { text: string; style: CaptionStyle }[] = [];
+
 		for (const node of Array.from(p.childNodes)) {
 			if (node.nodeType === 3) {
 				parts.push({ text: node.textContent ?? '', style: readPen(linePen) });
 			} else if (node.nodeType === 1) {
 				const el = node as Element;
+
 				if (el.tagName === 'br') {
 					parts.push({ text: '\n', style: readPen(linePen) });
 					continue;
 				}
+
 				if (el.tagName !== 's') continue;
+
 				if (int(el, 't'))
 					warnings.add('Timed sections (<s t>) were imported as static text');
+
 				const pen = penOf(el) ?? linePen;
+
 				if (pen && int(pen, 'rb'))
 					warnings.add('Ruby text is not supported yet and was flattened');
+
 				parts.push({ text: el.textContent ?? '', style: readPen(pen) });
 			}
 		}
+
 		const clean = parts
 			.map((x) => ({ ...x, text: x.text.replaceAll(ZWSP, '') }))
 			.filter((x) => x.text.length > 0);
+
 		if (!clean.length) continue;
 
 		const base = clean[0].style;
@@ -428,6 +489,7 @@ export function importSrv3(src: string): ImportResult {
 			end: t + d,
 			runs: clean.map((x) => {
 				const o = diff(base, x.style);
+
 				return o ? { text: x.text, styleOverride: o } : { text: x.text };
 			}),
 			styleId: internStyle(base),
@@ -441,13 +503,17 @@ export function importSrv3(src: string): ImportResult {
 		// Merge adjacent runs with identical overrides
 		cue.runs = cue.runs.reduce<Cue['runs']>((acc, r) => {
 			const last = acc.at(-1);
+
 			if (last && JSON.stringify(last.styleOverride) === JSON.stringify(r.styleOverride)) {
 				last.text += r.text;
 			} else acc.push({ ...r });
+
 			return acc;
 		}, []);
 		cues.push(cue);
 	}
+
 	cues.sort((a, b) => a.start - b.start);
+
 	return { cues, styles, positions, warnings: [...warnings] };
 }

@@ -76,11 +76,16 @@ export class AppMenu {
 			// Only changes go to the native menu. Most edits change just undo/redo.
 			for (const l of this.live) {
 				const now = { text: l.text(), enabled: l.enabled() };
+
 				if (now.text !== l.shown?.text) void l.item.setText(now.text);
+
 				if (now.enabled !== l.shown?.enabled) void l.item.setEnabled(now.enabled);
+
 				l.shown = now;
 			}
+
 			const pref = this.theme.preference();
+
 			for (const t of this.themeItems) void t.item.setChecked(t.id === pref);
 		});
 		void this.build();
@@ -251,9 +256,11 @@ export class AppMenu {
 				]),
 			],
 		});
+
 		// The Mac has one menu bar for the whole app; Windows and Linux put it on the window.
 		if (IS_MAC) await menu.setAsAppMenu();
 		else await menu.setAsWindowMenu();
+
 		this.ready.set(true);
 	}
 
@@ -262,26 +269,31 @@ export class AppMenu {
 		entries: (Entry | Submenu | PredefinedMenuItem)[],
 	): Promise<Submenu> {
 		const items = [];
+
 		for (const e of entries)
 			items.push(
 				e instanceof Submenu || e instanceof PredefinedMenuItem ? e : await this.item(e),
 			);
+
 		return Submenu.new({ text, items });
 	}
 
 	private async item(e: Entry): Promise<MenuItem | PredefinedMenuItem> {
 		if (e === 'separator') return PredefinedMenuItem.new({ item: 'Separator' });
+
 		const label = (text: string, keys?: string) =>
 			SHOW_KEYS && keys ? `${text}\t${keys}` : text;
 		let text: () => string;
 		let enabled: () => boolean;
 		let run: () => void;
+
 		if ('command' in e) {
 			const cmd = () => this.registry.get(e.command);
 			text = () => label(cmd()?.label ?? e.command, cmd()?.keys);
 			enabled = () => this.inEditor() && (cmd()?.enabled?.() ?? true);
 			run = () => {
 				const c = cmd();
+
 				if (c && enabled()) c.run();
 			};
 		} else {
@@ -291,9 +303,11 @@ export class AppMenu {
 				if (enabled()) e.run();
 			};
 		}
+
 		const shown = { text: text(), enabled: enabled() };
 		const item = await MenuItem.new({ ...shown, action: run });
 		this.live.push({ item, text, enabled, shown });
+
 		return item;
 	}
 
@@ -304,6 +318,7 @@ export class AppMenu {
 			{ id: 'dark', text: 'Dark' },
 		];
 		const items = [];
+
 		for (const o of options) {
 			const item = await CheckMenuItem.new({
 				text: o.text,
@@ -313,6 +328,7 @@ export class AppMenu {
 			this.themeItems.push({ item, id: o.id });
 			items.push(item);
 		}
+
 		return Submenu.new({ text: 'Theme', items });
 	}
 
@@ -350,14 +366,17 @@ export class AppMenu {
 		const el = document.activeElement as HTMLElement | null;
 		const editing =
 			!!el && (el.isContentEditable || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
+
 		if (editing) {
 			if (action === 'paste')
 				void navigator.clipboard
 					.readText()
 					.then((t) => document.execCommand('insertText', false, t));
 			else document.execCommand(action);
+
 			return;
 		}
+
 		if (action === 'cut') this.commands.cut();
 		else if (action === 'copy') this.commands.copy();
 		else if (this.commands.canPaste) this.commands.paste();

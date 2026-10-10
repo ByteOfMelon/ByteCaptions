@@ -39,11 +39,15 @@ export function assignSpeakers(
 	{ foldMinor = false } = {},
 ): SpeakerGuess[] {
 	let guesses = cues.map((c) => guess(c, turns));
+
 	if (foldMinor) {
 		const counts = new Map<number, number>();
+
 		for (const g of guesses) counts.set(g.speaker, (counts.get(g.speaker) ?? 0) + 1);
+
 		const min = Math.max(3, cues.length * MINOR_SHARE);
 		const minor = new Set([...counts].filter(([, n]) => n < min).map(([s]) => s));
+
 		if (minor.size && minor.size < counts.size) {
 			const major = turns.filter((t) => !minor.has(t.speaker));
 			guesses = guesses.map((g, i) =>
@@ -53,26 +57,35 @@ export function assignSpeakers(
 			);
 		}
 	}
+
 	smooth(cues, guesses);
+
 	return guesses;
 }
 
 function guess(cue: Cue, turns: readonly SpeakerTurn[]): SpeakerGuess {
 	const votes = new Map<number, number>();
+
 	for (const w of cue.words?.length ? cue.words : [cue])
 		for (const t of turns) {
 			const overlap = Math.min(w.end, t.end) - Math.max(w.start, t.start);
+
 			if (overlap > 0) votes.set(t.speaker, (votes.get(t.speaker) ?? 0) + overlap);
 		}
+
 	if (!votes.size) {
 		if (!turns.length) return { speaker: 0, purity: 0 };
+
 		const mid = (cue.start + cue.end) / 2;
 		const distance = (t: SpeakerTurn) => Math.max(0, t.start - mid, mid - t.end);
 		const near = turns.reduce((a, b) => (distance(b) < distance(a) ? b : a));
+
 		return { speaker: near.speaker, purity: 0 };
 	}
+
 	const total = [...votes.values()].reduce((a, b) => a + b, 0);
 	const [speaker, share] = [...votes].reduce((a, b) => (b[1] > a[1] ? b : a));
+
 	return { speaker, purity: share / total };
 }
 
@@ -93,6 +106,7 @@ function wordCount(c: Cue): number {
 function smooth(cues: readonly Cue[], guesses: SpeakerGuess[]): void {
 	for (let i = 1; i < cues.length - 1; i++) {
 		const [prev, cur, next] = [guesses[i - 1], guesses[i], guesses[i + 1]];
+
 		if (
 			wordCount(cues[i]) <= FRAGMENT_WORDS &&
 			cur.purity < 1 &&
@@ -142,12 +156,16 @@ export function splitBySpeaker(
 		solo: false,
 		cues: group.map(({ cue, purity }) => {
 			const { speakerUnsure: _, ...rest } = cue;
+
 			if (purity >= UNSURE_BELOW) return rest;
+
 			unsure++;
+
 			return { ...rest, speakerUnsure: true };
 		}),
 	}));
 	const samples = groups.map((group) => clearest(group).id);
+
 	return { tracks, samples, unsure };
 }
 
@@ -155,5 +173,6 @@ export function splitBySpeaker(
 function clearest(group: { cue: Cue; purity: number }[]): Cue {
 	const score = ({ cue, purity }: { cue: Cue; purity: number }) =>
 		purity * Math.min(1, (cue.end - cue.start) / 2500);
+
 	return group.reduce((a, b) => (score(b) > score(a) ? b : a)).cue;
 }

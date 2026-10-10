@@ -74,6 +74,7 @@ export class Menu {
 	constructor() {
 		afterNextRender(() => {
 			this.host.nativeElement.focus();
+
 			if (this.nested()) this.active.set(this.focusable()[0] ?? -1);
 		});
 	}
@@ -89,7 +90,9 @@ export class Menu {
 
 	protected activate(i: number): void {
 		const item = this.asItem(this.items()[i]);
+
 		if (item.disabled) return;
+
 		if (item.submenu) this.openSub.set(i);
 		else this.select.emit(item.id);
 	}
@@ -102,8 +105,10 @@ export class Menu {
 	protected onKey(e: KeyboardEvent): void {
 		// Keys inside an open submenu belong to the submenu.
 		if (e.target !== this.host.nativeElement) return;
+
 		const f = this.focusable();
 		const pos = f.indexOf(this.active());
+
 		switch (e.key) {
 			case 'ArrowDown':
 				this.active.set(f[(pos + 1) % f.length] ?? -1);
@@ -121,12 +126,15 @@ export class Menu {
 			case ' ':
 			case 'ArrowRight':
 				if (this.active() < 0) return;
+
 				if (e.key === 'ArrowRight' && !this.asItem(this.items()[this.active()]).submenu)
 					return;
+
 				this.activate(this.active());
 				break;
 			case 'ArrowLeft':
 				if (!this.nested()) return;
+
 				this.back.emit();
 				break;
 			case 'Escape':
@@ -135,6 +143,7 @@ export class Menu {
 			default:
 				return;
 		}
+
 		e.preventDefault();
 		e.stopPropagation();
 	}
@@ -149,6 +158,7 @@ export class ContextMenu {
 
 	open(at: { x: number; y: number } | MouseEvent, items: MenuEntry[]): Promise<string | null> {
 		if (at instanceof MouseEvent) at.preventDefault();
+
 		this.close?.();
 		const x = at instanceof MouseEvent ? at.clientX : at.x;
 		const y = at instanceof MouseEvent ? at.clientY : at.y;
@@ -167,7 +177,9 @@ export class ContextMenu {
 
 			// Keep the menu on screen.
 			const r = el.getBoundingClientRect();
+
 			if (r.right > innerWidth) el.style.left = `${Math.max(4, x - r.width)}px`;
+
 			if (r.bottom > innerHeight) el.style.top = `${Math.max(4, y - r.height)}px`;
 
 			const outside = (e: Event) => {

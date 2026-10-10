@@ -38,19 +38,24 @@ export function segmentWords(
 	let current: WordTiming[] = [];
 	const flush = () => {
 		if (current.length) groups.push(current);
+
 		current = [];
 	};
 
 	for (const word of clean) {
 		const prev = current.at(-1);
+
 		if (prev) {
 			const pause = word.start - prev.end >= options.pauseMs;
 			// Sentence ends start a new cue, unless the cue would be too short to read
 			const sentence =
 				SENTENCE_END.test(prev.text) && prev.end - current[0].start >= limits.minDurationMs;
+
 			if (pause || sentence) flush();
 		}
+
 		current.push(word);
+
 		// Over a limit - break at the best point and carry the rest into the next cue
 		while (current.length > 1 && !fits(current, limits)) {
 			const at = bestBreak(current, limits);
@@ -58,19 +63,23 @@ export function segmentWords(
 			current = current.slice(at);
 		}
 	}
+
 	flush();
 
 	const cues = groups.map((g) => {
 		const cue = createCue(g[0].start, g.at(-1)!.end, layoutLines(g, limits).join('\n'));
 		cue.words = g;
+
 		return cue;
 	});
 	adjustTiming(cues, limits);
+
 	return cues;
 }
 
 function fits(words: WordTiming[], limits: Limits): boolean {
 	if (words.at(-1)!.end - words[0].start > limits.maxDurationMs) return false;
+
 	return wrap(words, limits.maxCharsPerLine).length <= limits.maxLines;
 }
 
@@ -80,12 +89,15 @@ function wrap(words: WordTiming[], max: number): string[] {
 	let line = '';
 	words.forEach((w, i) => {
 		const longer = line ? line + wordGap(words[i - 1].text, w.text) + w.text : w.text;
+
 		if (line && textWidth(longer) > max) {
 			lines.push(line);
 			line = w.text;
 		} else line = longer;
 	});
+
 	if (line) lines.push(line);
+
 	return lines;
 }
 
@@ -96,9 +108,12 @@ function bestBreak(words: WordTiming[], limits: Limits): number {
 	const capacity = limits.maxCharsPerLine * limits.maxLines;
 	let best = 1;
 	let bestScore = -Infinity;
+
 	for (let at = 1; at < words.length; at++) {
 		const left = words.slice(0, at);
+
 		if (!fits(left, limits)) break;
+
 		const before = words[at - 1];
 		const gap = words[at].start - before.end;
 		const fill = textWidth(joinWords(left)) / capacity;
@@ -110,11 +125,13 @@ function bestBreak(words: WordTiming[], limits: Limits): number {
 			fill * 4 -
 			// Avoid leaving a single dangling word for the next cue
 			(at === words.length - 1 ? 2 : 0);
+
 		if (score >= bestScore) {
 			bestScore = score;
 			best = at;
 		}
 	}
+
 	return best;
 }
 
@@ -124,15 +141,19 @@ function bestBreak(words: WordTiming[], limits: Limits): number {
 export function layoutLines(words: WordTiming[], limits: Limits): string[] {
 	const max = limits.maxCharsPerLine;
 	const text = joinWords(words);
+
 	if (textWidth(text) <= max || limits.maxLines < 2 || words.length < 2) return [text];
 
 	let best: string[] | null = null;
 	let bestScore = Infinity;
+
 	for (let at = 1; at < words.length; at++) {
 		const a = joinWords(words.slice(0, at));
 		const b = joinWords(words.slice(at));
 		const [aw, bw] = [textWidth(a), textWidth(b)];
+
 		if (aw > max || bw > max) continue;
+
 		const prev = words[at - 1].text;
 		const score =
 			Math.abs(aw - bw) -
@@ -140,11 +161,13 @@ export function layoutLines(words: WordTiming[], limits: Limits): string[] {
 			(WEAK_END.test(prev) ? 10 : 0) +
 			// Slightly prefer a shorter top line (bottom-heavy pyramid reads better)
 			(aw > bw ? 2 : 0);
+
 		if (score < bestScore) {
 			bestScore = score;
 			best = [a, b];
 		}
 	}
+
 	return best ?? wrap(words, max);
 }
 
@@ -155,11 +178,13 @@ function adjustTiming(cues: Cue[], limits: Limits): void {
 	cues.forEach((cue, i) => {
 		const next = cues[i + 1];
 		const latest = next ? next.start - limits.minGapMs : Infinity;
+
 		if (cue.end > latest && latest > cue.start) cue.end = latest;
 
 		const chars = cue.runs[0].text.replace(/\n/g, '').length;
 		const needed = Math.max(limits.minDurationMs, (chars / limits.maxCps) * 1000);
 		const target = Math.min(cue.start + needed, cue.start + limits.maxDurationMs, latest);
+
 		if (target > cue.end) cue.end = Math.round(target);
 	});
 }

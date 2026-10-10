@@ -38,6 +38,7 @@ function escape(t: string): string {
 function rgba(hex: string, opacity: number): string {
 	const n = parseInt(hex.replace('#', ''), 16);
 	const a = Math.round(opacity * 100) / 100;
+
 	return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
 }
 
@@ -63,18 +64,27 @@ function lookCss(s: CaptionStyle): string {
 		`background-color: ${rgba(s.bgColor, s.bgOpacity)}`,
 		`font-family: ${FONTS[s.font]}`,
 	];
+
 	if (s.scale !== 1) rules.push(`font-size: ${Math.round(s.scale * 100)}%`);
+
 	const edge = shadow(s.edge, s.edgeColor);
+
 	if (edge) rules.push(`text-shadow: ${edge}`);
+
 	return rules.join('; ');
 }
 
 function tags(text: string, s: CaptionStyle, basic: boolean): string {
 	let t = escape(text);
+
 	if (!basic) return t;
+
 	if (s.underline) t = `<u>${t}</u>`;
+
 	if (s.italic) t = `<i>${t}</i>`;
+
 	if (s.bold) t = `<b>${t}</b>`;
+
 	return t;
 }
 
@@ -90,7 +100,9 @@ export function exportVtt(project: Project, opts: VttExportOptions = {}): string
 	const classFor = (s: CaptionStyle): string => {
 		const css = lookCss(s);
 		let c = classes.get(css);
+
 		if (!c) classes.set(css, (c = `s${classes.size + 1}`));
+
 		return c;
 	};
 	const karaokeColors = new Set<string>();
@@ -103,10 +115,13 @@ export function exportVtt(project: Project, opts: VttExportOptions = {}): string
 		// For karaoke - a timestamp where each word after the first starts, so that word turns from :future to :past as it's sung
 		const steps = basic ? karaokeSteps(fc.cue) : null;
 		const marks = new Map<number, number>();
+
 		if (steps) {
 			for (let i = 1; i < steps.length; i++) marks.set(steps[i - 1].sung, steps[i].start);
+
 			karaokeColors.add(fc.cue.karaokeColor ?? '');
 		}
+
 		const cuts = [...new Set([0, ...marks.keys(), length])]
 			.filter((n) => n >= 0 && n <= length)
 			.sort((a, b) => a - b);
@@ -118,20 +133,27 @@ export function exportVtt(project: Project, opts: VttExportOptions = {}): string
 				: null;
 
 		let out = '';
+
 		for (let i = 0; i < cuts.length - 1; i++) {
 			if (i && marks.has(cuts[i])) out += `<${formatClock(marks.get(cuts[i])!)}>`;
+
 			// Neighboring runs that come out the same are written as one
 			const pieces: { text: string; style: CaptionStyle; ruby?: string; key: string }[] = [];
+
 			for (const r of sliceRuns(runs, cuts[i], cuts[i + 1])) {
 				const s = look(r);
 				const key = `${s.bold}${s.italic}${s.underline}${styled && !cueClass ? lookCss(s) : ''}`;
 				const last = pieces.at(-1);
+
 				if (last && !last.ruby && !r.ruby && last.key === key) last.text += r.text;
 				else pieces.push({ text: r.text, style: s, ruby: r.ruby, key });
 			}
+
 			for (const p of pieces) {
 				let t = tags(p.text, p.style, basic);
+
 				if (basic && p.ruby) t = `<ruby>${t}<rt>${escape(p.ruby)}</rt></ruby>`;
+
 				// Karaoke words get the k class, so only they can take the sung colour
 				const cls = [
 					styled && !cueClass ? classFor(p.style) : '',
@@ -140,35 +162,48 @@ export function exportVtt(project: Project, opts: VttExportOptions = {}): string
 					.filter(Boolean)
 					.map((c) => '.' + c)
 					.join('');
+
 				if (cls || steps) t = `<c${cls}>${t}</c>`;
+
 				out += t;
 			}
 		}
+
 		if (cueClass) out = `<c.${cueClass}>${out}</c>`;
+
 		if (voiced) out = `<v ${escape(names.get(fc.trackId) ?? '')}>${out}`;
+
 		return out;
 	};
 
 	const body = flat.map((fc) => {
 		const p = fc.position;
 		const settings: string[] = [];
+
 		// Only emit positioning when it differs from the default bottom-center
 		if (!(p.anchor === 7 && p.x === 50 && p.y === 100)) {
 			settings.push(`line:${Math.round(p.y)}%`, `position:${Math.round(p.x)}%`);
+
 			if (p.align !== 'center')
 				settings.push(`align:${p.align === 'left' ? 'start' : 'end'}`);
 		}
+
 		const head = `${formatClock(fc.cue.start)} --> ${formatClock(fc.cue.end)}${settings.length ? ' ' + settings.join(' ') : ''}`;
+
 		return `${head}\n${cueBody(fc)}\n`;
 	});
 
 	const css: string[] = [];
+
 	for (const [rules, c] of classes) css.push(`::cue(.${c}) { ${rules}; }`);
+
 	if (styled && karaokeColors.size) {
 		// For WebVTT - one color per file as it can't scope :past to a cue, so the first cue color wins out
 		const color = [...karaokeColors][0] || '#FFFF00';
 		css.push(`::cue(.k:past) { color: ${rgba(color, 1)}; }`);
 	}
+
 	const style = css.length ? `STYLE\n${css.join('\n')}\n\n` : '';
+
 	return `WEBVTT\n\n${style}${body.join('\n')}`;
 }

@@ -109,6 +109,7 @@ export class Select<T = string> {
 
 	protected toggle(): void {
 		this.active.set(Math.max(0, this.selectedIndex()));
+
 		if (!this.open()) {
 			const r = this.trigger().nativeElement.getBoundingClientRect();
 			const gap = 4;
@@ -121,6 +122,7 @@ export class Select<T = string> {
 				bottom: up ? innerHeight - r.top + gap : null,
 			});
 		}
+
 		this.open.update((o) => !o);
 	}
 
@@ -131,11 +133,14 @@ export class Select<T = string> {
 
 	protected onKey(e: KeyboardEvent): void {
 		const last = this.options().length - 1;
+
 		switch (e.key) {
 			case 'ArrowDown':
 			case 'ArrowUp':
 				e.preventDefault();
+
 				if (!this.open()) return this.toggle();
+
 				this.active.update((i) =>
 					Math.min(last, Math.max(0, i + (e.key === 'ArrowDown' ? 1 : -1))),
 				);
@@ -146,12 +151,15 @@ export class Select<T = string> {
 					e.preventDefault();
 					this.active.set(e.key === 'Home' ? 0 : last);
 				}
+
 				break;
 			case 'Enter':
 			case ' ':
 				e.preventDefault();
+
 				if (this.open()) this.choose(this.active());
 				else this.toggle();
+
 				break;
 			case 'Escape':
 			case 'Tab':

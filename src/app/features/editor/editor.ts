@@ -141,6 +141,7 @@ export class Editor implements OnDestroy {
 
 	ngOnDestroy(): void {
 		if (this.drop.handler === this.onDrop) this.drop.handler = null;
+
 		this.resize.disconnect();
 	}
 
@@ -151,9 +152,11 @@ export class Editor implements OnDestroy {
 				return this.files.linkVideo(file);
 			case 'captions':
 				await this.files.importCaptions(file);
+
 				return;
 			case 'project':
 				await this.files.open(file);
+
 				return;
 			default:
 				this.files.error.set(
@@ -169,6 +172,7 @@ export class Editor implements OnDestroy {
 
 	protected onKey(e: KeyboardEvent): void {
 		if (e.defaultPrevented || e.isComposing || this.dialogs.isOpen) return;
+
 		const key = [
 			e.ctrlKey || e.metaKey ? 'ctrl' : '',
 			e.shiftKey ? 'shift' : '',
@@ -179,7 +183,9 @@ export class Editor implements OnDestroy {
 			.join('+');
 		const t = e.target as HTMLElement;
 		const inField = t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName);
+
 		if (inField && !FIELD_SAFE.has(key)) return;
+
 		// Let menus, listboxes and sliders keep their own arrow / space handling.
 		const inWidget = !!t.closest(
 			'[role="menu"], [role="listbox"], [role="tablist"], [role="radiogroup"], button, input[type="range"]',
@@ -189,6 +195,7 @@ export class Editor implements OnDestroy {
 			e.preventDefault();
 			fn();
 		};
+
 		switch (key) {
 			case 'ctrl+k':
 				return run(() => this.openPalette());
@@ -235,6 +242,7 @@ export class Editor implements OnDestroy {
 					)
 				)
 					run(() => this.commands.togglePlay());
+
 				return;
 			case 'j':
 				return run(() => this.playback.shuttleBy(-1));
@@ -288,9 +296,11 @@ export class Editor implements OnDestroy {
 				});
 			case 'ctrl+c':
 				if (!this.store.selection().size || getSelection()?.toString()) return;
+
 				return run(() => this.commands.copy());
 			case 'ctrl+x':
 				if (!this.store.selection().size || getSelection()?.toString()) return;
+
 				return run(() => this.commands.cut());
 			case 'ctrl+v':
 				return this.commands.canPaste ? run(() => this.commands.paste()) : undefined;
@@ -300,6 +310,7 @@ export class Editor implements OnDestroy {
 				return run(() => this.commands.selectAllOnTrack());
 			case 'f2': {
 				const track = this.store.primary()?.track ?? this.store.project().tracks[0];
+
 				return track ? run(() => this.ui.renamingTrack.set(track.id)) : undefined;
 			}
 			case 'alt+arrowleft':
@@ -307,7 +318,9 @@ export class Editor implements OnDestroy {
 			case 'alt+arrowright':
 				return run(() => this.commands.nudge(1));
 		}
+
 		if (inWidget) return;
+
 		switch (key) {
 			case 'enter':
 				return run(() => this.commands.newCueAt());

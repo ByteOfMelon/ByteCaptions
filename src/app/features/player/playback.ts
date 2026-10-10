@@ -40,7 +40,9 @@ export class Playback {
 	readonly range = computed(() => {
 		const a = this.inPoint();
 		const b = this.outPoint();
+
 		if (a === null && b === null) return null;
+
 		return { start: a ?? 0, end: b ?? this.store.duration() };
 	});
 	/** Loop playback (Ctrl+L). */
@@ -71,6 +73,7 @@ export class Playback {
 	attach(video: HTMLVideoElement | null): void {
 		this.video = video;
 		this.videoError.set(null);
+
 		if (video)
 			untracked(() => {
 				let loaded = false;
@@ -92,17 +95,21 @@ export class Playback {
 	play(speed = 1): void {
 		const t = this.store.playhead();
 		const span = this.loop() ? this.loopSpan() : null;
+
 		// Looping starts inside the loop; otherwise playing from the very end starts over.
 		if (span && (t < span.start || t >= span.end)) this.seek(speed > 0 ? span.start : span.end);
 		else if (speed > 0 && t >= this.store.duration()) this.seek(0);
+
 		this.shuttle.set(speed);
 		this.store.playing.set(true);
 		this.lastTick = performance.now();
+
 		// Video elements can't play backwards; the clock in tick() scrubs the video instead.
 		if (this.video) {
 			if (speed > 0) this.startVideo(this.video);
 			else this.video.pause();
 		}
+
 		cancelAnimationFrame(this.raf);
 		this.raf = requestAnimationFrame(this.tick);
 	}
@@ -131,6 +138,7 @@ export class Playback {
 
 	seek(ms: number): void {
 		this.store.seek(ms);
+
 		if (this.video) this.video.currentTime = this.store.playhead() / 1000;
 	}
 
@@ -151,14 +159,18 @@ export class Playback {
 	/** Mark in (I). An out point before it is dropped, like Premiere. */
 	setIn(ms: Ms = this.store.playhead()): void {
 		const out = this.outPoint();
+
 		if (out !== null && out <= ms) this.outPoint.set(null);
+
 		this.inPoint.set(ms);
 	}
 
 	/** Mark out (O). An in point after it is dropped. */
 	setOut(ms: Ms = this.store.playhead()): void {
 		const at = this.inPoint();
+
 		if (at !== null && at >= ms) this.inPoint.set(null);
+
 		this.outPoint.set(ms);
 	}
 
@@ -170,19 +182,24 @@ export class Playback {
 	/** Shift+I / Shift+O. */
 	goTo(edge: 'in' | 'out'): void {
 		const r = this.range();
+
 		if (r) this.seek(edge === 'in' ? r.start : r.end);
 	}
 
 	/** What looping plays: the in/out range, else the selected cues, else the whole video. */
 	loopSpan(): { start: Ms; end: Ms } {
 		const r = this.range();
+
 		if (r) return r;
+
 		const cues = this.store.selectedCues().map((c) => c.cue);
+
 		if (cues.length)
 			return {
 				start: Math.min(...cues.map((c) => c.start)),
 				end: Math.max(...cues.map((c) => c.end)),
 			};
+
 		return { start: 0, end: this.store.duration() };
 	}
 
@@ -192,13 +209,16 @@ export class Playback {
 		const starts = this.store.allCues().map((r) => r.cue.start);
 		const target =
 			dir > 0 ? starts.find((s) => s > t + 1) : [...starts].reverse().find((s) => s < t - 1);
+
 		if (target !== undefined) this.seek(target);
 	}
 
 	/** The video reached its end: start the loop over, or stop. */
 	private onEnded(): void {
 		if (!this.loop() || !this.store.playing() || this.shuttle() < 0) return this.pause();
+
 		this.seek(this.loopSpan().start);
+
 		if (this.video) this.startVideo(this.video);
 	}
 
@@ -209,6 +229,7 @@ export class Playback {
 	private startVideo(video: HTMLVideoElement): void {
 		video.play().catch((e: DOMException) => {
 			if (e.name === 'AbortError' || video !== this.video || video.error) return;
+
 			console.warn('The video would not play', e);
 			this.pause();
 			this.videoError.set(`The video won't play. ${e.message}`);
@@ -222,16 +243,21 @@ export class Playback {
 	 */
 	private recover(video: HTMLVideoElement): void {
 		if (video !== this.video) return;
+
 		const now = performance.now();
 		this.recoveries = this.recoveries.filter((t) => now - t < RECOVER_WINDOW_MS);
 		console.warn('Video error; reloading it', video.error?.code, video.error?.message);
+
 		if (this.recoveries.length >= MAX_RECOVERIES) return this.fail(video);
+
 		this.recoveries.push(now);
 		video.addEventListener(
 			'loadedmetadata',
 			() => {
 				if (video !== this.video) return;
+
 				video.currentTime = this.store.playhead() / 1000;
+
 				if (this.store.playing() && this.shuttle() > 0) this.startVideo(video);
 			},
 			{ once: true },
@@ -241,30 +267,39 @@ export class Playback {
 
 	private fail(video: HTMLVideoElement): void {
 		if (video !== this.video) return;
+
 		this.pause();
 		this.videoError.set(mediaErrorText(video.error));
 	}
 
 	private readonly tick = (now: number) => {
 		if (!this.store.playing()) return;
+
 		const speed = this.shuttle();
+
 		if (this.video && speed > 0) {
 			if (!this.video.paused) this.store.seek(this.video.currentTime * 1000);
 		} else {
 			this.store.seek(
 				this.store.playhead() + (now - this.lastTick) * this.store.rate() * speed,
 			);
+
 			// Backwards: scrub the video along, skipping frames while a seek is still loading.
 			if (this.video && !this.video.seeking)
 				this.video.currentTime = this.store.playhead() / 1000;
 		}
+
 		const t = this.store.playhead();
+
 		if (this.stopAt !== null && t >= this.stopAt) return this.pause();
+
 		const span = this.loop() ? this.loopSpan() : null;
+
 		if (span && (speed > 0 ? t >= span.end : t <= span.start))
 			this.seek(speed > 0 ? span.start : span.end);
 		else if (!(this.video && speed > 0) && (speed < 0 ? t <= 0 : t >= this.store.duration()))
 			return this.pause();
+
 		this.lastTick = now;
 		this.raf = requestAnimationFrame(this.tick);
 	};

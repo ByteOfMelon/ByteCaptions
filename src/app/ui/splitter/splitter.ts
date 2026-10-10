@@ -53,6 +53,7 @@ export class Splitter {
 
 	protected onPointerDown(e: PointerEvent): void {
 		if (e.button !== 0) return;
+
 		e.preventDefault();
 		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
 		this.start = { pos: this.pos(e), value: this.value() };
@@ -61,6 +62,7 @@ export class Splitter {
 
 	protected onPointerMove(e: PointerEvent): void {
 		if (!this.dragging()) return;
+
 		const delta = this.pos(e) - this.start.pos;
 		this.set(this.start.value + (this.reverse() ? -delta : delta));
 	}
@@ -77,12 +79,15 @@ export class Splitter {
 				: ['ArrowUp', 'ArrowDown'];
 		const step = e.shiftKey ? KEY_STEP_LARGE : KEY_STEP;
 		let dir = e.key === less ? -1 : e.key === more ? 1 : 0;
+
 		if (this.reverse()) dir = -dir;
+
 		if (dir) this.set(this.value() + dir * step);
 		else if (e.key === 'Home') this.set(this.min());
 		else if (e.key === 'End') this.set(this.max());
 		else if (e.key === 'Enter') this.value.set(this.defaultValue());
 		else return;
+
 		e.preventDefault();
 		e.stopPropagation();
 	}

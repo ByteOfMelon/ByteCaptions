@@ -192,8 +192,11 @@ export class Timeline {
 		const t = this.tapping.active();
 		const ref = t && this.store.find(t.cueId);
 		const v = this.view();
+
 		if (!t || !ref || !v.width) return null;
+
 		const x = msToX(v, (ref.cue.start + ref.cue.end) / 2);
+
 		return { text: t.label, x: Math.max(160, Math.min(v.width - 160, x)) };
 	});
 	/** Note of the marker under the pointer. */
@@ -214,21 +217,26 @@ export class Timeline {
 	/** "In … → Out … • 4.73 s" while an in/out range is set. */
 	protected readonly rangeLabel = computed(() => {
 		const r = this.playback.range();
+
 		if (!r) return null;
+
 		const fmt = (ms: Ms) =>
 			this.ui.timeUnits() === 'ms'
 				? formatClock(ms)
 				: formatTimecode(ms, this.store.project().fps);
+
 		return `In ${fmt(r.start)} → Out ${fmt(r.end)} • ${((r.end - r.start) / 1000).toFixed(2)} s`;
 	});
 	/** Fully zoomed out shows the whole video, however long it is. */
 	private readonly minPxPerS = computed(() => {
 		const seconds = this.store.duration() / 1000;
 		const width = this.size().width;
+
 		return seconds && width ? Math.min(MIN_PX_PER_S, (width * 0.98) / seconds) : MIN_PX_PER_S;
 	});
 	private readonly pxPerMs = computed(() => {
 		const min = this.minPxPerS();
+
 		return (min * Math.pow(MAX_PX_PER_S / min, this.zoom() / 100)) / 1000;
 	});
 	/** Latest view start: scrolling may go half a screen past the end. */
@@ -258,6 +266,7 @@ export class Timeline {
 
 	protected readonly headers = computed(() => {
 		const p = this.store.project();
+
 		return p.tracks.map((track) => ({ track, style: p.styles[track.defaultStyleId] }));
 	});
 
@@ -284,8 +293,10 @@ export class Timeline {
 		// Keep the playhead in view while playing (page-style follow).
 		effect(() => {
 			if (!this.store.playing()) return;
+
 			const v = this.view();
 			const x = msToX(v, this.store.playhead());
+
 			if (v.width && (x < 0 || x > v.width - 24))
 				this.viewStart.set(Math.max(0, this.store.playhead() - 40 / v.pxPerMs));
 		});
@@ -295,14 +306,18 @@ export class Timeline {
 			const v = this.view();
 			const el = this.canvas().nativeElement;
 			const dpr = window.devicePixelRatio || 1;
+
 			if (!v.width) return;
+
 			// Resizing reallocates the canvas, so only do it when the size changes.
 			const w = Math.round(v.width * dpr);
 			const h = Math.round(v.height * dpr);
+
 			if (el.width !== w || el.height !== h) {
 				el.width = w;
 				el.height = h;
 			}
+
 			const ctx = el.getContext('2d')!;
 			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 			paintTimeline(ctx, {
@@ -337,16 +352,20 @@ export class Timeline {
 			const range = el.scrollWidth - el.clientWidth;
 			const max = this.maxStart();
 			const left = max && range > 0 ? (this.viewStart() / max) * range : 0;
+
 			if (Math.abs(el.scrollLeft - left) > 1) el.scrollLeft = left;
 		});
 
 		// Opening a marker that's off-screen (Markers tab, Shift+M) scrolls it into view.
 		effect(() => {
 			const m = this.markers.find(this.markers.editing());
+
 			if (!m) return;
+
 			untracked(() => {
 				const v = this.view();
 				const x = msToX(v, m.at);
+
 				if (v.width && (x < 0 || x > v.width))
 					this.viewStart.set(
 						Math.max(0, Math.min(this.maxStart(), m.at - v.width / 3 / v.pxPerMs)),
@@ -377,6 +396,7 @@ export class Timeline {
 	/** Keyboard zoom: around the playhead when it's in view; fit shows the whole video. */
 	private zoomStep(step: TimelineZoom): void {
 		if (step !== 'fit') return this.zoomBy(step === 'in' ? 10 : -10, this.playheadX());
+
 		this.zoom.set(0);
 		this.viewStart.set(0);
 	}
@@ -384,6 +404,7 @@ export class Timeline {
 	/** The playhead's x if it's in view, else the middle of the timeline. */
 	private playheadX(): number {
 		const x = msToX(this.view(), this.store.playhead());
+
 		return x >= 0 && x <= this.size().width ? x : this.size().width / 2;
 	}
 
@@ -401,7 +422,9 @@ export class Timeline {
 	/** Enter keeps the field open on an empty name and says why; leaving it reverts. */
 	protected finishRename(track: Track, name: string, keepOpen = false): void {
 		if (this.ui.renamingTrack() !== track.id) return;
+
 		if (!name.trim() && keepOpen) return this.renameError.set('Track name can’t be empty.');
+
 		this.cancelRename();
 		this.commands.renameTrack(track.id, name);
 	}
@@ -419,17 +442,23 @@ export class Timeline {
 
 	protected onContextMenu(e: MouseEvent): void {
 		e.preventDefault();
+
 		if (this.drag) return;
+
 		const r = this.canvas().nativeElement.getBoundingClientRect();
 		const x = e.clientX - r.left;
 		const y = e.clientY - r.top;
 		const marker = y < RULER_H ? this.markerAt(x) : null;
+
 		if (marker) {
 			this.markers.selected.set(marker);
 			void this.menus.marker(e, marker);
+
 			return;
 		}
+
 		const h = this.hit(x, y);
+
 		if (h.kind === 'cue') void this.menus.cue(e, h.track, h.cueId);
 		else if (h.kind === 'lane') void this.menus.lane(e, h.track, xToMs(this.view(), x));
 		else if (h.kind === 'ruler' || h.kind === 'range' || h.kind === 'marker') {
@@ -443,6 +472,7 @@ export class Timeline {
 	protected onDoubleClick(e: MouseEvent): void {
 		const r = this.canvas().nativeElement.getBoundingClientRect();
 		const marker = e.clientY - r.top < RULER_H ? this.markerAt(e.clientX - r.left) : null;
+
 		if (marker) this.markers.edit(marker);
 	}
 
@@ -455,17 +485,22 @@ export class Timeline {
 
 	private local(e: PointerEvent | WheelEvent): { x: number; y: number } {
 		const r = this.canvas().nativeElement.getBoundingClientRect();
+
 		return { x: e.clientX - r.left, y: e.clientY - r.top };
 	}
 
 	private hit(x: number, y: number, alt = false): Hit {
 		if (y < RULER_H) return this.rulerHit(x, alt);
+
 		if (y < LANES_TOP) return { kind: 'none' };
+
 		y += this.scrollY();
 		const tracks = this.store.project().tracks;
 		const i = Math.floor((y - LANES_TOP) / (LANE_H + LANE_GAP));
 		const track = tracks[i];
+
 		if (!track || y > laneY(i) + LANE_H) return { kind: 'none' };
+
 		const v = this.view();
 		const ms = xToMs(v, x);
 		const inCue = y >= laneY(i) + CUE_INSET && y <= laneY(i) + LANE_H - CUE_INSET;
@@ -474,20 +509,26 @@ export class Timeline {
 			(a, b) =>
 				Number(this.store.selection().has(b.id)) - Number(this.store.selection().has(a.id)),
 		);
+
 		for (const c of cues) {
 			const x0 = msToX(v, c.start),
 				x1 = msToX(v, c.end);
+
 			if (!inCue || x < x0 - EDGE_PX || x > x1 + EDGE_PX) continue;
+
 			const edge =
 				Math.abs(x - x0) <= EDGE_PX ? 'start' : Math.abs(x - x1) <= EDGE_PX ? 'end' : null;
 			// The selected cue's word lines can be dragged.
 			const words = this.store.selection().has(c.id) && !edge ? c.words : undefined;
 			const word = words?.findIndex((w, k) => k > 0 && Math.abs(x - msToX(v, w.start)) <= 4);
+
 			if (word !== undefined && word > 0)
 				return { kind: 'word', track, cueId: c.id, index: word };
+
 			if (edge || (ms >= c.start && ms <= c.end))
 				return { kind: 'cue', track, trackIndex: i, cueId: c.id, edge };
 		}
+
 		return { kind: 'lane', track, trackIndex: i };
 	}
 
@@ -495,10 +536,13 @@ export class Timeline {
 	private markerAt(x: number): MarkerId | null {
 		const v = this.view();
 		let best: { id: MarkerId; d: number } | null = null;
+
 		for (const m of this.markers.list()) {
 			const d = Math.abs(x - msToX(v, m.at)) - (m.id === this.markers.selected() ? 1 : 0);
+
 			if (d <= 6 && (!best || d < best.d)) best = { id: m.id, d };
 		}
+
 		return best?.id ?? null;
 	}
 
@@ -510,15 +554,24 @@ export class Timeline {
 	private rulerHit(x: number, alt: boolean): Hit {
 		const r = this.playback.range();
 		const v = this.view();
+
 		if (Math.abs(x - msToX(v, this.store.playhead())) <= 6) return { kind: 'ruler' };
+
 		const marker = this.markerAt(x);
+
 		if (marker) return { kind: 'marker', id: marker };
+
 		if (!r) return { kind: 'ruler' };
+
 		const x0 = msToX(v, r.start);
 		const x1 = msToX(v, r.end);
+
 		if (Math.abs(x - x0) <= EDGE_PX) return { kind: 'range', edge: 'start' };
+
 		if (Math.abs(x - x1) <= EDGE_PX) return { kind: 'range', edge: 'end' };
+
 		if (alt && x > x0 && x < x1) return { kind: 'range', edge: null };
+
 		return { kind: 'ruler' };
 	}
 
@@ -530,6 +583,7 @@ export class Timeline {
 	 */
 	private snapDelta(points: Ms[], exclude: ReadonlySet<CueId>, ownWords = false): number {
 		if (!this.ui.snapping()) return 0;
+
 		const fps = this.store.project().fps;
 		const tc = (ms: Ms) => formatTimecode(ms, fps);
 		const targets: { at: Ms; label: string }[] = [
@@ -539,14 +593,17 @@ export class Timeline {
 				.silenceEdges()
 				.map((at) => ({ at, label: `Snapped to silence ${tc(at)}` })),
 		];
+
 		for (const t of this.store.project().tracks)
 			t.cues.forEach((c, i) => {
 				const dragged = exclude.has(c.id);
+
 				if (!dragged)
 					targets.push(
 						{ at: c.start, label: `Snapped to cue ${i + 1} • Start ${tc(c.start)}` },
 						{ at: c.end, label: `Snapped to cue ${i + 1} • End ${tc(c.end)}` },
 					);
+
 				if (!dragged || ownWords)
 					for (const w of c.words ?? [])
 						targets.push(
@@ -554,31 +611,41 @@ export class Timeline {
 							{ at: w.end, label: `Snapped to "${w.text}" • End ${tc(w.end)}` },
 						);
 			});
+
 		const limit = SNAP_PX / this.pxPerMs();
 		let best: { d: number; at: Ms; label: string } | null = null;
+
 		for (const p of points)
 			for (const t of targets) {
 				const d = t.at - p;
+
 				if (Math.abs(d) <= limit && (!best || Math.abs(d) < Math.abs(best.d)))
 					best = { d, ...t };
 			}
+
 		this.snapAt.set(best?.at ?? null);
 		this.snapLabel = best?.label ?? '';
+
 		if (best) return best.d;
+
 		const frame = 1000 / fps;
+
 		return Math.round(points[0] / frame) * frame - points[0];
 	}
 
 	protected onPointerDown(e: PointerEvent): void {
 		if (e.button !== 0) return;
+
 		const { x, y } = this.local(e);
 		const h = this.hit(x, y, e.altKey);
 		(e.target as Element).setPointerCapture(e.pointerId);
 		const additive = e.ctrlKey || e.metaKey;
 
 		this.markerTip.set(null);
+
 		if (h.kind === 'ruler') {
 			this.drag = { mode: 'scrub' };
+
 			// Grabbing the playhead's own handle doesn't nudge it to the pointer.
 			if (Math.abs(x - msToX(this.view(), this.store.playhead())) > 6)
 				this.playback.seek(xToMs(this.view(), x));
@@ -602,6 +669,7 @@ export class Timeline {
 			this.store.begin('Move word timing');
 		} else if (h.kind === 'cue') {
 			const cue = h.track.cues.find((c) => c.id === h.cueId)!;
+
 			if (h.edge && !h.track.locked && !additive && !e.shiftKey) {
 				this.store.select(cue.id);
 				this.drag = {
@@ -614,13 +682,18 @@ export class Timeline {
 				};
 				this.trim.set({ cueId: cue.id, edge: h.edge, original: this.drag.original });
 				this.store.begin('Trim cue');
+
 				return;
 			}
+
 			const wasSelected = this.store.selection().has(cue.id);
+
 			if (e.shiftKey) this.store.select(cue.id, 'range');
 			else if (additive) this.store.select(cue.id, 'toggle');
 			else if (!wasSelected) this.store.select(cue.id);
+
 			if (!this.store.selection().has(cue.id)) return;
+
 			const orig = new Map(
 				this.store
 					.selectedCues()
@@ -656,6 +729,7 @@ export class Timeline {
 
 	protected onPointerMove(e: PointerEvent): void {
 		const { x, y } = this.local(e);
+
 		if (!this.drag) {
 			const h = this.hit(x, y, e.altKey);
 			this.showMarkerTip(h.kind === 'marker' ? h.id : null);
@@ -675,8 +749,10 @@ export class Timeline {
 									? 'crosshair'
 									: 'default',
 			);
+
 			return;
 		}
+
 		this.pointer = { x, y };
 		this.dragTo(x, y);
 		this.edgeScroll();
@@ -688,6 +764,7 @@ export class Timeline {
 	 */
 	private edgeScroll(): void {
 		if (this.edgeFrame) return;
+
 		this.edgeFrame = requestAnimationFrame(() => {
 			this.edgeFrame = 0;
 			const d = this.drag;
@@ -697,7 +774,9 @@ export class Timeline {
 				d?.mode === 'trim' ||
 				d?.mode === 'word' ||
 				d?.mode === 'range';
+
 			if (!d || !p || (!always && !d.moved)) return;
+
 			const width = this.size().width;
 			const over =
 				p.x < AUTOSCROLL_PX
@@ -705,7 +784,9 @@ export class Timeline {
 					: p.x > width - AUTOSCROLL_PX
 						? p.x - width + AUTOSCROLL_PX
 						: 0;
+
 			if (!over) return;
+
 			const speed = Math.min(
 				AUTOSCROLL_MAX_SPEED,
 				AUTOSCROLL_MIN_SPEED + Math.abs(over) * 0.4,
@@ -715,7 +796,9 @@ export class Timeline {
 				0,
 				Math.min(this.maxStart(), start + (Math.sign(over) * speed) / this.pxPerMs()),
 			);
+
 			if (next === start) return;
+
 			this.viewStart.set(next);
 			this.dragTo(p.x, p.y);
 			this.edgeScroll();
@@ -725,8 +808,11 @@ export class Timeline {
 	/** Applies the current drag with the pointer at canvas (x, y). */
 	private dragTo(x: number, y: number): void {
 		const d = this.drag;
+
 		if (!d) return;
+
 		const ms = xToMs(this.view(), x);
+
 		switch (d.mode) {
 			case 'scrub':
 				this.playback.seek(ms);
@@ -747,13 +833,16 @@ export class Timeline {
 					const diff = (now - d.original) / 1000;
 					const sign = diff < 0 ? '−' : '+';
 					const edge = d.edge === 'start' ? 'Start' : 'End';
+
 					return `${edge} ${tc(d.original)} → ${tc(now)}  ${sign}${Math.abs(diff).toFixed(2)} s`;
 				});
 				break;
 			}
 			case 'word': {
 				const ref = this.store.find(d.cueId);
+
 				if (!ref?.cue.words) break;
+
 				const t = Math.round(ms + this.snapDelta([ms], new Set([d.cueId])));
 				const words = moveWordEdge(
 					ref.cue.words,
@@ -768,17 +857,20 @@ export class Timeline {
 					const diff = (now - d.original) / 1000;
 					const sign = diff < 0 ? '−' : '+';
 					const pair = `“${words[d.index - 1].text}” → “${words[d.index].text}”`;
+
 					return `${pair}  ${tc(d.original)} → ${tc(now)}  ${sign}${Math.abs(diff).toFixed(2)} s`;
 				});
 				break;
 			}
 			case 'marker': {
 				if (!d.moved && Math.abs(x - d.downX) < 3) return;
+
 				if (!d.moved) {
 					d.moved = true;
 					this.markerTip.set(null);
 					this.store.begin('Move marker');
 				}
+
 				const at = Math.max(
 					0,
 					Math.min(
@@ -789,6 +881,7 @@ export class Timeline {
 				this.markers.move(d.id, at);
 				this.showHud(at, RULER_H + 48, 'right', () => {
 					const tc = formatTimecode(at, this.store.project().fps);
+
 					return `Marker ${this.markers.number(d.id)} • ${tc}`;
 				});
 				break;
@@ -797,14 +890,17 @@ export class Timeline {
 				const minLen = 1000 / this.store.project().fps;
 				const duration = this.store.duration();
 				const fmt = (ms: Ms) => formatTimecode(ms, this.store.project().fps);
+
 				if (d.edge) {
 					const t = Math.round(ms + this.snapDelta([ms], new Set()));
+
 					if (d.edge === 'start')
 						this.playback.inPoint.set(Math.max(0, Math.min(t, d.end - minLen)));
 					else
 						this.playback.outPoint.set(
 							Math.min(duration, Math.max(t, d.start + minLen)),
 						);
+
 					const now = this.playback.range()![d.edge];
 					// Labels sit inside the range so the In label isn't hidden behind the track headers.
 					this.showHud(now, RULER_H + 48, d.edge === 'start' ? 'right' : 'left', () =>
@@ -812,6 +908,7 @@ export class Timeline {
 					);
 					break;
 				}
+
 				let delta = ms - d.downMs;
 				delta += this.snapDelta([d.start + delta, d.end + delta], new Set());
 				delta = Math.round(Math.max(-d.start, Math.min(duration - d.end, delta)));
@@ -820,26 +917,31 @@ export class Timeline {
 				this.cursor.set('grabbing');
 				this.showHud(d.end + delta, RULER_H + 48, 'right', () => {
 					const [a, b] = [d.start + delta, d.end + delta];
+
 					return `${fmt(a)} → ${fmt(b)}  ${((b - a) / 1000).toFixed(2)} s`;
 				});
 				break;
 			}
 			case 'move': {
 				if (!d.moved && Math.hypot(x - d.downX, y - d.downY) < 3) return;
+
 				if (!d.moved) {
 					d.moved = true;
 					this.store.begin(d.orig.size > 1 ? `Move ${d.orig.size} cues` : 'Move cue');
 				}
+
 				const ids = new Set(d.orig.keys());
 				const minStart = Math.min(...[...d.orig.values()].map((o) => o.start));
 				let delta = Math.max(-minStart, ms - d.downMs);
 				const a = d.orig.get(d.anchor);
+
 				// Pure vertical drags keep their timing; only horizontal movement snaps.
 				if (Math.abs(x - d.downX) < 3) delta = 0;
 				else if (a)
 					delta = Math.round(
 						delta + this.snapDelta([a.start + delta, a.end + delta], ids),
 					);
+
 				this.store.apply('Move cue', (p) => {
 					for (const [id, o] of d.orig) setTiming(id, o.start + delta, o.end + delta)(p);
 				});
@@ -847,6 +949,7 @@ export class Timeline {
 				// Vertical drag moves cues to another unlocked track (when they share one).
 				const h = this.hit(x, y);
 				const sameTrack = this.store.selectedCues().every((r) => r.track.id === d.trackId);
+
 				if (
 					(h.kind === 'lane' || h.kind === 'cue') &&
 					h.track.id !== d.trackId &&
@@ -856,10 +959,12 @@ export class Timeline {
 					this.store.apply('Move cue', moveCues([...ids], 0, h.track.id));
 					d.trackId = h.track.id;
 				}
+
 				break;
 			}
 			case 'create': {
 				if (!d.moved && Math.abs(x - d.downX) < 3) return;
+
 				const minLen = 1000 / this.store.project().fps;
 				const t = Math.max(
 					0,
@@ -867,6 +972,7 @@ export class Timeline {
 				);
 				const [start, end] = t < d.ms0 ? [t, d.ms0] : [d.ms0, t];
 				const timing = [start, Math.max(end, start + minLen)] as const;
+
 				if (!d.moved) {
 					d.moved = true;
 					const cue = createCue(timing[0], timing[1], '');
@@ -875,9 +981,11 @@ export class Timeline {
 					this.store.apply('New cue', addCue(d.trackId, cue));
 					this.store.select(cue.id);
 				} else this.store.apply('New cue', setTiming(d.cueId!, timing[0], timing[1]));
+
 				this.showHud(t, y, t < d.ms0 ? 'left' : 'right', () => {
 					const tc = (ms: Ms) => formatTimecode(ms, this.store.project().fps);
 					const len = (timing[1] - timing[0]) / 1000;
+
 					return `${tc(timing[0])} → ${tc(timing[1])}  ${len.toFixed(2)} s`;
 				});
 				break;
@@ -894,7 +1002,9 @@ export class Timeline {
 				let n = 0;
 				this.store.project().tracks.forEach((t, i) => {
 					const ly = laneY(i) + CUE_INSET - this.scrollY();
+
 					if (ly + LANE_H - CUE_INSET * 2 < y0 || ly > y1) return;
+
 					for (const c of t.cues)
 						if (c.end >= t0 && c.start <= t1) {
 							next.add(c.id);
@@ -930,21 +1040,28 @@ export class Timeline {
 		this.trim.set(null);
 		this.wordEdge.set(null);
 		this.hud.set(null);
+
 		if (!d) return;
+
 		if (
 			d.mode === 'trim' ||
 			d.mode === 'word' ||
 			((d.mode === 'move' || d.mode === 'create' || d.mode === 'marker') && d.moved)
 		)
 			this.store.end();
+
 		// Clicking a marker selects it and jumps there.
 		if (d.mode === 'marker' && !d.moved) this.markers.select(d.id);
+
 		// Alt+click without dragging just moves the playhead, like a plain click.
 		if (d.mode === 'create' && !d.moved)
 			this.playback.seek(xToMs(this.view(), this.local(e).x));
+
 		if (d.mode === 'move' && !d.moved && d.clickSelect) this.store.select(d.clickSelect);
+
 		if (d.mode === 'box' && !d.moved) {
 			if (!d.base.size) this.store.clearSelection();
+
 			this.playback.seek(xToMs(this.view(), this.local(e).x));
 		}
 	}
@@ -952,7 +1069,9 @@ export class Timeline {
 	/** Hovering a marker shows its note (or its number) under the flag. */
 	private showMarkerTip(id: MarkerId | null): void {
 		const m = this.markers.find(id);
+
 		if (!m || this.markers.editing() === m.id) return this.markerTip.set(null);
+
 		const text = m.note || `Marker ${this.markers.number(m.id)}`;
 		this.markerTip.set({
 			text,
@@ -970,11 +1089,14 @@ export class Timeline {
 	protected readonly popover = computed(() => {
 		const m = this.markers.find(this.markers.editing());
 		const v = this.view();
+
 		if (!m || !v.width) return null;
+
 		const r = this.canvas().nativeElement.getBoundingClientRect();
 		const x = r.left + msToX(v, m.at) - 140;
 		const below = r.top + RULER_H + 4;
 		const top = below + 220 > window.innerHeight ? Math.max(8, r.top - 224) : below;
+
 		return { marker: m, left: Math.max(8, Math.min(window.innerWidth - 288, x)), top };
 	});
 
@@ -991,18 +1113,24 @@ export class Timeline {
 		const snapped = this.snapAt() !== null;
 		const at = snapped ? this.snapAt() : ms;
 		const text = snapped ? this.snapLabel : fallback?.();
+
 		if (at === null || !text) return this.hud.set(null);
+
 		const x = msToX(this.view(), at);
 		this.hud.set({ text, x: align === 'left' ? x - 8 : x + 8, y: Math.max(0, y - 40), align });
 	}
 
 	protected onWheel(e: WheelEvent): void {
 		e.preventDefault();
+
 		if (e.ctrlKey || e.metaKey) {
 			this.zoomBy(-Math.sign(e.deltaY) * 5, this.local(e).x);
+
 			return;
 		}
+
 		if (e.shiftKey && !e.deltaX) return this.scrollBy(e.deltaY);
+
 		const delta =
 			(Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) / this.pxPerMs();
 		this.viewStart.set(Math.max(0, Math.min(this.maxStart(), this.viewStart() + delta)));
@@ -1011,8 +1139,11 @@ export class Timeline {
 	protected onHScroll(): void {
 		const el = this.hscroll().nativeElement;
 		const range = el.scrollWidth - el.clientWidth;
+
 		if (range <= 0) return;
+
 		const ms = (el.scrollLeft / range) * this.maxStart();
+
 		// Ignore the echo of setting scrollLeft from the view.
 		if (Math.abs(ms - this.viewStart()) * this.pxPerMs() >= 1) this.viewStart.set(ms);
 	}
@@ -1024,6 +1155,7 @@ export class Timeline {
 
 	protected onHeadersWheel(e: WheelEvent): void {
 		if (!this.maxScrollY()) return;
+
 		e.preventDefault();
 		this.scrollBy(e.deltaY);
 	}

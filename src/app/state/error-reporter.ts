@@ -16,7 +16,9 @@ export class ErrorReporter implements ErrorHandler {
 	handleError(error: unknown): void {
 		console.error(error);
 		const text = describe(error);
+
 		if (IGNORED.some((r) => r.test(text))) return;
+
 		// Keep the first message: later ones are usually knock-on effects of it.
 		this.zone.run(() => {
 			if (!this.files.error()) this.files.error.set(text);
@@ -27,5 +29,6 @@ export class ErrorReporter implements ErrorHandler {
 function describe(error: unknown): string {
 	const e = (error as { rejection?: unknown })?.rejection ?? error;
 	const text = e instanceof Error ? e.message : typeof e === 'string' ? e : String(e);
+
 	return text.trim() || 'An unexpected error happened.';
 }

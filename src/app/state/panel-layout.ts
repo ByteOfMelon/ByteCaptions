@@ -10,6 +10,7 @@ type Sizes = typeof PANEL_DEFAULTS;
 function stored(): Partial<Sizes> {
 	try {
 		const v = JSON.parse(localStorage.getItem(KEY) ?? 'null');
+
 		return v && typeof v === 'object' ? v : {};
 	} catch {
 		return {};
@@ -31,6 +32,7 @@ export class PanelLayout {
 				inspector: this.inspector(),
 				timeline: this.timeline(),
 			};
+
 			try {
 				localStorage.setItem(KEY, JSON.stringify(sizes));
 			} catch {
@@ -48,6 +50,7 @@ export class PanelLayout {
 
 	private size(k: keyof Sizes): number {
 		const v = this.saved[k];
+
 		return typeof v === 'number' && Number.isFinite(v) ? v : PANEL_DEFAULTS[k];
 	}
 }

@@ -22,6 +22,7 @@ export class ProjectStore {
 
 	readonly project = computed(() => {
 		this.version();
+
 		return this.history.current;
 	});
 	readonly canUndo = computed(() => (this.version(), this.history.canUndo));
@@ -49,7 +50,9 @@ export class ProjectStore {
 	readonly problems = computed(() => lintProject(this.project()));
 	readonly problemsByCue = computed(() => {
 		const map = new Map<CueId, ReturnType<typeof lintProject>>();
+
 		for (const p of this.problems()) map.set(p.cueId, [...(map.get(p.cueId) ?? []), p]);
+
 		return map;
 	});
 
@@ -62,6 +65,7 @@ export class ProjectStore {
 	readonly duration = computed(() => {
 		const p = this.project();
 		const lastCue = Math.max(0, ...p.tracks.flatMap((t) => t.cues.map((c) => c.end)));
+
 		return Math.max(p.media?.durationMs ?? 0, lastCue);
 	});
 
@@ -69,6 +73,7 @@ export class ProjectStore {
 		// Deleting the last cues can shorten the project; keep the playhead inside it.
 		effect(() => {
 			const end = this.duration();
+
 			if (untracked(this.playhead) > end) this.playhead.set(end);
 		});
 	}
@@ -78,8 +83,10 @@ export class ProjectStore {
 			this.history.apply(label, recipe);
 		} catch (e) {
 			console.warn(e);
+
 			return;
 		}
+
 		this.changed();
 	}
 
@@ -142,7 +149,9 @@ export class ProjectStore {
 	/** Plain click selects one; additive (Ctrl/Cmd) toggles; range (Shift) extends in list order. */
 	select(cueId: CueId, mode: 'replace' | 'toggle' | 'range' = 'replace'): void {
 		if (mode === 'replace') return this.selection.set(new Set([cueId]));
+
 		const next = new Set(this.selection());
+
 		if (mode === 'toggle') {
 			if (next.has(cueId)) next.delete(cueId);
 			else next.add(cueId);
@@ -154,8 +163,10 @@ export class ProjectStore {
 				anchor < 0
 					? [target, target]
 					: [Math.min(anchor, target), Math.max(anchor, target)];
+
 			for (let i = a; i <= b; i++) next.add(all[i].cue.id);
 		}
+
 		this.selection.set(next);
 	}
 
@@ -173,6 +184,7 @@ export class ProjectStore {
 			const t = this.playhead();
 			const p = this.project();
 			const soloed = p.tracks.some((tr) => tr.solo);
+
 			return p.tracks
 				.filter((tr) => !tr.muted && (!soloed || tr.solo))
 				.flatMap((track) =>

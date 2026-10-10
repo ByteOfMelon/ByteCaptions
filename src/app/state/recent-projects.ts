@@ -20,6 +20,7 @@ const MAX = 8;
 function load(): RecentProject[] {
 	try {
 		const list = JSON.parse(localStorage.getItem(KEY) ?? '[]');
+
 		return Array.isArray(list) ? list : [];
 	} catch {
 		return [];
@@ -66,14 +67,21 @@ export class RecentProjects {
 /** "Edited 2 hours ago", "Edited yesterday", "Edited Sep 12". */
 export function editedLabel(at: number, now = Date.now()): string {
 	const min = Math.round((now - at) / 60_000);
+
 	if (min < 1) return 'Edited just now';
+
 	if (min < 60) return `Edited ${min} min ago`;
+
 	const hours = Math.round(min / 60);
 	const day = (d: number) => new Date(d).toDateString();
+
 	if (day(at) === day(now)) return `Edited ${hours} hour${hours === 1 ? '' : 's'} ago`;
+
 	if (day(at) === day(now - 86_400_000)) return 'Edited yesterday';
+
 	const date = new Date(at);
 	const sameYear = date.getFullYear() === new Date(now).getFullYear();
+
 	return `Edited ${date.toLocaleDateString('en-US', {
 		month: 'short',
 		day: 'numeric',

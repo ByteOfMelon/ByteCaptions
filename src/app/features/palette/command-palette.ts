@@ -37,6 +37,7 @@ const MAX_CUES = 5;
 function loadRecent(): string[] {
 	try {
 		const v = JSON.parse(localStorage.getItem(RECENT_KEY) ?? 'null');
+
 		return Array.isArray(v) ? v : DEFAULT_RECENT;
 	} catch {
 		return DEFAULT_RECENT;
@@ -46,8 +47,11 @@ function loadRecent(): string[] {
 /** Split `text` into plain / matched runs for highlighting. */
 function highlight(text: string, q: string): { t: string; m: boolean }[] {
 	if (!q) return [{ t: text, m: false }];
+
 	const i = text.toLowerCase().indexOf(q.toLowerCase());
+
 	if (i < 0) return [{ t: text, m: false }];
+
 	return [
 		{ t: text.slice(0, i), m: false },
 		{ t: text.slice(i, i + q.length), m: true },
@@ -102,6 +106,7 @@ export class CommandPalette implements OnInit {
 				.filter((c): c is Command => !!c && c.scope !== 'cue')
 				.slice(0, 4);
 			const cmd = (c: Command): Item => ({ kind: 'command', key: c.id, cmd: c });
+
 			return [
 				{
 					title: primary ? `For cue ${primary.index}` : '',
@@ -121,12 +126,16 @@ export class CommandPalette implements OnInit {
 			)
 			.map((c) => ({ kind: 'command', key: c.id, cmd: c }));
 		const cues: Item[] = [];
+
 		for (const ref of this.store.allCues()) {
 			const text = cueText(ref.cue).replace(/\n/g, ' ');
+
 			if (text.toLowerCase().includes(ql))
 				cues.push({ kind: 'cue', key: ref.cue.id, ref, text });
+
 			if (cues.length >= MAX_CUES) break;
 		}
+
 		return [
 			{ title: 'Go to', items: time },
 			{ title: 'Commands', items: commands },
@@ -138,8 +147,10 @@ export class CommandPalette implements OnInit {
 
 	protected readonly summary = computed(() => {
 		if (!this.query().trim() || this.mode() === 'timecode') return '';
+
 		const n = (k: Item['kind']) => this.items().filter((i) => i.kind === k).length;
 		const plural = (c: number, w: string) => `${c} ${w}${c === 1 ? '' : 's'}`;
+
 		return `${plural(n('command'), 'command')} • ${plural(n('cue'), 'cue')}`;
 	});
 
@@ -171,23 +182,31 @@ export class CommandPalette implements OnInit {
 
 	protected onKey(e: KeyboardEvent): void {
 		const n = this.items().length;
+
 		switch (e.key) {
 			case 'ArrowDown':
 				e.preventDefault();
+
 				if (n) this.active.set((this.active() + 1) % n);
+
 				break;
 			case 'ArrowUp':
 				e.preventDefault();
+
 				if (n) this.active.set((this.active() - 1 + n) % n);
+
 				break;
 			case 'Enter': {
 				e.preventDefault();
 				const item = this.items()[this.active()];
+
 				if (item) this.run(item);
+
 				break;
 			}
 			case 'Backspace':
 				if (!this.query() && this.mode() === 'timecode') this.mode.set('search');
+
 				break;
 		}
 	}
@@ -196,9 +215,12 @@ export class CommandPalette implements OnInit {
 		if (item.kind === 'command' && item.cmd.prompt === 'timecode') {
 			this.mode.set('timecode');
 			this.query.set('');
+
 			return;
 		}
+
 		this.ref.close();
+
 		if (item.kind === 'time') {
 			this.playback.seek(item.ms);
 		} else if (item.kind === 'cue') {

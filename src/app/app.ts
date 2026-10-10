@@ -35,12 +35,15 @@ export class App {
 	/** Closing the window with unsaved changes asks to save first. */
 	private async onClose(e: { preventDefault(): void }): Promise<void> {
 		if (!this.store.dirty()) return;
+
 		switch (await askSaveChanges(this.store.project().name)) {
 			case 'save':
 				if (!(await this.files.save())) e.preventDefault();
+
 				return;
 			case 'discard':
 				await this.recovery.discard(this.store.project().id);
+
 				return;
 			case 'cancel':
 				e.preventDefault();

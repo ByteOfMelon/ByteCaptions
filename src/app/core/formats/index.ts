@@ -57,6 +57,7 @@ export const FORMATS: Record<FormatId, FormatInfo> = {
 
 export function formatForFilename(name: string): FormatInfo | undefined {
 	const ext = name.split('.').pop()?.toLowerCase() ?? '';
+
 	return Object.values(FORMATS).find((f) => f.extensions.includes(ext));
 }
 
@@ -66,10 +67,15 @@ export function sniffFormat(src: string): FormatInfo | undefined {
 		.replace(/^\uFEFF/, '')
 		.trimStart()
 		.slice(0, 200);
+
 	if (/^<\?xml|^<timedtext/.test(head) && /format="3"/.test(src.slice(0, 500)))
 		return FORMATS.srv3;
+
 	if (head.startsWith('WEBVTT')) return FORMATS.vtt;
+
 	if (/^\d+\s*\n\s*\d{1,2}:\d{2}:\d{2}[,.]\d{3}\s*-->/.test(head)) return FORMATS.srt;
+
 	if (/^\d+:\d{2}:\d{2}\.\d{3},\d+:\d{2}:\d{2}\.\d{3}/.test(head)) return FORMATS.sbv;
+
 	return undefined;
 }

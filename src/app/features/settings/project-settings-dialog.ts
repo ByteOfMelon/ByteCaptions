@@ -60,6 +60,7 @@ export class ProjectSettingsDialog implements OnInit {
 
 	protected readonly subtitle = computed(() => {
 		const s = Math.round(this.store.duration() / 1000);
+
 		return `${this.project.name} • ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 	});
 
@@ -70,12 +71,14 @@ export class ProjectSettingsDialog implements OnInit {
 	protected readonly lastDuration = signal<'min' | 'max'>('min');
 	protected readonly durationError = computed(() => {
 		if (this.minDuration() < this.maxDuration()) return null;
+
 		return this.lastDuration() === 'min'
 			? { min: 'Must be shorter than max duration.', max: null }
 			: { min: null, max: 'Must be longer than min duration.' };
 	});
 	protected readonly isDefault = computed(() => {
 		const d = defaultSettings();
+
 		return (
 			this.maxChars() === d.maxCharsPerLine &&
 			this.maxLines() === d.maxLines &&
@@ -92,6 +95,7 @@ export class ProjectSettingsDialog implements OnInit {
 
 	protected async browse(): Promise<void> {
 		const file = await openFile(VIDEO_FILTER);
+
 		if (file) this.video.set({ file, ref: await this.files.videoRef(file) });
 	}
 
@@ -108,6 +112,7 @@ export class ProjectSettingsDialog implements OnInit {
 	/** Applies every change as one undo step. */
 	protected save(): void {
 		if (this.durationError() || this.nameError()) return;
+
 		const name = this.name().trim();
 		const settings: ProjectSettings = {
 			maxCharsPerLine: this.maxChars(),
@@ -126,14 +131,18 @@ export class ProjectSettingsDialog implements OnInit {
 			(Object.keys(settings) as (keyof ProjectSettings)[]).some(
 				(k) => settings[k] !== p.settings[k],
 			);
+
 		if (changed)
 			this.store.apply('Project settings', (draft) => {
 				draft.name = name;
 				draft.fps = this.fps();
 				draft.settings = settings;
+
 				if (video) draft.media = video.ref;
 			});
+
 		if (video) this.files.loadVideo(video.file);
+
 		this.ref.close();
 	}
 }

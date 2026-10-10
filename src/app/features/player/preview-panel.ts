@@ -81,6 +81,7 @@ export class PreviewPanel {
 	protected readonly formatBar = computed(() => {
 		const at = this.barAt();
 		const active = this.format.active();
+
 		return at && active && this.editing() === active.cueId
 			? { ...at, style: active.style }
 			: null;
@@ -106,6 +107,7 @@ export class PreviewPanel {
 	 */
 	protected readonly missingVideo = computed(() => {
 		const path = this.store.project().media?.path;
+
 		return path && !this.playback.mediaUrl() ? { path, name: basename(path) } : null;
 	});
 	/** Player height drives caption size, like YouTube's player. */
@@ -123,12 +125,16 @@ export class PreviewPanel {
 		const plain = this.mode() === 'plain';
 		const mobile = this.mode() === 'mobile';
 		const fontPx = this.frameHeight() * 0.0533;
+
 		return this.store.activeCues().map(({ track, cue }) => {
 			let style = resolveStyle(p, track, cue);
+
 			// YouTube's mobile apps draw every caption on a black box, at one fixed size.
 			if (mobile) style = { ...style, bgColor: '#080808', bgOpacity: 0.75, scale: 1 };
+
 			const pos = resolvePosition(p, track, cue);
 			const textStyle = captionTextStyle(style, Math.max(1, fontPx / 18));
+
 			if (plain) {
 				// Plain formats drop styling and positioning: YouTube default look at the bottom.
 				Object.assign(
@@ -147,6 +153,7 @@ export class PreviewPanel {
 					}),
 				);
 			}
+
 			return {
 				id: cue.id,
 				locked: track.locked,
@@ -186,7 +193,9 @@ export class PreviewPanel {
 		effect(() => {
 			const el = this.editor()?.nativeElement;
 			const id = this.editing();
+
 			if (!el || !id) return;
+
 			untracked(() => {
 				this.renderEditor(el, id);
 				this.format.attach((change) => this.applyFormat(change));
@@ -199,8 +208,11 @@ export class PreviewPanel {
 			const highlights = (CSS as unknown as { highlights?: Map<string, unknown> }).highlights;
 			const Highlight = (globalThis as unknown as { Highlight?: new (r: Range) => unknown })
 				.Highlight;
+
 			if (!highlights || !Highlight) return;
+
 			const range = kept && el ? rangeAt(el, kept.start, kept.end) : null;
+
 			if (range) highlights.set('bc-kept-selection', new Highlight(range));
 			else highlights.delete('bc-kept-selection');
 		});
@@ -209,14 +221,18 @@ export class PreviewPanel {
 			const el = this.editor()?.nativeElement;
 			const id = this.editing();
 			const sel = document.getSelection();
+
 			if (!el || !id || !sel?.rangeCount || !el.contains(sel.anchorNode)) return;
+
 			const r = sel.getRangeAt(0);
 			const start = offsetIn(el, r.startContainer, r.startOffset);
 			let end = offsetIn(el, r.endContainer, r.endOffset);
 			// Double-clicking a word also selects the space after it; leave that out, like
 			// word processors do.
 			const text = textOf(el);
+
 			while (end > start + 1 && /\s/.test(text[end - 1])) end--;
+
 			this.format.selection.set({ cueId: id, start, end });
 			this.placeBar(r);
 		};
@@ -224,10 +240,15 @@ export class PreviewPanel {
 		// ends editing.
 		const onOutside = (e: Event) => {
 			const id = this.editing();
+
 			if (!id || !this.keptRange()) return;
+
 			const t = e.target as Element | null;
+
 			if (t?.closest?.('[data-keeps-text-selection]')) return;
+
 			if (this.editor()?.nativeElement.contains(t)) return;
+
 			this.finish(id);
 		};
 		document.addEventListener('selectionchange', onSelection);
@@ -244,16 +265,20 @@ export class PreviewPanel {
 	/** Put the cue's runs into the editor as styled spans. */
 	private renderEditor(el: HTMLElement, id: string): void {
 		const ref = this.store.find(id);
+
 		if (!ref) return;
+
 		const base = resolveStyle(this.store.project(), ref.track, ref.cue);
 		const unit = Math.max(1, (this.frameHeight() * 0.0533) / 18);
 		el.replaceChildren(
 			...ref.cue.runs.map((r) => {
 				const span = document.createElement('span');
 				span.textContent = r.text;
+
 				if (r.styleOverride && this.mode() !== 'plain')
 					for (const [k, v] of Object.entries(runStyle(base, r.styleOverride, unit)))
 						span.style.setProperty(k, v);
+
 				return span;
 			}),
 		);
@@ -262,6 +287,7 @@ export class PreviewPanel {
 	/** Position the format bar above a range in the editor. */
 	private placeBar(r: Range): void {
 		if (r.collapsed) return this.barAt.set(null);
+
 		const box = r.getBoundingClientRect();
 		const stage = this.frame().nativeElement.getBoundingClientRect();
 		this.barAt.set({ x: box.left + box.width / 2 - stage.left, y: box.top - stage.top });
@@ -272,7 +298,9 @@ export class PreviewPanel {
 		const el = this.editor()?.nativeElement;
 		const id = this.editing();
 		const sel = this.format.selection();
+
 		if (!el || !id || !sel || sel.cueId !== id) return;
+
 		const text = textOf(el).replace(/\n+$/, '');
 		this.store.apply(change === 'clear' ? 'Clear formatting' : 'Format text', (p) => {
 			edits.setText(id, text)(p);
@@ -280,11 +308,13 @@ export class PreviewPanel {
 		});
 		this.renderEditor(el, id);
 		const range = rangeAt(el, sel.start, sel.end);
+
 		if (document.activeElement === el && range) {
 			const s = document.getSelection();
 			s?.removeAllRanges();
 			s?.addRange(range);
 		} else this.keptRange.set({ start: sel.start, end: sel.end });
+
 		if (range) this.placeBar(range);
 	}
 
@@ -297,25 +327,33 @@ export class PreviewPanel {
 		// Wait for focus to land: the Inspector and format bar keep the selection.
 		setTimeout(() => {
 			if (this.editing() !== id) return;
+
 			const el = this.editor()?.nativeElement;
 			const now = document.activeElement;
+
 			if (el && now === el) return;
+
 			const sel = this.format.selection();
+
 			if (now?.closest('[data-keeps-text-selection]') && sel && sel.end > sel.start) {
 				this.keptRange.set({ start: sel.start, end: sel.end });
+
 				return;
 			}
+
 			this.finish(id);
 		});
 	}
 
 	private finish(id: string): void {
 		const el = this.editor()?.nativeElement;
+
 		if (el) this.commit(id, textOf(el));
 	}
 
 	protected async locateVideo(): Promise<void> {
 		const file = await openFile(VIDEO_FILTER);
+
 		if (file) await this.files.linkVideo(file, 'Relink video');
 	}
 
@@ -327,6 +365,7 @@ export class PreviewPanel {
 
 	protected edit(id: string, locked: boolean): void {
 		if (locked) return;
+
 		this.playback.pause();
 		this.store.select(id);
 		this.editing.set(id);
@@ -334,9 +373,11 @@ export class PreviewPanel {
 
 	protected commit(id: string, text: string): void {
 		if (this.editing() !== id) return;
+
 		this.stopEditing();
 		const cue = this.store.find(id)?.cue;
 		const clean = text.replace(/\n+$/, '');
+
 		if (cue && clean !== cueText(cue)) this.store.apply('Edit text', edits.setText(id, clean));
 	}
 
@@ -344,6 +385,7 @@ export class PreviewPanel {
 		const el = e.target as HTMLElement;
 		const toggles = { b: 'bold', i: 'italic', u: 'underline' } as const;
 		const key = e.key.toLowerCase() as keyof typeof toggles;
+
 		if (e.key === 'Escape') {
 			e.stopPropagation();
 			this.stopEditing();
@@ -379,11 +421,14 @@ export class PreviewPanel {
 /** A cue's runs cut into lines at its line breaks. */
 function lines(runs: readonly TextRun[]): TextRun[][] {
 	const out: TextRun[][] = [[]];
+
 	for (const r of runs)
 		r.text.split('\n').forEach((part, i) => {
 			if (i) out.push([]);
+
 			if (part) out.at(-1)!.push({ ...r, text: part });
 		});
+
 	return out;
 }
 
@@ -396,9 +441,11 @@ function textOf(node: Node): string {
 		else {
 			if ((n.nodeName === 'DIV' || n.nodeName === 'P') && out && !out.endsWith('\n'))
 				out += '\n';
+
 			out += textOf(n);
 		}
 	});
+
 	return out;
 }
 
@@ -407,6 +454,7 @@ function offsetIn(root: HTMLElement, node: Node, offset: number): number {
 	const r = document.createRange();
 	r.setStart(root, 0);
 	r.setEnd(node, offset);
+
 	return textOf(r.cloneContents()).length;
 }
 
@@ -416,18 +464,24 @@ function rangeAt(root: HTMLElement, start: number, end: number): Range | null {
 	const r = document.createRange();
 	let at = 0;
 	let started = false;
+
 	for (let n = walker.nextNode(); n; n = walker.nextNode()) {
 		const len = n.textContent?.length ?? 0;
+
 		if (!started && start <= at + len) {
 			r.setStart(n, start - at);
 			started = true;
 		}
+
 		if (started && end <= at + len) {
 			r.setEnd(n, end - at);
+
 			return r;
 		}
+
 		at += len;
 	}
+
 	return null;
 }
 
@@ -441,7 +495,9 @@ function runStyle(
 	unit: number,
 ): Record<string, string> {
 	const out = captionTextStyle({ ...base, ...override }, unit);
+
 	if (override.bgColor === undefined && override.bgOpacity === undefined)
 		out['background-color'] = 'transparent';
+
 	return out;
 }

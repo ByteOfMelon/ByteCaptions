@@ -30,8 +30,11 @@ export class WordTapping {
 	/** What the timeline shows while tapping: which cue, how far, and the hint text. */
 	readonly active = computed(() => {
 		const s = this.state();
+
 		if (!s) return null;
+
 		const n = s.taps.length;
+
 		return {
 			cueId: s.cueId,
 			tappedUntil: n ? this.store.playhead() : null,
@@ -49,9 +52,13 @@ export class WordTapping {
 
 	start(cueId: CueId): void {
 		const ref = this.store.find(cueId);
+
 		if (!ref || ref.track.locked) return;
+
 		const words = splitWords(cueText(ref.cue));
+
 		if (!words.length) return;
+
 		this.state.set({ cueId, words, taps: [], rate: this.store.rate() });
 		this.store.select(cueId);
 		this.store.rate.set(TAP_RATE);
@@ -60,16 +67,22 @@ export class WordTapping {
 
 	private onKey(e: KeyboardEvent): void {
 		const s = this.state();
+
 		if (!s) return;
+
 		if (e.key === ' ' || e.key === 'Escape') {
 			e.preventDefault();
 			e.stopPropagation();
 		}
+
 		if (e.key === 'Escape') this.playback.pause();
 		else if (e.key === ' ' && !e.repeat && s.taps.length < s.words.length) {
 			const ref = this.store.find(s.cueId);
+
 			if (!ref) return;
+
 			const t = Math.max(ref.cue.start, Math.min(ref.cue.end - 1, this.store.playhead()));
+
 			// Taps only go forwards.
 			if (t > (s.taps.at(-1) ?? -1)) this.state.set({ ...s, taps: [...s.taps, t] });
 		}
@@ -78,10 +91,14 @@ export class WordTapping {
 	private finish(): void {
 		const s = this.state();
 		this.state.set(null);
+
 		if (!s) return;
+
 		this.store.rate.set(s.rate);
 		const ref = this.store.find(s.cueId);
+
 		if (!ref || !s.taps.length) return;
+
 		this.store.apply(
 			'Tap to time',
 			setWords(s.cueId, tappedWords(s.words, s.taps, ref.cue.start, ref.cue.end)),

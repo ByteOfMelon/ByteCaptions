@@ -74,10 +74,12 @@ export class ExportDialog implements OnInit {
 
 	ngOnInit(): void {
 		const ids = this.trackIds();
+
 		if (ids?.length) this.included.set(new Set(ids));
 	}
 	protected readonly subtitle = computed(() => {
 		const s = Math.round(this.store.duration() / 1000);
+
 		return `${this.project().name} • ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 	});
 	protected readonly loses = computed(() => FORMATS[this.format()].loses);
@@ -92,8 +94,10 @@ export class ExportDialog implements OnInit {
 	/** Default: next to the project file (or the video) on desktop, a bare name in the browser. */
 	protected readonly path = computed(() => {
 		if (this.fileName()) return this.fileName();
+
 		const name = `${this.project().name}.${FORMATS[this.format()].extensions.at(-1)}`;
 		const near = this.files.currentPath() ?? this.project().media?.path;
+
 		return isDesktop && near && isAbsolute(near) ? `${dirname(near)}${sep(near)}${name}` : name;
 	});
 
@@ -101,6 +105,7 @@ export class ExportDialog implements OnInit {
 	private readonly subset = computed<Project>(() => {
 		const ids = this.included();
 		const p = this.project();
+
 		return {
 			...p,
 			tracks: p.tracks
@@ -112,8 +117,11 @@ export class ExportDialog implements OnInit {
 	/** SRV3 files near the safe size may not load on YouTube (PLAN §4.1). */
 	protected readonly heavy = computed(() => {
 		if (this.format() !== 'srv3' || !this.included().size) return null;
+
 		const { weight, lines, bytes } = exportSrv3(this.subset()).stats;
+
 		if (weight < 0.8) return null;
+
 		return {
 			over: weight >= 1,
 			title:
@@ -128,14 +136,18 @@ export class ExportDialog implements OnInit {
 		this.format.set(id);
 		// Keep a chosen file name but swap its extension.
 		const name = this.fileName();
+
 		if (name)
 			this.fileName.set(name.replace(/\.[^.]+$/, '') + '.' + FORMATS[id].extensions.at(-1));
+
 		this.handle = undefined;
 	}
 
 	protected async browse(): Promise<void> {
 		const target = await pickSaveTarget(this.path(), this.filter());
+
 		if (!target) return;
+
 		this.handle = target.handle;
 		this.browsedPath = target.path ?? null;
 		this.fileName.set(target.path ?? target.name);
@@ -143,6 +155,7 @@ export class ExportDialog implements OnInit {
 
 	private filter() {
 		const f = FORMATS[this.format()];
+
 		return { name: f.label, extensions: [...f.extensions] };
 	}
 
@@ -153,6 +166,7 @@ export class ExportDialog implements OnInit {
 
 	protected async export(): Promise<void> {
 		if (!this.included().size) return;
+
 		const subset = this.subset();
 		// On desktop a bare file name has no folder yet, so ask where.
 		let target: SaveTarget | null = isDesktop
@@ -160,7 +174,9 @@ export class ExportDialog implements OnInit {
 				? { name: basename(this.path()), path: this.path() }
 				: await pickSaveTarget(this.path(), this.filter())
 			: { name: basename(this.path()), path: null, handle: this.handle };
+
 		if (!target) return;
+
 		// The save dialog asks before replacing a file; a typed path doesn't, so ask here.
 		if (
 			isDesktop &&
@@ -174,7 +190,9 @@ export class ExportDialog implements OnInit {
 			))
 		)
 			return;
+
 		this.busy.set(true);
+
 		try {
 			await writeText(target, FORMATS[this.format()].export(subset));
 			this.ref.close(target.path ?? target.name);

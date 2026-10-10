@@ -80,8 +80,10 @@ export class TrackChecklist {
 
 	protected toggle(id: TrackId, on: boolean): void {
 		const next = new Set(this.selected());
+
 		if (on) next.add(id);
 		else next.delete(id);
+
 		this.selected.set(next);
 	}
 }

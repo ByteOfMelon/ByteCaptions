@@ -44,6 +44,7 @@ export function basename(path: string): string {
 
 export function dirname(path: string): string {
 	const i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+
 	return i > 0 ? path.slice(0, i) : path;
 }
 
@@ -83,6 +84,7 @@ export function fromPath(path: string): PickedFile {
 
 export function fromFile(file: File): PickedFile {
 	let url: string | null = null;
+
 	return {
 		name: file.name,
 		path: null,
@@ -100,8 +102,10 @@ export async function fileExists(path: string): Promise<boolean> {
 export async function openFile(filter: FileFilter): Promise<PickedFile | null> {
 	if (isDesktop) {
 		const path = await openDialog({ multiple: false, directory: false, filters: [filter] });
+
 		return typeof path === 'string' ? fromPath(path) : null;
 	}
+
 	return new Promise((resolve) => {
 		const input = Object.assign(document.createElement('input'), {
 			type: 'file',
@@ -134,12 +138,17 @@ export async function pickSaveTarget(
 ): Promise<SaveTarget | null> {
 	if (isDesktop) {
 		const path = await saveDialog({ defaultPath: suggested, filters: [filter] });
+
 		return path ? { name: basename(path), path } : null;
 	}
+
 	const w = window as unknown as SavePickerWindow;
+
 	if (!w.showSaveFilePicker) return null;
+
 	try {
 		const handle = await w.showSaveFilePicker({ suggestedName: suggested });
+
 		return { name: handle.name, path: null, handle };
 	} catch {
 		return null;
@@ -149,12 +158,15 @@ export async function pickSaveTarget(
 /** Write text to a target; without a path or handle the browser downloads it. */
 export async function writeText(target: SaveTarget, text: string): Promise<void> {
 	if (target.path) return writeTextFile(target.path, text);
+
 	if (target.handle) {
 		const w = await target.handle.createWritable();
 		await w.write(text);
 		await w.close();
+
 		return;
 	}
+
 	const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
 	const a = Object.assign(document.createElement('a'), { href: url, download: target.name });
 	a.click();
@@ -168,6 +180,7 @@ export async function confirmAction(
 	okLabel: string,
 ): Promise<boolean> {
 	if (isDesktop) return ask(message, { title, kind: 'warning', okLabel, cancelLabel: 'Cancel' });
+
 	return confirm(message);
 }
 
@@ -178,9 +191,12 @@ export async function askSaveChanges(name: string): Promise<'save' | 'discard' |
 		kind: 'warning',
 		buttons: { yes: 'Save', no: "Don't save", cancel: 'Cancel' },
 	});
+
 	// Custom buttons resolve to their label; older versions resolve to Yes/No/Cancel.
 	if (choice === 'Save' || choice === 'Yes') return 'save';
+
 	if (choice === "Don't save" || choice === 'No') return 'discard';
+
 	return 'cancel';
 }
 

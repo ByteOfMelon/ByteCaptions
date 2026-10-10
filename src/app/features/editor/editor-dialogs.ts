@@ -29,6 +29,7 @@ export class EditorDialogs {
 			inputs: { count: ids.length },
 		});
 		const ms = await ref.closed;
+
 		if (typeof ms === 'number') this.commands.shiftTiming(ids, ms);
 	}
 

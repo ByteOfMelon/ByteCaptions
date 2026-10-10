@@ -27,6 +27,7 @@ export class SettingsDialog {
 
 	protected async signOut(): Promise<void> {
 		const name = this.youtube.account()?.title ?? 'YouTube';
+
 		if (
 			await confirmAction(
 				`Sign out of ${name}? You'll need to sign in again to upload captions.`,

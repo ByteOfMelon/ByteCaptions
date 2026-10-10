@@ -17,7 +17,9 @@ export class MediaSource {
 
 	clear(): void {
 		const old = this.url();
+
 		if (old?.startsWith('blob:')) URL.revokeObjectURL(old);
+
 		this.url.set(null);
 		this.path.set(null);
 	}
@@ -26,6 +28,7 @@ export class MediaSource {
 	async loadForProject(p: Project): Promise<void> {
 		this.clear();
 		const path = p.media?.path;
+
 		if (isDesktop && path && (await fileExists(path))) this.load(fromPath(path));
 	}
 }

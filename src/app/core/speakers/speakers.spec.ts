@@ -7,6 +7,7 @@ function cue(text: string, from: number): Cue {
 	const tokens = text.split(' ');
 	const c = createCue(from, from + tokens.length * 300, text);
 	c.words = tokens.map((t, i) => ({ text: t, start: from + i * 300, end: from + i * 300 + 280 }));
+
 	return c;
 }
 

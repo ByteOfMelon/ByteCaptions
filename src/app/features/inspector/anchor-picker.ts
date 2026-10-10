@@ -19,6 +19,7 @@ const ANCHOR_XY: [number, number][] = [
 /** The changes to apply to a Position when an anchor is picked. */
 export function positionForAnchor(anchor: Anchor): Partial<Position> {
 	const [x, y] = ANCHOR_XY[anchor];
+
 	return {
 		anchor,
 		x,

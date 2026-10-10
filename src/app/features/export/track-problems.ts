@@ -37,6 +37,7 @@ export class TrackProblems {
 	protected readonly counts = computed(() => {
 		const ids = this.tracks();
 		const list = this.store.problems().filter((p) => ids.has(p.trackId));
+
 		return {
 			errors: list.filter((p) => p.severity === 'error').length,
 			warnings: list.filter((p) => p.severity !== 'error').length,
@@ -48,6 +49,7 @@ export class TrackProblems {
 			errors && `${errors} error${errors > 1 ? 's' : ''}`,
 			warnings && `${warnings} warning${warnings > 1 ? 's' : ''}`,
 		].filter(Boolean);
+
 		return `${parts.join(' and ')} in these tracks`;
 	});
 }

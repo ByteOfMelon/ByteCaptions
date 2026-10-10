@@ -11,11 +11,17 @@ export interface PlainExportOptions {
 
 function tagged(fc: FlatCue, opts: PlainExportOptions): string {
 	let t = fc.text;
+
 	if (opts.basicTags === false) return t;
+
 	const s = fc.style;
+
 	if (s.underline) t = `<u>${t}</u>`;
+
 	if (s.italic) t = `<i>${t}</i>`;
+
 	if (s.bold) t = `<b>${t}</b>`;
+
 	return t;
 }
 
@@ -66,60 +72,82 @@ const ARROW = /^\s*(\S+)\s*-->\s*(\S+)(.*)$/;
 export function importSrt(src: string): ImportResult {
 	const cues: Cue[] = [];
 	const warnings: string[] = [];
+
 	for (const b of blocks(src)) {
 		const i = b.findIndex((l) => ARROW.test(l));
+
 		if (i < 0) continue;
+
 		const m = ARROW.exec(b[i])!;
 		const start = parseTime(m[1]);
 		const end = parseTime(m[2]);
+
 		if (start == null || end == null) {
 			warnings.push(`Skipped cue with invalid time: "${b[i]}"`);
 			continue;
 		}
+
 		cues.push(createCue(start, end, stripTags(b.slice(i + 1).join('\n'))));
 	}
+
 	return { cues, warnings };
 }
 
 export function importVtt(src: string): ImportResult {
 	const text = normalizeNewlines(src);
+
 	if (!/^WEBVTT/.test(text)) return { cues: [], warnings: ['Missing WEBVTT header'] };
+
 	const cues: Cue[] = [];
 	const warnings: string[] = [];
 	let styled = false;
+
 	for (const b of blocks(text).slice(1)) {
 		if (/^(NOTE|STYLE|REGION)\b/.test(b[0])) {
 			styled ||= b[0].startsWith('STYLE');
 			continue;
 		}
+
 		const i = b.findIndex((l) => ARROW.test(l));
+
 		if (i < 0) continue;
+
 		const m = ARROW.exec(b[i])!;
 		const start = parseTime(m[1]);
 		const end = parseTime(m[2]);
+
 		if (start == null || end == null) {
 			warnings.push(`Skipped cue with invalid time: "${b[i]}"`);
 			continue;
 		}
+
 		cues.push(createCue(start, end, stripTags(b.slice(i + 1).join('\n'))));
 	}
+
 	if (styled) warnings.push('VTT STYLE blocks were ignored');
+
 	return { cues, warnings };
 }
 
 export function importSbv(src: string): ImportResult {
 	const cues: Cue[] = [];
 	const warnings: string[] = [];
+
 	for (const b of blocks(src)) {
 		const m = /^\s*([\d:.]+),([\d:.]+)\s*$/.exec(b[0]);
+
 		if (!m) continue;
+
 		const start = parseTime(m[1]);
 		const end = parseTime(m[2]);
+
 		if (start == null || end == null) {
 			warnings.push(`Skipped cue with invalid time: "${b[0]}"`);
 			continue;
 		}
+
 		cues.push(createCue(start, end, b.slice(1).join('\n')));
 	}
+
 	return { cues, warnings };
 }

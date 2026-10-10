@@ -9,6 +9,7 @@ const KEY = 'bc.theme';
 function loadPreference(): ThemePreference {
 	try {
 		const t = localStorage.getItem(KEY);
+
 		return t === 'dark' || t === 'light' ? t : 'system';
 	} catch {
 		return 'system';
@@ -29,6 +30,7 @@ export class ThemeService {
 	private readonly system = signal<Theme>(systemTheme());
 	readonly theme = computed(() => {
 		const p = this.preference();
+
 		return p === 'system' ? this.system() : p;
 	});
 
@@ -39,6 +41,7 @@ export class ThemeService {
 
 	setPreference(p: ThemePreference): void {
 		this.preference.set(p);
+
 		try {
 			// Nothing stored means "system", which the pre-boot script in index.html also reads.
 			if (p === 'system') localStorage.removeItem(KEY);

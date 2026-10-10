@@ -123,7 +123,9 @@ export class MarkerPopover {
 	constructor() {
 		effect(() => {
 			const m = this.marker();
+
 			if (m.id === this.shownId) return;
+
 			this.shownId = m.id;
 			untracked(() => this.draft.set(m.note));
 		});
@@ -135,6 +137,7 @@ export class MarkerPopover {
 
 	protected close(save: boolean): void {
 		if (save) this.markers.setNote(this.marker().id, this.draft());
+
 		this.closed = true;
 		this.markers.editing.set(null);
 	}
@@ -151,7 +154,9 @@ export class MarkerPopover {
 	/** Arrow keys pick the next / previous color, like a radio group. */
 	protected onSwatchKey(e: KeyboardEvent): void {
 		const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+
 		if (!step) return;
+
 		e.preventDefault();
 		const i = MARKER_COLOR_NAMES.findIndex((c) => c.id === this.marker().color);
 		const next =

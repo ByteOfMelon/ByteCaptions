@@ -25,6 +25,7 @@ export class MarkersView {
 		const q = this.query().trim().toLowerCase();
 		const fps = this.store.project().fps;
 		const ms = this.ui.timeUnits() === 'ms';
+
 		return this.markers
 			.list()
 			.map((m, i) => ({

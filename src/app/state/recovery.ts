@@ -40,31 +40,39 @@ const storage = {
 	async dir(): Promise<string> {
 		const dir = await join(await appLocalDataDir(), 'recovery');
 		await mkdir(dir, { recursive: true });
+
 		return dir;
 	},
 	async write(e: RecoveryEntry): Promise<void> {
 		const text = JSON.stringify(e);
+
 		if (isDesktop)
 			return writeTextFile(await join(await this.dir(), `${e.projectId}.json`), text);
+
 		localStorage.setItem(BROWSER_PREFIX + e.projectId, text);
 	},
 	async remove(projectId: string): Promise<void> {
 		if (isDesktop) return remove(await join(await this.dir(), `${projectId}.json`));
+
 		localStorage.removeItem(BROWSER_PREFIX + projectId);
 	},
 	async list(): Promise<RecoveryEntry[]> {
 		const texts: string[] = [];
+
 		if (isDesktop) {
 			const dir = await this.dir();
+
 			for (const f of await readDir(dir))
 				if (f.isFile && f.name.endsWith('.json'))
 					texts.push(await readTextFile(await join(dir, f.name)));
 		} else {
 			for (let i = 0; i < localStorage.length; i++) {
 				const key = localStorage.key(i);
+
 				if (key?.startsWith(BROWSER_PREFIX)) texts.push(localStorage.getItem(key) ?? '');
 			}
 		}
+
 		return texts.flatMap((t) => {
 			try {
 				return [JSON.parse(t) as RecoveryEntry];
@@ -127,9 +135,12 @@ export class Recovery {
 					dirty,
 					project: dirty || path ? undefined : serializeProject(this.store.project()),
 				});
+
 				// Switching projects only happens after saving or choosing to discard.
 				if (this.lastId && this.lastId !== id) void this.discard(this.lastId);
+
 				this.lastId = id;
+
 				if (dirty) this.schedule();
 				else void this.discard(id);
 			});
@@ -143,9 +154,11 @@ export class Recovery {
 	 */
 	async resume(): Promise<void> {
 		const s = this.previous;
+
 		try {
 			if (s?.dirty) {
 				const entry = (await storage.list()).find((e) => e.projectId === s.projectId);
+
 				if (entry) await this.recover(entry);
 			} else if (s?.path && isDesktop) {
 				await this.files.open(s.path);
@@ -156,6 +169,7 @@ export class Recovery {
 		} catch (e) {
 			console.warn('Could not reopen the project after reloading', e);
 		}
+
 		await this.refresh();
 	}
 
@@ -179,9 +193,13 @@ export class Recovery {
 	/** Write the recovery copy now, if there are unsaved changes. */
 	async flush(): Promise<void> {
 		if (this.timer) clearTimeout(this.timer);
+
 		this.timer = null;
+
 		if (!this.store.dirty()) return;
+
 		const p = this.store.project();
+
 		try {
 			await storage.write({
 				projectId: p.id,
@@ -199,11 +217,14 @@ export class Recovery {
 	/** Delete a project's recovery copy (only ones this session wrote, or one being dismissed). */
 	async discard(projectId: string, force = false): Promise<void> {
 		if (!force && !this.written.has(projectId)) return;
+
 		this.written.delete(projectId);
+
 		if (this.store.project().id === projectId && this.timer) {
 			clearTimeout(this.timer);
 			this.timer = null;
 		}
+
 		try {
 			await storage.remove(projectId);
 		} catch {
@@ -220,16 +241,21 @@ export class Recovery {
 	/** Reopen a leftover copy as the current project, with its changes still unsaved. */
 	async recover(e: RecoveryEntry): Promise<boolean> {
 		let project: Project;
+
 		try {
 			project = parseProject(e.project);
 		} catch (err) {
 			this.files.error.set(`${e.name} couldn't be recovered. ${errorMessage(err)}`);
+
 			return false;
 		}
+
 		if (!(await this.files.restore(project, e.path))) return false;
+
 		// The copy now belongs to this session: it's rewritten on edits and deleted on save.
 		this.written.add(e.projectId);
 		this.entries.update((l) => l.filter((x) => x.projectId !== e.projectId));
+
 		return true;
 	}
 }

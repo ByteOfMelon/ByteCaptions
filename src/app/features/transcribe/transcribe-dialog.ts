@@ -88,11 +88,14 @@ export class TranscribeDialog {
 	protected readonly range = this.playback.range;
 	protected readonly scopeOptions = computed(() => {
 		const r = this.range();
+
 		if (!r) return [];
+
 		const timeLabel = (ms: number) =>
 			this.ui.timeUnits() === 'ms'
 				? formatClock(ms)
 				: formatTimecode(ms, this.store.project().fps);
+
 		return [
 			{
 				value: 'range',
@@ -105,15 +108,23 @@ export class TranscribeDialog {
 	protected readonly rangeNote = computed(() => {
 		const o = this.job.options();
 		const r = o.range;
+
 		if (!r || o.target === 'new') return null;
+
 		const t = this.store.track(o.target);
+
 		if (!t) return null;
+
 		const n = t.cues.filter((c) => {
 			const mid = (c.start + c.end) / 2;
+
 			return mid >= r.start && mid < r.end;
 		}).length;
+
 		if (!n) return `Adds cues to ${t.name} inside the range.`;
+
 		const what = n === 1 ? 'the cue' : `the ${n} cues`;
+
 		return `Replaces ${what} on ${t.name} inside the range. Undo brings ${n === 1 ? 'it' : 'them'} back.`;
 	});
 
@@ -127,6 +138,7 @@ export class TranscribeDialog {
 		const names = this.job.unused()?.names ?? [];
 		const list =
 			names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
+
 		return `Whisper ${list} ${names.length > 1 ? 'are' : 'is'} no longer offered here.`;
 	});
 	protected readonly position = computed(
@@ -136,9 +148,11 @@ export class TranscribeDialog {
 
 	constructor() {
 		this.job.refreshModels();
+
 		// Opening with a range set defaults to transcribing just that.
 		if (!this.job.running() && this.job.phase() === 'setup')
 			this.setScope(this.range() ? 'range' : 'all');
+
 		// Closing on an error (close button, Escape) starts over next time.
 		void this.ref.closed.then(() => {
 			if (this.job.phase() === 'error') this.job.reset();
@@ -149,13 +163,16 @@ export class TranscribeDialog {
 		this.job.setOptions({ range: scope === 'range' ? this.range() : null });
 		const target = this.job.options().target;
 		const valid = this.targetOptions().some((o) => o.value === target);
+
 		if (!valid) this.job.setOptions({ target: this.defaultTrack() ?? 'new' });
 	}
 
 	/** The selected cue's track if it can be changed, else the first one that can. */
 	private defaultTrack(): TrackId | null {
 		const primary = this.store.primary()?.track;
+
 		if (primary && !primary.locked) return primary.id;
+
 		return this.unlocked()[0]?.id ?? null;
 	}
 

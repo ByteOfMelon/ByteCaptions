@@ -70,7 +70,9 @@ export class Dialogs {
 			environmentInjector: this.env,
 			elementInjector: injector,
 		});
+
 		for (const [k, v] of Object.entries(opts.inputs ?? {})) ref.setInput(k, v);
+
 		const el = ref.location.nativeElement as HTMLElement;
 		overlay.append(el);
 		document.body.append(overlay);
@@ -81,6 +83,7 @@ export class Dialogs {
 		// height up by one, which shows a scrollbar on content that fits exactly.
 		const centre = new ResizeObserver(() => {
 			if (opts.placement === 'top') return;
+
 			const free = overlay.clientHeight - el.offsetHeight;
 			el.style.marginTop = `${Math.max(0, Math.floor(free / 2) - OVERLAY_PADDING)}px`;
 		});
@@ -89,6 +92,7 @@ export class Dialogs {
 
 		const onKey = (e: KeyboardEvent) => {
 			if (this.stack.at(-1) !== dialogRef) return;
+
 			if (e.key === 'Escape' && !e.defaultPrevented) {
 				e.preventDefault();
 				e.stopPropagation();
@@ -97,10 +101,13 @@ export class Dialogs {
 				const items = [...el.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
 					(n) => n.offsetParent !== null,
 				);
+
 				if (!items.length) return;
+
 				const first = items[0],
 					last = items.at(-1)!;
 				const at = document.activeElement;
+
 				if (e.shiftKey && (at === first || at === el)) {
 					e.preventDefault();
 					last.focus();
@@ -109,6 +116,7 @@ export class Dialogs {
 					first.focus();
 				}
 			}
+
 			// Keep editor shortcuts from firing underneath the dialog.
 			e.stopPropagation();
 		};
@@ -132,12 +140,16 @@ export class Dialogs {
 		// starts inside it without painting a focus ring on the first control.
 		requestAnimationFrame(() => {
 			if (el.contains(document.activeElement)) return;
+
 			const auto = el.querySelector<HTMLElement>('[bcAutofocus]');
+
 			if (auto) return auto.focus();
+
 			el.tabIndex = -1;
 			el.style.outline = 'none';
 			el.focus();
 		});
+
 		return dialogRef;
 	}
 }
@@ -190,8 +202,11 @@ export class Dialog {
 		const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 		afterNextRender(() => {
 			if (document.activeElement && document.activeElement !== document.body) return;
+
 			const auto = host.querySelector<HTMLElement>('[bcAutofocus]');
+
 			if (auto) return auto.focus();
+
 			host.tabIndex = -1;
 			host.style.outline = 'none';
 			host.focus();

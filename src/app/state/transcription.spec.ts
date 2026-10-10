@@ -13,6 +13,7 @@ function failingEngine(events: EngineEvent[], message: string): TranscriptionEng
 		device: async () => null,
 		run: async (_opts, _ms, _signal, emit) => {
 			events.forEach(emit);
+
 			throw new Error(message);
 		},
 	} satisfies TranscriptionEngine;
@@ -25,6 +26,7 @@ function setup(engine: TranscriptionEngine) {
 	const job = TestBed.inject(Transcription);
 	Object.defineProperty(job, 'engine', { value: engine });
 	const dialog = TestBed.runInInjectionContext(() => new TranscribeDialog());
+
 	return { job, retryLabel: () => (dialog as unknown as { retryLabel(): string }).retryLabel() };
 }
 

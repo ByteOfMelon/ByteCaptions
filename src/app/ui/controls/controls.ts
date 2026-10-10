@@ -112,6 +112,7 @@ export class Slider {
 	readonly disabled = input(false, { transform: booleanAttribute });
 	protected readonly percent = computed(() => {
 		const range = this.max() - this.min();
+
 		return range ? ((this.value() - this.min()) / range) * 100 : 0;
 	});
 	protected readonly display = computed(() => `${this.value()}${this.unit()}`);

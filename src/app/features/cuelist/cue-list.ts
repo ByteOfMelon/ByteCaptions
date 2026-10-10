@@ -50,12 +50,14 @@ export class CueList {
 		const fps = this.store.project().fps;
 		const problems = this.store.problemsByCue();
 		const maxCps = this.store.project().settings.maxCps;
+
 		return this.store
 			.allCues()
 			.filter((r) => !q || cueText(r.cue).toLowerCase().includes(q))
 			.map((r) => {
 				const cps = readingSpeed(r.cue);
 				const text = cueText(r.cue);
+
 				return {
 					ref: r,
 					id: r.cue.id,
@@ -73,14 +75,18 @@ export class CueList {
 	/** Provide summary of search results to user */
 	protected readonly matchSummary = computed(() => {
 		const rows = this.rows();
+
 		if (!this.query().trim()) return null;
+
 		const n = rows.reduce((sum, r) => sum + r.parts.filter((p) => p.hit).length, 0);
+
 		return `${n} ${n === 1 ? 'match' : 'matches'} in ${rows.length} ${rows.length === 1 ? 'cue' : 'cues'}`;
 	});
 
 	/** Listed cue under the playhead */
 	protected readonly playingId = computed(() => {
 		const t = this.store.playhead();
+
 		return this.rows().find((r) => r.ref.cue.start <= t && t < r.ref.cue.end)?.id ?? null;
 	});
 
@@ -91,13 +97,17 @@ export class CueList {
 		// Keep the playing cue in view during playback
 		effect(() => {
 			if (!this.store.playing()) return;
+
 			const playing = this.playingId();
+
 			if (!playing) return;
+
 			untracked(() => this.scrollTo(playing));
 		});
 		// And the selected cue when selection changes elsewhere (timeline, problems)
 		effect(() => {
 			const id = this.store.primary()?.cue.id;
+
 			if (id) untracked(() => this.scrollTo(id));
 		});
 	}
@@ -112,17 +122,20 @@ export class CueList {
 			r.cue.id,
 			e.shiftKey ? 'range' : e.ctrlKey || e.metaKey ? 'toggle' : 'replace',
 		);
+
 		if (!e.shiftKey && !e.ctrlKey && !e.metaKey) this.playback.seek(r.cue.start);
 	}
 
 	protected commit(id: string, text: string): void {
 		this.editing.set(null);
 		const cue = this.store.find(id)?.cue;
+
 		if (cue && cueText(cue) !== text) this.store.apply('Edit text', edits.setText(id, text));
 	}
 
 	protected onEditKey(e: KeyboardEvent, id: string): void {
 		const el = e.target as HTMLTextAreaElement;
+
 		if (e.key === 'Escape') {
 			this.editing.set(null);
 		} else if (e.key === 'Enter' && !e.shiftKey) {
@@ -141,6 +154,7 @@ export class CueList {
 			e.metaKey
 		)
 			return;
+
 		e.stopPropagation();
 		this.editingTime.set({ id: r.cue.id, edge });
 	}
@@ -151,27 +165,36 @@ export class CueList {
 		const cue = t && this.store.find(t.id)?.cue;
 
 		if (!cue) return null;
+
 		const ms = parseTime(text, this.store.project().fps);
+
 		if (ms === null) return 'Not a valid time.';
 
 		if (t.edge === 'start' && ms >= cue.end) return 'Start must be before end.';
+
 		if (t.edge === 'end' && ms <= cue.start) return 'End must be after start.';
+
 		return null;
 	}
 
 	protected commitTime(text: string, keepOpen = false): void {
 		const t = this.editingTime();
+
 		if (!t) return;
 
 		const error = this.timeProblem(text);
+
 		if (error && keepOpen) return this.timeError.set(error);
+
 		this.closeTime();
 
 		const cue = this.store.find(t.id)?.cue;
 		const ms = parseTime(text, this.store.project().fps);
+
 		if (error || !cue || ms === null) return;
 
 		const [start, end] = t.edge === 'start' ? [ms, cue.end] : [cue.start, ms];
+
 		if (start === cue.start && end === cue.end) return;
 
 		this.store.apply(
@@ -205,11 +228,14 @@ export class CueList {
 	/** Replace in the selected matching cue (or the first one), then select the next match */
 	protected replaceOne(): void {
 		const rows = this.rows().filter((r) => !r.ref.track.locked);
+
 		if (!rows.length) return;
+
 		const at = rows.findIndex((r) => this.store.selection().has(r.id));
 		const target = rows[Math.max(0, at)];
 		this.store.apply('Replace', edits.setText(target.id, this.replaced(target.text)));
 		const next = this.rows().find((r) => r.ref.index > target.ref.index && !r.ref.track.locked);
+
 		if (next) {
 			this.store.select(next.id);
 			this.playback.seek(next.ref.cue.start);
@@ -218,7 +244,9 @@ export class CueList {
 
 	protected replaceAll(): void {
 		const rows = this.rows().filter((r) => !r.ref.track.locked);
+
 		if (!rows.length) return;
+
 		const n = rows.reduce((sum, r) => sum + r.parts.filter((p) => p.hit).length, 0);
 		this.store.apply(`Replace ${n} ${n === 1 ? 'match' : 'matches'}`, (p) => {
 			for (const r of rows) edits.setText(r.id, this.replaced(r.text))(p);
@@ -240,11 +268,15 @@ function matcher(query: string): RegExp {
 function splitMatches(text: string, query: string): { text: string; hit: boolean }[] {
 	const parts: { text: string; hit: boolean }[] = [];
 	let last = 0;
+
 	for (const m of text.matchAll(matcher(query))) {
 		if (m.index > last) parts.push({ text: text.slice(last, m.index), hit: false });
+
 		parts.push({ text: m[0], hit: true });
 		last = m.index + m[0].length;
 	}
+
 	if (last < text.length) parts.push({ text: text.slice(last), hit: false });
+
 	return parts;
 }

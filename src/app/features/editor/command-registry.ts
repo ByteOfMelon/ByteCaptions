@@ -98,6 +98,7 @@ export class CommandRegistry {
 		const hasCue = () => !!this.store.primary();
 		const playing = this.store.playing();
 		const hasRange = () => !!this.playback.range();
+
 		return [
 			{
 				id: 'split',

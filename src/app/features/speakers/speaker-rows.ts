@@ -77,9 +77,12 @@ export class SpeakerRows {
 	protected readonly rows = computed(() =>
 		this.result().rows.flatMap((r) => {
 			const t = this.store.track(r.trackId);
+
 			if (!t) return [];
+
 			const min = Math.round(r.talkMs / 60_000);
 			const talk = min ? `${min} min` : `${Math.round(r.talkMs / 1000)} s`;
+
 			return [
 				{
 					...r,
@@ -94,12 +97,15 @@ export class SpeakerRows {
 	protected rename(trackId: string, name: string): void {
 		name = name.trim();
 		const t = this.store.track(trackId);
+
 		if (!t || !name || name === t.name) return;
+
 		this.store.apply('Rename track', updateTrack(trackId, { name }));
 	}
 
 	protected listen(cueId: string): void {
 		const cue = this.store.find(cueId)?.cue;
+
 		if (cue) this.playback.playSpan(cue.start, cue.end);
 	}
 }

@@ -26,10 +26,15 @@ export class TextFormat {
 	/** The selection with what the Inspector needs: its text and its formatting. */
 	readonly active = computed(() => {
 		const sel = this.selection();
+
 		if (!sel || sel.end <= sel.start) return null;
+
 		const ref = this.store.find(sel.cueId);
+
 		if (!ref) return null;
+
 		const base = resolveStyle(this.store.project(), ref.track, ref.cue);
+
 		return {
 			...sel,
 			text: cueText(ref.cue).slice(sel.start, sel.end),
@@ -55,17 +60,23 @@ export class TextFormat {
 	 */
 	apply(change: Partial<CaptionStyle> | 'clear'): void {
 		const a = this.active();
+
 		if (!a || !this.applier) return;
+
 		if (change === 'clear') return this.applier('clear');
+
 		const out: Partial<CaptionStyle> = {};
+
 		for (const [k, v] of Object.entries(change) as [keyof CaptionStyle, unknown][])
 			(out as Record<string, unknown>)[k] = a.base[k] === v ? undefined : v;
+
 		this.applier(out);
 	}
 
 	/** Bold, italic or underline on or off for the whole selection. */
 	toggle(key: 'bold' | 'italic' | 'underline'): void {
 		const a = this.active();
+
 		if (a) this.apply({ [key]: !a.style[key] });
 	}
 }

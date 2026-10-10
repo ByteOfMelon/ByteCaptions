@@ -23,5 +23,6 @@ export function isStopped(err: unknown): boolean {
 /** A failed job's "Title|detail" message, split for display. */
 export function jobErrorText(err: unknown): { title: string; detail: string } {
 	const [title, detail = ''] = String((err as Error).message ?? err).split('|');
+
 	return { title, detail };
 }

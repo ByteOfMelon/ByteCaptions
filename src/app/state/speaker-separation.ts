@@ -57,6 +57,7 @@ export class SpeakerSeparation {
 
 	async refresh(): Promise<void> {
 		if (!isDesktop) return;
+
 		try {
 			this.installed.set(await invoke<boolean>('speakers_installed'));
 		} catch (e) {
@@ -71,28 +72,37 @@ export class SpeakerSeparation {
 		emit: (e: SpeakerEvent) => void,
 	): Promise<SpeakerTurn[]> {
 		const path = this.media.path();
+
 		if (!path)
 			throw new Error(
 				"There's no video to listen to|Link the project's video first (drop it on the editor), then try again.",
 			);
+
 		const cancel = () => void invoke('job_cancel');
 		signal.addEventListener('abort', cancel);
+
 		try {
 			if (!(await invoke<boolean>('speakers_installed'))) {
 				const progress = new Channel<{ received: number; total: number }>();
 				progress.onmessage = (p) => emit({ type: 'download', ...p });
+
 				try {
 					await invoke('speakers_download', { onProgress: progress });
 				} catch (e) {
 					if (wasCancelled(e, signal)) throw stopped();
+
 					throw new Error(`Speaker model download failed|${e}`);
 				}
+
 				this.installed.set(true);
 			}
+
 			if (signal.aborted) throw stopped();
+
 			const events = new Channel<{ kind: 'extracted' }>();
 			events.onmessage = () => emit({ type: 'extracted' });
 			emit({ type: 'separating' });
+
 			try {
 				return await invoke<SpeakerTurn[]>('diarize', {
 					path,
@@ -101,6 +111,7 @@ export class SpeakerSeparation {
 				});
 			} catch (e) {
 				if (wasCancelled(e, signal)) throw stopped();
+
 				throw new Error(`Speaker separation failed|${e}`);
 			}
 		} finally {
@@ -121,6 +132,7 @@ export class SpeakerSeparation {
 		const others = project.tracks.filter((t) => t.id !== track.id).length;
 		const palette = trackColors();
 		const colors = palette.map((_, i) => palette[(others + i) % palette.length]);
+
 		return splitBySpeaker(
 			track,
 			assignSpeakers(track.cues, turns, { foldMinor: detected }),
@@ -132,6 +144,7 @@ export class SpeakerSeparation {
 	static replace(trackId: TrackId | null, split: SpeakerSplit) {
 		return (p: Draft<Project>) => {
 			const at = p.tracks.findIndex((t) => t.id === trackId);
+
 			if (at >= 0) p.tracks.splice(at, 1, ...split.tracks);
 			else p.tracks.push(...split.tracks);
 		};

@@ -38,8 +38,11 @@ function lastVideos(): Record<string, string> {
 /** A YouTube video ID, from the ID itself or a watch / youtu.be / Studio link. */
 export function videoIdFrom(text: string): string | null {
 	const s = text.trim();
+
 	if (/^[\w-]{11}$/.test(s)) return s;
+
 	const m = s.match(/(?:v=|youtu\.be\/|\/video\/|\/shorts\/|\/live\/)([\w-]{11})/);
+
 	return m ? m[1] : null;
 }
 
@@ -136,16 +139,22 @@ export class YouTubeDialog {
 	/** The track this upload replaces: same language, preferring the same name. */
 	protected readonly replace = computed(() => {
 		const same = (this.captions() ?? []).filter((c) => c.language === this.language());
+
 		return same.find((c) => c.name === this.name().trim()) ?? same[0] ?? null;
 	});
 	protected readonly languageNote = computed(() => {
 		const lang = languageName(this.language());
 		const blank = `Leave the name blank to show just "${lang}".`;
+
 		if (this.captionsFailed())
 			return `Couldn't check the captions this video already has, so this may add a second ${lang} track. ${blank}`;
+
 		if (this.captions() === null) return blank;
+
 		const r = this.replace();
+
 		if (!r) return blank;
+
 		return `Replaces the ${r.name ? `"${r.name}"` : lang} captions this video already has. ${blank}`;
 	});
 
@@ -165,22 +174,28 @@ export class YouTubeDialog {
 		const q = this.query().trim().toLowerCase();
 		const list = this.yt.videos();
 		const id = videoIdFrom(this.query());
+
 		if (id) return list.filter((v) => v.id === id);
+
 		return q ? list.filter((v) => v.title.toLowerCase().includes(q)) : list;
 	});
 	protected readonly foundOther = computed(() => {
 		const f = this.found();
+
 		return typeof f === 'object' && f && f.channelId !== this.yt.account()?.id ? f : null;
 	});
 	/** The list shown: a found video of this channel first, then the loaded matches. */
 	protected readonly listed = computed(() => {
 		const f = this.found();
 		const own = typeof f === 'object' && f && !this.foundOther() ? [f] : [];
+
 		return [...own, ...this.filtered()];
 	});
 	protected readonly listLabel = computed(() => {
 		const total = this.yt.totalVideos();
+
 		if (this.query().trim()) return 'Matches';
+
 		return `${total} video${total === 1 ? '' : 's'} • Newest first`;
 	});
 	protected readonly chooseSubtitle = computed(
@@ -191,12 +206,15 @@ export class YouTubeDialog {
 	// Uploading
 	protected readonly jobSubtitle = computed(() => {
 		const j = this.yt.job();
+
 		if (!j) return '';
+
 		return `${j.video.title} • ${languageName(j.language)} • ${j.draft ? 'Draft' : 'Goes live'}`;
 	});
 	protected readonly progress = computed(() => {
 		const steps = this.yt.steps();
 		const done = steps.filter((s) => s.status === 'done').length;
+
 		return Math.round(((done + 0.5) / Math.max(1, steps.length)) * 100);
 	});
 
@@ -204,20 +222,25 @@ export class YouTubeDialog {
 		// Signed in: load the uploads, then pick the video last used or the one that matches.
 		effect(() => {
 			if (!this.yt.account()) return;
+
 			untracked(() => {
 				if (!this.yt.videos().length) void this.yt.loadVideos();
 			});
 		});
 		effect(() => {
 			const videos = this.yt.videos();
+
 			if (untracked(this.video) || !videos.length) return;
+
 			untracked(() => void this.pickInitial());
 		});
 		effect(() => {
 			const v = this.video();
 			this.captions.set(null);
 			this.captionsFailed.set(false);
+
 			if (!v) return;
+
 			this.yt
 				.captions(v.id)
 				.then((c) => {
@@ -231,7 +254,9 @@ export class YouTubeDialog {
 		effect(() => {
 			const id = videoIdFrom(this.query());
 			this.findError.set(null);
+
 			if (!id || this.yt.videos().some((v) => v.id === id)) return this.found.set(null);
+
 			this.found.set('searching');
 			this.yt.findVideo(id).then(
 				(v) => {
@@ -239,6 +264,7 @@ export class YouTubeDialog {
 				},
 				(e: YtError) => {
 					if (videoIdFrom(this.query()) !== id) return;
+
 					this.found.set(null);
 					this.findError.set(e);
 				},
@@ -251,7 +277,9 @@ export class YouTubeDialog {
 		const remembered = last
 			? (this.yt.videos().find((v) => v.id === last) ?? (await this.yt.findVideo(last)))
 			: null;
+
 		if (this.video()) return;
+
 		this.video.set(remembered ?? this.yt.matchByLength(this.lengthMs()));
 	}
 
@@ -267,7 +295,9 @@ export class YouTubeDialog {
 
 	protected usePicked(): void {
 		const v = this.picked();
+
 		if (v) this.video.set(v);
+
 		this.view.set('main');
 	}
 
@@ -278,7 +308,9 @@ export class YouTubeDialog {
 
 	protected upload(): void {
 		const video = this.video();
+
 		if (!video || !this.canUpload()) return;
+
 		try {
 			localStorage.setItem(
 				LAST_VIDEO_KEY,
@@ -287,6 +319,7 @@ export class YouTubeDialog {
 		} catch {
 			/* Remembering the video is a convenience. */
 		}
+
 		void this.yt.upload({
 			video,
 			trackIds: this.project()
@@ -302,7 +335,9 @@ export class YouTubeDialog {
 	/** Sign in again after the sign-in expired mid-upload, then retry. */
 	protected async signInAndRetry(): Promise<void> {
 		const job = this.yt.job();
+
 		if (!(await this.yt.signIn()) || !job) return;
+
 		this.yt.reset();
 		void this.yt.upload(job);
 	}
@@ -310,6 +345,7 @@ export class YouTubeDialog {
 	protected retry(): void {
 		const job = this.yt.job();
 		this.yt.reset();
+
 		if (job) void this.yt.upload(job);
 	}
 
@@ -321,11 +357,13 @@ export class YouTubeDialog {
 
 	protected openStudio(): void {
 		const v = this.yt.result()?.options.video;
+
 		if (v) openExternal(`https://studio.youtube.com/video/${v.id}/translations`);
 	}
 
 	protected errorText(e: YtError): { title: string; detail: string } {
 		const m = ERRORS[e.kind] ?? ERRORS.failed;
+
 		return { title: m.title, detail: m.detail ?? e.message };
 	}
 
@@ -337,6 +375,7 @@ export class YouTubeDialog {
 
 	protected meta(v: YtVideo): string {
 		const privacy = v.privacy ? v.privacy[0].toUpperCase() + v.privacy.slice(1) : '';
+
 		return [formatLength(v.durationMs), privacy, uploaded(v.publishedAt)]
 			.filter(Boolean)
 			.join(' • ');
@@ -348,12 +387,15 @@ export class YouTubeDialog {
 /** "Uploaded Sep 30", with the year when it isn't this year. */
 function uploaded(iso: string): string {
 	const d = new Date(iso);
+
 	if (isNaN(d.getTime())) return '';
+
 	const sameYear = d.getFullYear() === new Date().getFullYear();
 	const date = d.toLocaleDateString('en-US', {
 		month: 'short',
 		day: 'numeric',
 		...(sameYear ? {} : { year: 'numeric' }),
 	});
+
 	return `Uploaded ${date}`;
 }

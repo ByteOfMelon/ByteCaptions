@@ -42,8 +42,11 @@ export class Start implements OnDestroy {
 	private readonly dragDetail = signal<string | null>(null);
 	protected readonly dragging = computed(() => {
 		const h = this.drop.hover();
+
 		if (!h) return null;
+
 		const video = h.kind === 'video';
+
 		return {
 			title: video ? 'Drop to start a project' : 'Drop to open',
 			name: h.file?.name ?? (video ? 'Video file' : 'Video, project or caption file'),
@@ -74,7 +77,9 @@ export class Start implements OnDestroy {
 		effect((onCleanup) => {
 			const h = this.drop.hover();
 			this.dragDetail.set(null);
+
 			if (h?.kind !== 'video' || !h.file) return;
+
 			let live = true;
 			onCleanup(() => (live = false));
 			void Promise.all([probeVideo(h.file.mediaUrl()), h.file.size()]).then(
@@ -83,6 +88,7 @@ export class Start implements OnDestroy {
 						info ? formatLength(info.durationMs) : null,
 						size !== null ? formatBytes(size) : null,
 					].filter(Boolean);
+
 					if (live && parts.length) this.dragDetail.set(parts.join(' • '));
 				},
 			);
@@ -115,6 +121,7 @@ export class Start implements OnDestroy {
 			'Discard changes',
 			'Discard',
 		);
+
 		if (ok) await this.recovery.dismiss(entry);
 	}
 
@@ -153,13 +160,16 @@ export class Start implements OnDestroy {
 
 	protected onKey(e: KeyboardEvent): void {
 		if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey) return;
+
 		const run = {
 			n: () => this.newProject(),
 			o: () => this.openProject(),
 			i: () => this.importCaptions(),
 			',': () => this.openSettings(),
 		}[e.key.toLowerCase()];
+
 		if (!run) return;
+
 		e.preventDefault();
 		void run();
 	}

@@ -48,15 +48,20 @@ export class History<T> {
 
 	apply(label: string, recipe: Recipe<T>): T {
 		const [next, patches, inverse] = produceWithPatches(this.state, recipe);
+
 		if (patches.length === 0) return this.state;
+
 		this.state = next as T;
+
 		if (this.group) {
 			this.group.patches.push(...patches);
 			this.group.inverse.unshift(...inverse);
 		} else {
 			this.push({ label, patches, inverse });
 		}
+
 		this.future = [];
+
 		return this.state;
 	}
 
@@ -68,23 +73,30 @@ export class History<T> {
 	end(): void {
 		const g = this.group;
 		this.group = null;
+
 		if (g && g.patches.length) this.push(g);
 	}
 
 	undo(): T {
 		this.end();
 		const e = this.past.pop();
+
 		if (!e) return this.state;
+
 		this.state = applyPatches(this.state as object, e.inverse) as T;
 		this.future.push(e);
+
 		return this.state;
 	}
 
 	redo(): T {
 		const e = this.future.pop();
+
 		if (!e) return this.state;
+
 		this.state = applyPatches(this.state as object, e.patches) as T;
 		this.past.push(e);
+
 		return this.state;
 	}
 
@@ -98,6 +110,7 @@ export class History<T> {
 
 	private push(e: Entry): void {
 		this.past.push(e);
+
 		if (this.past.length > this.limit) this.past.shift();
 	}
 }

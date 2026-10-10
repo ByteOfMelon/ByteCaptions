@@ -52,6 +52,7 @@ export class TranscriptView {
 	protected readonly trackId = computed(() => {
 		const tracks = this.store.project().tracks;
 		const chosen = this.chosenTrack();
+
 		return tracks.some((t) => t.id === chosen) ? chosen! : (tracks[0]?.id ?? '');
 	});
 	protected readonly track = computed<Track | undefined>(() => this.store.track(this.trackId()));
@@ -68,14 +69,18 @@ export class TranscriptView {
 		const ms = this.store.duration();
 		const m = Math.floor(ms / 60000);
 		const s = Math.floor((ms % 60000) / 1000);
+
 		return `${m}:${String(s).padStart(2, '0')}`;
 	});
 
 	protected readonly paragraphs = computed<Paragraph[]>(() => {
 		const track = this.track();
+
 		if (!track) return [];
+
 		const out: Paragraph[] = [];
 		let prevEnd = -Infinity;
+
 		for (const cue of track.cues) {
 			const seg: Segment = {
 				cue,
@@ -87,13 +92,16 @@ export class TranscriptView {
 						gap: wordGap(w.text, all[i + 1]?.text ?? ''),
 					})) ?? null,
 			};
+
 			if (!out.length || cue.start - prevEnd > PARAGRAPH_GAP_MS) {
 				// Paragraph timestamps are shown to the second
 				out.push({ start: formatTimecode(cue.start, 1).slice(0, 8), segments: [] });
 			}
+
 			out[out.length - 1].segments.push(seg);
 			prevEnd = cue.end;
 		}
+
 		return out;
 	});
 
@@ -102,9 +110,11 @@ export class TranscriptView {
 		() => {
 			const t = this.store.playhead();
 			const paras = this.paragraphs();
+
 			for (let p = 0; p < paras.length; p++)
 				for (const seg of paras[p].segments) {
 					const c = seg.cue;
+
 					if (c.start <= t && t < c.end)
 						return {
 							para: p,
@@ -112,6 +122,7 @@ export class TranscriptView {
 							word: c.words?.findIndex((w) => w.start <= t && t < w.end) ?? -1,
 						};
 				}
+
 			return { para: -1, cue: null, word: -1 };
 		},
 		{ equal: (a, b) => a.para === b.para && a.cue === b.cue && a.word === b.word },
@@ -134,6 +145,7 @@ export class TranscriptView {
 	protected commit(cue: Cue, text: string): void {
 		this.editing.set(null);
 		const clean = text.replace(/\s*\n\s*/g, ' ').trim();
+
 		if (clean !== cueText(cue).replace(/\n/g, ' '))
 			this.store.apply('Edit text', edits.setText(cue.id, clean));
 	}

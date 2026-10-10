@@ -80,22 +80,30 @@ export class TimelineMenus {
 	private runShared(id: string, cues: CueId[], styleId: StyleId | null): boolean {
 		if (id.startsWith('preset:')) {
 			this.commands.setPreset(cues, id.slice(7));
+
 			return true;
 		}
+
 		if (id.startsWith('track:')) {
 			this.commands.moveToTrack(cues, id.slice(6));
+
 			return true;
 		}
+
 		if (id === 'edit-presets') {
 			this.dialogs.presets(styleId ?? undefined);
+
 			return true;
 		}
+
 		return false;
 	}
 
 	async cue(at: At, track: Track, cueId: CueId): Promise<void> {
 		if (!this.store.selection().has(cueId)) this.store.select(cueId);
+
 		const sel = this.store.selectedCues();
+
 		if (sel.length > 1) return this.several(at);
 
 		// Number as the cue list does: across all tracks, in time order.
@@ -201,7 +209,9 @@ export class TimelineMenus {
 				disabled: locked,
 			},
 		]);
+
 		if (!id || this.runShared(id, [cueId], styleId)) return;
+
 		const run: Record<string, () => void> = {
 			split: () => this.commands.splitAtPlayhead(),
 			merge: () => this.commands.merge(),
@@ -284,7 +294,9 @@ export class TimelineMenus {
 				disabled: !ids.length,
 			},
 		]);
+
 		if (!id || this.runShared(id, ids, common)) return;
+
 		if (id === 'merge') this.commands.merge();
 		else if (id === 'shift') void this.dialogs.shiftTiming(ids);
 		else if (id === 'cut') this.commands.cut();
@@ -318,6 +330,7 @@ export class TimelineMenus {
 				disabled: !track.cues.length,
 			},
 		]);
+
 		if (id === 'new') this.commands.newCueAt(atMs, track.id);
 		else if (id === 'paste') this.commands.paste(atMs, track.id);
 		else if (id === 'select-all') this.commands.selectAllOnTrack(track.id);
@@ -381,6 +394,7 @@ export class TimelineMenus {
 				checked: this.playback.loop(),
 			},
 		]);
+
 		if (id === 'select-range') this.commands.selectRange();
 		else if (id === 'shift-range')
 			void this.dialogs.shiftTiming(this.commands.rangeCues().map((x) => x.cue.id));
@@ -395,7 +409,9 @@ export class TimelineMenus {
 
 	async marker(at: At, id: MarkerId): Promise<void> {
 		const m = this.markers.find(id);
+
 		if (!m) return;
+
 		const choice = await this.menu.open(at, [
 			{ kind: 'header', label: `Marker ${this.markers.number(id)}` },
 			{ id: 'edit', label: 'Edit note…', icon: LucidePencil.icon },
@@ -413,6 +429,7 @@ export class TimelineMenus {
 			{ kind: 'separator' },
 			{ id: 'delete', label: 'Delete marker', icon: LucideTrash2.icon, danger: true },
 		]);
+
 		if (choice === 'edit') this.markers.edit(id);
 		else if (choice === 'delete') this.markers.remove(id);
 		else if (choice?.startsWith('color:'))
@@ -478,7 +495,9 @@ export class TimelineMenus {
 				disabled: tracks.length < 2,
 			},
 		]);
+
 		if (!id) return;
+
 		if (id.startsWith('preset:')) this.commands.setTrackPreset(track.id, id.slice(7));
 		else if (id.startsWith('color:')) this.commands.setTrackColor(track.id, id.slice(6));
 		else if (id === 'edit-presets') this.dialogs.presets(track.defaultStyleId);

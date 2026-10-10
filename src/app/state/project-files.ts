@@ -31,6 +31,7 @@ import { RecentProject, RecentProjects } from './recent-projects';
  */
 export function trackColors(): string[] {
 	const css = getComputedStyle(document.documentElement);
+
 	return [1, 2, 3, 4].map((n) => css.getPropertyValue(`--color-track-${n}`).trim());
 }
 
@@ -52,6 +53,7 @@ export class ProjectFiles {
 
 	nextTrackColor(p: Project = this.store.project()): string {
 		const colors = trackColors();
+
 		return colors[p.tracks.length % colors.length];
 	}
 
@@ -65,6 +67,7 @@ export class ProjectFiles {
 	/** Ask before replacing a project with unsaved changes. Resolves true to go ahead. */
 	async confirmDiscard(): Promise<boolean> {
 		if (!this.store.dirty()) return true;
+
 		return confirmAction(
 			`${this.store.project().name} has unsaved changes. Discard them?`,
 			'Unsaved changes',
@@ -83,7 +86,9 @@ export class ProjectFiles {
 	/** Start a fresh project named after a video. Resolves false if cancelled. */
 	async newFromVideo(file?: PickedFile | null): Promise<boolean> {
 		file ??= await openFile(VIDEO_FILTER);
+
 		if (!file || !(await this.confirmDiscard())) return false;
+
 		const info = await probeVideo(file.mediaUrl());
 		const p = createProject(stripExtension(file.name));
 		p.fps = 60;
@@ -98,26 +103,34 @@ export class ProjectFiles {
 		};
 		this.media.load(file);
 		this.loadProject(p, null, false);
+
 		return true;
 	}
 
 	/** Open a project file (picked, dropped or by path). Resolves false on cancel or error. */
 	async open(file?: PickedFile | string | null): Promise<boolean> {
 		if (typeof file === 'string') file = fromPath(file);
+
 		file ??= await openFile(PROJECT_FILTER);
+
 		if (!file || !(await this.confirmDiscard())) return false;
+
 		try {
 			const { project: p, relinked } = await this.findMovedVideo(
 				parseProject(await file.text()),
 				file.path,
 			);
 			this.loadProject(p, file.path, !relinked);
+
 			if (relinked) this.store.markUnsaved();
+
 			this.recent.record(p, file.name, file.path);
 			await this.media.loadForProject(p);
+
 			return true;
 		} catch (e) {
 			this.error.set(`${file.name} couldn't be opened. ${errorMessage(e)}`);
+
 			return false;
 		}
 	}
@@ -128,10 +141,12 @@ export class ProjectFiles {
 	 */
 	async restore(p: Project, path: string | null): Promise<boolean> {
 		if (!(await this.confirmDiscard())) return false;
+
 		({ project: p } = await this.findMovedVideo(p, path));
 		this.loadProject(p, path, false);
 		this.store.markUnsaved();
 		await this.media.loadForProject(p);
+
 		return true;
 	}
 
@@ -144,22 +159,29 @@ export class ProjectFiles {
 		projectPath: string | null,
 	): Promise<{ project: Project; relinked: boolean }> {
 		const path = p.media?.path;
+
 		if (!isDesktop || !projectPath || !p.media || !path || (await fileExists(path)))
 			return { project: p, relinked: false };
+
 		const sep = projectPath.includes('\\') ? '\\' : '/';
 		const nearby = `${dirname(projectPath)}${sep}${basename(path)}`;
+
 		if (!(await fileExists(nearby))) return { project: p, relinked: false };
+
 		return { project: { ...p, media: { ...p.media, path: nearby } }, relinked: true };
 	}
 
 	/** Reopen a recent project: by path on desktop, by asking for the file in the browser. */
 	async openRecent(r: RecentProject): Promise<boolean> {
 		if (!isDesktop || !r.path) return this.open();
+
 		if (!(await fileExists(r.path))) {
 			this.recent.remove(r.id);
 			this.error.set(`${r.fileName} was moved or deleted, so it was removed from the list.`);
+
 			return false;
 		}
+
 		return this.open(r.path);
 	}
 
@@ -169,34 +191,46 @@ export class ProjectFiles {
 		const suggested = `${p.name}.${PROJECT_EXTENSION}`;
 		let path = saveAs ? null : this.currentPath();
 		let name = path ? basename(path) : suggested;
+
 		if (!path && isDesktop) {
 			const target = await pickSaveTarget(suggested, PROJECT_FILTER);
+
 			if (!target) return false;
+
 			({ path, name } = target);
 		}
+
 		try {
 			await writeText({ name, path }, serializeProject(p));
 		} catch (e) {
 			this.error.set(`Couldn't save ${name}. ${errorMessage(e)}`);
+
 			return false;
 		}
+
 		this.currentPath.set(path);
 		this.saved.set(true);
 		this.store.markSaved(p);
 		this.recent.record(p, name, path);
+
 		return true;
 	}
 
 	/** Import a caption file as a new track of the current project. */
 	async importCaptions(file?: PickedFile | null): Promise<boolean> {
 		file ??= await openFile(CAPTION_FILTER);
+
 		if (!file) return false;
+
 		const src = await file.text();
 		const format = formatForFilename(file.name) ?? sniffFormat(src);
+
 		if (!format) {
 			this.error.set(`${file.name} isn't a caption format ByteCaptions can read.`);
+
 			return false;
 		}
+
 		const result = format.import(src);
 		const track = createTrack(stripExtension(file.name), this.nextTrackColor());
 		track.cues = result.cues;
@@ -206,14 +240,18 @@ export class ProjectFiles {
 			addTrack(track)(p);
 		});
 		this.error.set(result.warnings.length ? result.warnings.join(' ') : null);
+
 		return true;
 	}
 
 	/** Start a new project with a caption file as its first track (Start screen, menu). */
 	async importAsNewProject(file?: PickedFile | null): Promise<boolean> {
 		file ??= await openFile(CAPTION_FILTER);
+
 		if (!file || !(await this.confirmDiscard())) return false;
+
 		this.newEmpty(stripExtension(file.name));
+
 		return this.importCaptions(file);
 	}
 
@@ -229,6 +267,7 @@ export class ProjectFiles {
 	/** Probe `file` for the project's media reference (Link video, Project settings). */
 	async videoRef(file: PickedFile): Promise<MediaRef> {
 		const info = await probeVideo(file.mediaUrl());
+
 		return {
 			path: file.path ?? file.name,
 			hash: '',

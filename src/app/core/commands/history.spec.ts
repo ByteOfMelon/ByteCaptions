@@ -11,6 +11,7 @@ function setup() {
 		{ ...createCue(0, 1000, 'one two three four'), id: 'a' },
 		{ ...createCue(2000, 3000, 'second'), id: 'b' },
 	];
+
 	return new History<Project>(p);
 }
 
@@ -31,7 +32,9 @@ describe('History', () => {
 	it('groups a drag into one undo step', () => {
 		const h = setup();
 		h.begin('Move');
+
 		for (let i = 0; i < 10; i++) h.apply('Move', edits.moveCues(['b'], 10));
+
 		h.end();
 		expect(cues(h)[1].start).toBe(2100);
 		h.undo();

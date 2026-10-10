@@ -9,14 +9,17 @@ const limits = defaultSettings();
 function speak(text: string, from = 0, ms = 300): WordTiming[] {
 	const out: WordTiming[] = [];
 	let t = from;
+
 	for (const token of text.split(' ')) {
 		if (token === '|') {
 			t += 1000;
 			continue;
 		}
+
 		out.push({ text: token, start: t, end: t + ms - 20 });
 		t += ms;
 	}
+
 	return out;
 }
 
@@ -52,9 +55,11 @@ describe('segmentWords', () => {
 			'so what we are going to do today is take a look at how the whole thing works from ' +
 			'start to finish and then we will talk about what could have been done differently ' +
 			'and why it matters for everyone who plays games like this one on a regular basis';
+
 		for (const text of texts(speak(long))) {
 			const lines = text.split('\n');
 			expect(lines.length).toBeLessThanOrEqual(limits.maxLines);
+
 			for (const line of lines)
 				expect(line.length).toBeLessThanOrEqual(limits.maxCharsPerLine);
 		}
@@ -72,6 +77,7 @@ describe('segmentWords', () => {
 
 	it('splits cues that would run past the max duration', () => {
 		const slow = speak('one two three four five six', 0, 2000);
+
 		for (const cue of segmentWords(slow, limits)) {
 			expect(cue.end - cue.start).toBeLessThanOrEqual(limits.maxDurationMs);
 		}
@@ -140,6 +146,7 @@ describe('layoutLines', () => {
 		const words = speak([...'我们今天下午一起去公园散步然后在湖边吃了晚饭再回家'].join(' '));
 		const lines = layoutLines(words, limits);
 		expect(lines.length).toBe(2);
+
 		for (const line of lines) expect(textWidth(line)).toBeLessThanOrEqual(42);
 	});
 });

@@ -10,17 +10,23 @@ const leaveEditor: CanDeactivateFn<unknown> = async () => {
 	const store = inject(ProjectStore);
 	const files = inject(ProjectFiles);
 	const transcription = inject(Transcription);
+
 	if (!store.dirty()) return true;
+
 	const choice = isDesktop
 		? await askSaveChanges(store.project().name)
 		: (await files.confirmDiscard())
 			? 'discard'
 			: 'cancel';
+
 	if (choice === 'cancel') return false;
+
 	if (choice === 'save') return files.save();
+
 	// Close the project (its recovery copy goes with it), so a transcription can't add to it.
 	transcription.stop();
 	files.newEmpty();
+
 	return true;
 };
 
