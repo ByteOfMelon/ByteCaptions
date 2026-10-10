@@ -8,8 +8,7 @@ import { Field } from '../../ui/field/field';
 import { Playback } from '../player/playback';
 
 /**
- * The speakers a separation found, one row per new track: rename it, see how much they say,
- * and Listen to their clearest line to tell who's who.
+ * The speakers a separation found, one row per new track
  */
 @Component({
 	selector: 'bc-speaker-rows',
@@ -56,7 +55,6 @@ import { Playback } from '../player/playback';
 			flex: 1;
 			min-width: 0;
 		}
-		/* Fixed width so the name fields line up. */
 		.count {
 			flex: 0 0 104px;
 			text-align: right;
@@ -73,7 +71,6 @@ export class SpeakerRows {
 	private readonly playback = inject(Playback);
 	readonly result = input.required<SpeakerResult>();
 
-	/** Rows for the tracks that still exist, with their current name and colour. */
 	protected readonly rows = computed(() =>
 		this.result().rows.flatMap((r) => {
 			const t = this.store.track(r.trackId);

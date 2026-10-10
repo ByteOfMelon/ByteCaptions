@@ -14,16 +14,14 @@ import { ThemeService } from './theme/theme.service';
 	template: '<router-outlet />',
 })
 export class App {
-	// Instantiated here so the theme attribute is applied before any route renders.
+	// Instantiated here so the theme attribute is applied before any route renders
 	protected readonly theme = inject(ThemeService);
-	// Autosave runs for the whole session, whichever screen is showing.
 	private readonly recovery = inject(Recovery);
 	private readonly store = inject(ProjectStore);
 	private readonly files = inject(ProjectFiles);
 
 	constructor() {
 		if (isDesktop) {
-			// The window's menu bar; the browser has none for now.
 			inject(AppMenu);
 			void getCurrentWindow().onCloseRequested((e) => this.onClose(e));
 		} else
@@ -32,7 +30,7 @@ export class App {
 			});
 	}
 
-	/** Closing the window with unsaved changes asks to save first. */
+	/** Closing the window with unsaved changes asks to save first */
 	private async onClose(e: { preventDefault(): void }): Promise<void> {
 		if (!this.store.dirty()) return;
 

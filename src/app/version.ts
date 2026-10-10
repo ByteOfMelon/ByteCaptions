@@ -1,4 +1,4 @@
 import { version } from '../../package.json';
 
-/** The version as shown in the app. Drop " beta" for 1.0. */
+/** Specifies how the version should be rendered, gets around package.json being mad at me lol */
 export const APP_VERSION = `${version} beta`;

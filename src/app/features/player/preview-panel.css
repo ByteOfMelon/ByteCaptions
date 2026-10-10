@@ -34,7 +34,6 @@ h2 {
 	place-items: center;
 	container-type: size;
 }
-/* 16:9 video area, letterboxed inside the frame; captions are positioned within it. */
 .stage {
 	position: relative;
 	width: min(100cqw, calc(100cqh * 16 / 9));
@@ -57,7 +56,6 @@ video {
 	display: grid;
 	place-items: center;
 	padding: var(--spacing-md);
-	/* The stage is black in both themes, so the text uses the dark theme's colors. */
 	color: rgb(252 252 252 / 0.5);
 	text-align: center;
 }
@@ -81,8 +79,6 @@ video {
 
 .caption-window {
 	position: absolute;
-	/* Long lines wrap like YouTube's player: up to 96% of the video wide. max-content keeps
-	   the width independent of `left`, which would otherwise cap it at the space to the right. */
 	width: max-content;
 	max-width: 96%;
 	line-height: 1.3;
@@ -124,7 +120,6 @@ video {
 	gap: var(--spacing-sm);
 }
 
-/* Floating bar over a text selection in the caption being edited. */
 .format-bar {
 	position: absolute;
 	z-index: 2;

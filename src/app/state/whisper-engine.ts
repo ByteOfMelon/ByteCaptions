@@ -17,25 +17,21 @@ type AsrEvent =
 	| { type: 'progress'; percent: number }
 	| { type: 'segment'; startMs: Ms; endMs: Ms; text: string };
 
-/** Voice activity detection model; keep in sync with VAD_MODEL in src-tauri/src/models.rs. */
+/** Voice activity detection model - keep in sync with VAD_MODEL in src-tauri/src/models.rs */
 const VAD_MODEL = 'silero-v6.2.0';
 
 /**
- * Transcription on the desktop app: whisper.cpp in the Rust backend (src-tauri/src/asr.rs),
- * with models downloaded on first use (models.rs). The backend returns timed words; they're
- * grouped into cues here with the project's caption limits.
+ * Transcription, only on the desktop app
  */
 export class WhisperEngine implements TranscriptionEngine {
-	/** Downloaded models by whisper name, with their size in bytes. */
+	/** Downloaded models by Whisper name */
 	private installed = new Map<string, number>();
 
 	constructor(
 		private readonly mediaPath: () => string | null,
 		private readonly settings: () => ProjectSettings,
-		/** Called when the set of downloaded models changes. */
 		private readonly changed: () => void,
 	) {
-		// A job still running from before the window reloaded has nobody to report to.
 		void invoke('job_cancel');
 		void this.refresh();
 	}
@@ -61,7 +57,6 @@ export class WhisperEngine implements TranscriptionEngine {
 	}
 
 	downloaded(): ReadonlyMap<string, number> {
-		// The speech detector is tiny and goes with every model.
 		return new Map([...this.installed].filter(([name]) => name !== VAD_MODEL));
 	}
 
@@ -95,7 +90,7 @@ export class WhisperEngine implements TranscriptionEngine {
 		signal.addEventListener('abort', cancel);
 
 		try {
-			// The speech detector comes along with whichever Whisper model is downloaded first.
+			// The speech detector comes along with whichever Whisper model is downloaded first
 			for (const name of [model.whisper, VAD_MODEL].filter((n) => !this.installed.has(n))) {
 				emit({ type: 'step', step: 'download', status: 'running', detail: '' });
 				let last = '';

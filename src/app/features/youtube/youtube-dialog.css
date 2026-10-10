@@ -9,7 +9,6 @@
 	gap: var(--spacing-md);
 }
 
-/* Video cards: the chosen video, and the list in Choose a video. */
 .video-card {
 	display: flex;
 	align-items: center;
@@ -69,7 +68,6 @@ button.video-card:focus-visible {
 	display: flex;
 	flex-direction: column;
 	gap: var(--spacing-xs);
-	/* Long channels scroll inside the list, not the whole dialog. */
 	max-height: min(420px, 50vh);
 	overflow-y: auto;
 }
@@ -86,7 +84,6 @@ button.video-card:focus-visible {
 	align-self: center;
 }
 
-/* Tracks, as in Export. */
 .option-text,
 .intro {
 	display: flex;
@@ -95,7 +92,6 @@ button.video-card:focus-visible {
 	gap: 2px;
 }
 
-/* Signed-in channel, at the start of the footer. */
 .channel {
 	display: flex;
 	flex: 1;
@@ -126,7 +122,6 @@ button.video-card:focus-visible {
 	box-shadow: var(--focus-ring);
 }
 
-/* Steps and result, as in Auto-transcribe. */
 .steps {
 	overflow: clip;
 	display: flex;

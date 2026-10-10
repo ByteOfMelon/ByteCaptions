@@ -1,4 +1,4 @@
-# Keep LF in the working tree on every OS so Prettier (endOfLine: lf) stays clean.
+# Enforce LF line endings on every OS
 * text=auto eol=lf
 *.png binary
 *.jpg binary

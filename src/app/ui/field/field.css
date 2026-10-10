@@ -48,7 +48,6 @@
 	color: var(--color-text-faded);
 }
 
-/* Projected input fills the row; long values ellipsize. */
 .box ::ng-deep input {
 	flex: 1;
 	min-width: 0;
@@ -76,7 +75,6 @@
 	height: 20px;
 }
 
-/* Number field */
 .suffix {
 	color: var(--color-text-faded);
 }

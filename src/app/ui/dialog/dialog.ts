@@ -18,14 +18,13 @@ import { IconButton } from '../button/button';
 const FOCUSABLE =
 	'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
 
-/** `.bc-overlay` padding (styles.css). */
 const OVERLAY_PADDING = 16;
 
-/** Handle given to a dialog's content component via `inject(DialogRef)`. */
+/** Handle given to a dialog's content component */
 export class DialogRef<R = unknown> {
 	private resolve!: (r: R | undefined) => void;
 	readonly closed = new Promise<R | undefined>((r) => (this.resolve = r));
-	/** Set by the service; tears down the overlay. */
+
 	destroy: () => void = () => {};
 
 	close(result?: R): void {
@@ -36,15 +35,12 @@ export class DialogRef<R = unknown> {
 
 export interface DialogOptions {
 	inputs?: Record<string, unknown>;
-	/** 'center' (default) or 'top' for the command palette. */
 	placement?: 'center' | 'top';
-	/** Close when the scrim is clicked. Default true. */
 	dismissable?: boolean;
 }
 
 /**
- * Opens a component in a modal overlay over a 75% black scrim (handoff §2). Traps focus,
- * closes on Escape / scrim click and restores focus afterwards.
+ * Opens a component in a modal overlaying the current content.
  */
 @Injectable({ providedIn: 'root' })
 export class Dialogs {
@@ -79,16 +75,14 @@ export class Dialogs {
 		this.appRef.attachView(ref.hostView);
 		ref.changeDetectorRef.detectChanges();
 
-		// Centre on whole pixels: a dialog at a half-pixel offset rounds its body's scroll
-		// height up by one, which shows a scrollbar on content that fits exactly.
-		const centre = new ResizeObserver(() => {
+		const center = new ResizeObserver(() => {
 			if (opts.placement === 'top') return;
 
 			const free = overlay.clientHeight - el.offsetHeight;
 			el.style.marginTop = `${Math.max(0, Math.floor(free / 2) - OVERLAY_PADDING)}px`;
 		});
-		centre.observe(overlay);
-		centre.observe(el);
+		center.observe(overlay);
+		center.observe(el);
 
 		const onKey = (e: KeyboardEvent) => {
 			if (this.stack.at(-1) !== dialogRef) return;
@@ -117,7 +111,7 @@ export class Dialogs {
 				}
 			}
 
-			// Keep editor shortcuts from firing underneath the dialog.
+			// Keep editor shortcuts from firing underneath the dialog
 			e.stopPropagation();
 		};
 		const onPointer = (e: PointerEvent) => {
@@ -128,7 +122,7 @@ export class Dialogs {
 		this.stack.push(dialogRef as DialogRef);
 
 		dialogRef.destroy = () => {
-			centre.disconnect();
+			center.disconnect();
 			this.stack.splice(this.stack.indexOf(dialogRef as DialogRef), 1);
 			this.appRef.detachView(ref.hostView);
 			ref.destroy();
@@ -136,8 +130,7 @@ export class Dialogs {
 			previousFocus?.focus();
 		};
 
-		// Focus [bcAutofocus] if the content has one; otherwise the dialog itself, so Tab
-		// starts inside it without painting a focus ring on the first control.
+		// Focus [bcAutofocus] if the content has one
 		requestAnimationFrame(() => {
 			if (el.contains(document.activeElement)) return;
 
@@ -155,9 +148,7 @@ export class Dialogs {
 }
 
 /**
- * Standard dialog frame: title + subtitle + close button, a body, and a footer
- * (`<div dialogFooter>`). Put a `.footer-note` or `.footer-start` group first in the footer
- * for left-aligned content.
+ * Standard dialog frame
  */
 @Component({
 	selector: 'bc-dialog',
@@ -193,12 +184,10 @@ export class Dialog {
 	readonly heading = input.required<string>();
 	readonly subtitle = input<string>();
 	readonly width = input(640);
-	/** Subtitle beside the title instead of below it (Style Presets). */
+	/** Subtitle beside the title instead of below it */
 	readonly inlineSubtitle = input(false, { transform: booleanAttribute });
 
 	constructor() {
-		// A dialog that swaps its content (e.g. Auto-transcribe steps) re-creates this frame;
-		// pull focus back in if it fell to <body>.
 		const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 		afterNextRender(() => {
 			if (document.activeElement && document.activeElement !== document.body) return;

@@ -18,7 +18,7 @@ type Limits = Pick<
 	'maxCharsPerLine' | 'maxLines' | 'minDurationMs' | 'maxDurationMs' | 'minGapMs' | 'maxCps'
 >;
 
-const SENTENCE_END = /[.?!…。！？]["'”’)\]」』）]*$/;
+const SENTENCE_END = /[.?!...。！？]["'”’)\]」』）]*$/;
 const CLAUSE_END = /[,;:—–\-、，；：]["'”’)\]」』）]*$/;
 /** Words a line or cue shouldn't end on, since they bind to what follows (English) */
 const WEAK_END =

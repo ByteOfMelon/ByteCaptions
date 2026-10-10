@@ -39,9 +39,7 @@ import { Playback } from '../player/playback';
 type At = { x: number; y: number } | MouseEvent;
 
 /**
- * Right-click menus for the timeline (Timeline Menus board): a cue, several selected cues,
- * empty lane space, a track header, the ruler and a marker. Keys shown are the editor's
- * current bindings.
+ * Right-click menus for the timeline
  */
 @Injectable({ providedIn: 'root' })
 export class TimelineMenus {
@@ -54,7 +52,7 @@ export class TimelineMenus {
 	private readonly markers = inject(Markers);
 	private readonly transcription = inject(Transcription);
 
-	/** "Style preset" submenu: presets with a check on `current`, then "Edit presets…". */
+	/** "Style preset" submenu */
 	private presetMenu(current: StyleId | null): MenuEntry[] {
 		return [
 			...Object.entries(this.store.project().styles).map(([id, s]) => ({
@@ -63,7 +61,7 @@ export class TimelineMenus {
 				checked: id === current,
 			})),
 			{ kind: 'separator' },
-			{ id: 'edit-presets', label: 'Edit presets…', icon: LucidePencil.icon },
+			{ id: 'edit-presets', label: 'Edit presets...', icon: LucidePencil.icon },
 		];
 	}
 
@@ -76,7 +74,7 @@ export class TimelineMenus {
 		}));
 	}
 
-	/** Shared handling for submenu ids. Returns true if `id` was one of them. */
+	/** Shared handling for submenu ids */
 	private runShared(id: string, cues: CueId[], styleId: StyleId | null): boolean {
 		if (id.startsWith('preset:')) {
 			this.commands.setPreset(cues, id.slice(7));
@@ -106,7 +104,6 @@ export class TimelineMenus {
 
 		if (sel.length > 1) return this.several(at);
 
-		// Number as the cue list does: across all tracks, in time order.
 		const { cue, index } = sel[0];
 		const styleId = cue.styleId ?? track.defaultStyleId;
 		const t = this.store.playhead();
@@ -243,7 +240,6 @@ export class TimelineMenus {
 				label: 'Merge into one cue',
 				icon: LucideMerge.icon,
 				keys: 'M',
-				// Merging only joins cues on one track.
 				disabled: tracks.size !== 1 || sel.length !== n,
 			},
 			{
@@ -263,7 +259,7 @@ export class TimelineMenus {
 			},
 			{
 				id: 'shift',
-				label: 'Shift timing…',
+				label: 'Shift timing...',
 				icon: LucideClock.icon,
 				disabled: !ids.length,
 			},
@@ -336,10 +332,10 @@ export class TimelineMenus {
 		else if (id === 'select-all') this.commands.selectAllOnTrack(track.id);
 	}
 
-	/** Ruler: add a marker or set the in/out points where it was clicked, or clear them. */
+	/** Ruler - add a marker or set the in/out points where it was clicked, or clear them */
 	async ruler(at: At, atMs: Ms): Promise<void> {
 		const r = this.playback.range();
-		// Right-clicking inside the range offers what can be done with the cues in it.
+		// Right-clicking inside the range offers what can be done with the cues in it
 		const inRange = !!r && atMs >= r.start && atMs <= r.end;
 		const n = inRange ? this.commands.rangeCues().length : 0;
 		const rangeItems: MenuEntry[] = inRange
@@ -353,7 +349,7 @@ export class TimelineMenus {
 					},
 					{
 						id: 'shift-range',
-						label: 'Shift cues in range…',
+						label: 'Shift cues in range...',
 						icon: LucideMove.icon,
 						disabled: !n,
 					},
@@ -414,7 +410,7 @@ export class TimelineMenus {
 
 		const choice = await this.menu.open(at, [
 			{ kind: 'header', label: `Marker ${this.markers.number(id)}` },
-			{ id: 'edit', label: 'Edit note…', icon: LucidePencil.icon },
+			{ id: 'edit', label: 'Edit note...', icon: LucidePencil.icon },
 			{
 				id: 'color',
 				label: 'Color',
@@ -474,12 +470,12 @@ export class TimelineMenus {
 				icon: LucideArrowDown.icon,
 				disabled: tracks.at(-1)!.id === track.id,
 			},
-			{ id: 'export', label: 'Export this track…', icon: LucideUpload.icon },
+			{ id: 'export', label: 'Export this track...', icon: LucideUpload.icon },
 			...(this.transcription.available
 				? [
 						{
 							id: 'speakers',
-							label: 'Separate speakers…',
+							label: 'Separate speakers...',
 							icon: LucideUsers.icon,
 							disabled:
 								track.locked || !track.cues.length || this.transcription.running(),

@@ -7,25 +7,23 @@ import { isDesktop } from './file-io';
 import { ProjectFiles, errorMessage } from './project-files';
 import { ProjectStore } from './project-store';
 
-/** A copy of a project with unsaved changes, kept in case the app closes before it's saved. */
+/** A copy of a project with unsaved changes, kept in case the app closes before it's saved */
 export interface RecoveryEntry {
 	projectId: string;
 	name: string;
-	/** Where the project was saved, if it ever was; recovering keeps saving there. */
+	/** Where the project was saved, if it ever was; recovering keeps saving there */
 	path: string | null;
 	savedAt: number;
-	/** The serialized project. */
+	/** The serialized project */
 	project: string;
 }
 
-/** How long after an edit the recovery copy is written. */
+/** How long after an edit the recovery copy is written */
 const DELAY_MS = 2000;
 const BROWSER_PREFIX = 'bc.recovery.';
 
 /**
- * The open project, kept in sessionStorage so a reload of the window (not a restart of the
- * app) reopens it: from its recovery copy when it has unsaved changes, else from where it's
- * saved, else (a new project with no changes yet) from the copy kept here.
+ * The open project, kept in sessionStorage so a reload of the window restores it
  */
 interface SessionProject {
 	projectId: string;
@@ -35,7 +33,7 @@ interface SessionProject {
 }
 const SESSION_KEY = 'bc.session';
 
-/** Where recovery copies live: the app's data folder on desktop, localStorage in the browser. */
+/** Where recovery copies live - the app's data folder on desktop, localStorage in the browser */
 const storage = {
 	async dir(): Promise<string> {
 		const dir = await join(await appLocalDataDir(), 'recovery');
@@ -95,32 +93,29 @@ function writeSession(s: SessionProject): void {
 	try {
 		sessionStorage.setItem(SESSION_KEY, JSON.stringify(s));
 	} catch {
-		// Too big or storage blocked: a reload falls back to the Start screen's recovery list.
+		// Too big or storage blocked - a reload falls back to the Start screen's recovery list.
 		try {
 			sessionStorage.removeItem(SESSION_KEY);
 		} catch {
-			// Storage blocked.
+			console.log('[Recovery] Failed to remove session from sessionStorage');
 		}
 	}
 }
 
 /**
- * Autosave for crash recovery (PLAN §5.1). While the open project has unsaved changes, a copy
- * is written a couple of seconds after each edit and when the window loses focus. Saving, or
- * leaving the project on purpose (Discard / Don't save), deletes it. A copy still there at
- * launch means the app closed unexpectedly, and the Start screen offers it back.
+ * Autosave for crash recovery
  */
 @Injectable({ providedIn: 'root' })
 export class Recovery {
 	private readonly store = inject(ProjectStore);
 	private readonly files = inject(ProjectFiles);
-	/** Copies left over from an earlier session, newest first. */
+	/** Copies left over from an earlier session, newest first */
 	readonly entries = signal<RecoveryEntry[]>([]);
-	/** Projects this session has written a copy for (so it only deletes its own). */
+	/** Projects this session has written a copy for (so it only deletes its own copies) */
 	private readonly written = new Set<string>();
 	private lastId: string | null = null;
 	private timer: ReturnType<typeof setTimeout> | null = null;
-	/** The project open before the window reloaded, if it did. */
+	/** The project open before the window reloaded */
 	private readonly previous = readSession();
 
 	constructor() {
@@ -136,7 +131,7 @@ export class Recovery {
 					project: dirty || path ? undefined : serializeProject(this.store.project()),
 				});
 
-				// Switching projects only happens after saving or choosing to discard.
+				// Switching projects only happens after saving or choosing to discard
 				if (this.lastId && this.lastId !== id) void this.discard(this.lastId);
 
 				this.lastId = id;
@@ -149,8 +144,7 @@ export class Recovery {
 	}
 
 	/**
-	 * After the window reloads, reopen the project that was open, then list the leftover copies.
-	 * Runs before the app first renders (app.config.ts).
+	 * After the window reloads, reopen the project that was open, then list the leftover copies
 	 */
 	async resume(): Promise<void> {
 		const s = this.previous;
@@ -167,7 +161,7 @@ export class Recovery {
 				this.store.markSaved();
 			}
 		} catch (e) {
-			console.warn('Could not reopen the project after reloading', e);
+			console.warn('[Recovery] Could not reopen the project after reloading', e);
 		}
 
 		await this.refresh();
@@ -182,7 +176,7 @@ export class Recovery {
 					.sort((a, b) => b.savedAt - a.savedAt),
 			);
 		} catch (e) {
-			console.warn('Could not read recovery copies', e);
+			console.warn('[Recovery] Could not read recovery copies', e);
 		}
 	}
 
@@ -190,7 +184,7 @@ export class Recovery {
 		this.timer ??= setTimeout(() => void this.flush(), DELAY_MS);
 	}
 
-	/** Write the recovery copy now, if there are unsaved changes. */
+	/** Write the recovery copy now, if there are unsaved changes */
 	async flush(): Promise<void> {
 		if (this.timer) clearTimeout(this.timer);
 
@@ -210,11 +204,11 @@ export class Recovery {
 			});
 			this.written.add(p.id);
 		} catch (e) {
-			console.warn('Could not write recovery copy', e);
+			console.warn('[Recovery] Could not write recovery copy', e);
 		}
 	}
 
-	/** Delete a project's recovery copy (only ones this session wrote, or one being dismissed). */
+	/** Delete a project's recovery copy (only ones this session wrote, or one being dismissed) */
 	async discard(projectId: string, force = false): Promise<void> {
 		if (!force && !this.written.has(projectId)) return;
 
@@ -228,17 +222,17 @@ export class Recovery {
 		try {
 			await storage.remove(projectId);
 		} catch {
-			// Already gone.
+			console.warn('[Recovery] Could not remove recovery copy', projectId);
 		}
 	}
 
-	/** Dismiss a leftover copy from the Start screen. */
+	/** Dismiss a leftover copy from the Start screen */
 	async dismiss(e: RecoveryEntry): Promise<void> {
 		await this.discard(e.projectId, true);
 		this.entries.update((l) => l.filter((x) => x.projectId !== e.projectId));
 	}
 
-	/** Reopen a leftover copy as the current project, with its changes still unsaved. */
+	/** Reopen a leftover copy as the current project, with its changes still unsaved */
 	async recover(e: RecoveryEntry): Promise<boolean> {
 		let project: Project;
 
@@ -252,7 +246,7 @@ export class Recovery {
 
 		if (!(await this.files.restore(project, e.path))) return false;
 
-		// The copy now belongs to this session: it's rewritten on edits and deleted on save.
+		// The copy now belongs to this session
 		this.written.add(e.projectId);
 		this.entries.update((l) => l.filter((x) => x.projectId !== e.projectId));
 

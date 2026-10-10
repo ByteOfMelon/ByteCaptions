@@ -1,9 +1,8 @@
-//! Uploading captions to YouTube (PLAN §5.12).
+//! YouTube sign-in and caption upload
 //!
-//! Sign-in is Google's flow for desktop apps: the browser opens Google's consent page, which
-//! redirects back to a one-off server on 127.0.0.1 with a code (PKCE-protected). The refresh
-//! token it trades for is kept in the OS's secure storage (keyring); access tokens only live
-//! in memory. The OAuth client comes from build.rs; builds without one leave this off.
+//! Sign-in is Google's desktop flow: consent in the browser, redirected with a PKCE code to a
+//! one-off loopback server. The refresh token lives in the OS keyring; access tokens only in
+//! memory
 
 use std::time::{Duration, Instant};
 
@@ -24,18 +23,17 @@ const TOKEN_URL: &str = "https://oauth2.googleapis.com/token";
 const REVOKE_URL: &str = "https://oauth2.googleapis.com/revoke";
 const API: &str = "https://www.googleapis.com/youtube/v3";
 const UPLOAD_API: &str = "https://www.googleapis.com/upload/youtube/v3";
-/// Captions need this scope even to list them; it also covers listing the channel's videos.
+/// Captions need this scope even to list them; it also covers listing the channel's videos
 const SCOPE: &str = "https://www.googleapis.com/auth/youtube.force-ssl";
 const KEYRING_SERVICE: &str = "ByteCaptions";
 const KEYRING_USER: &str = "youtube";
-/// How long to wait for the browser sign-in before giving up.
 const SIGN_IN_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 
-/// Errors the dialog tells apart; `kind` picks its message and actions.
+/// Errors the dialog tells apart
 #[derive(Debug, Serialize)]
 pub struct YtError {
 	/// "not-configured", "signed-out", "cancelled", "timeout", "quota", "forbidden",
-	/// "not-found", "no-channel", "offline" or "failed".
+	/// "not-found", "no-channel", "offline" or "failed"
 	kind: &'static str,
 	message: String,
 }
@@ -53,9 +51,9 @@ fn offline(e: reqwest::Error) -> YtError {
 
 #[derive(Default)]
 pub struct YouTube {
-	/// Access token and when it stops working.
+	/// Access token and when it expires
 	token: Mutex<Option<(String, Instant)>>,
-	/// Cancels a sign-in that's waiting on the browser.
+	/// Cancels a sign-in waiting on the browser
 	cancel: Notify,
 }
 
@@ -65,7 +63,7 @@ pub struct Account {
 	id: String,
 	title: String,
 	thumbnail: String,
-	/// Playlist of the channel's uploads, for listing its videos.
+	/// Playlist of the channel's uploads, for listing its videos
 	uploads: String,
 }
 
@@ -76,7 +74,7 @@ pub struct Video {
 	title: String,
 	channel_id: String,
 	duration_ms: u64,
-	/// "public", "unlisted" or "private".
+	/// "public", "unlisted" or "private"
 	privacy: String,
 	published_at: String,
 	thumbnail: String,
@@ -111,7 +109,7 @@ fn client() -> Result<(&'static str, &'static str), YtError> {
 		option_env!("BC_GOOGLE_CLIENT_ID"),
 		option_env!("BC_GOOGLE_CLIENT_SECRET"),
 	) {
-		// CI sets both empty when the repository has no Google secrets.
+		// CI sets both empty when the repository has no Google secrets
 		(Some(id), Some(secret)) if !id.is_empty() && !secret.is_empty() => Ok((id, secret)),
 		_ => Err(err(
 			"not-configured",
@@ -155,7 +153,6 @@ async fn read_json(res: reqwest::Response) -> Result<(StatusCode, Value), YtErro
 	Ok((status, value))
 }
 
-/// POST a form to Google's token endpoint.
 async fn token_request(form: &[(&str, &str)]) -> Result<(StatusCode, Value), YtError> {
 	let res = reqwest::Client::new()
 		.post(TOKEN_URL)
@@ -174,7 +171,7 @@ impl YouTube {
 		Some(access)
 	}
 
-	/// A working access token, refreshed from the stored refresh token when needed.
+	/// A working access token, refreshed from the stored refresh token when needed
 	async fn access_token(&self) -> Result<String, YtError> {
 		let mut token = self.token.lock().await;
 		if let Some((t, until)) = token.as_ref()
@@ -198,7 +195,7 @@ impl YouTube {
 		{
 			return Ok(access);
 		}
-		// Revoked, expired (Google ends test-mode sign-ins after a week) or otherwise refused.
+		// Revoked, expired (Google ends test-mode sign-ins after a week) or otherwise refused
 		if body["error"] == "invalid_grant" {
 			forget_refresh_token();
 			return Err(err("signed-out", "Your YouTube sign-in has expired."));
@@ -209,7 +206,7 @@ impl YouTube {
 		))
 	}
 
-	/// Call the YouTube API and return its JSON. Retries once with a fresh token on 401.
+	/// Retries once with a fresh token on 401
 	async fn call(
 		&self,
 		method: Method,
@@ -240,13 +237,9 @@ impl YouTube {
 	}
 }
 
-/// Map a YouTube API error response to the kinds the dialog knows.
 fn api_error(status: StatusCode, body: &Value) -> YtError {
 	let reason = body["error"]["errors"][0]["reason"].as_str().unwrap_or("");
-	let message = body["error"]["message"]
-		.as_str()
-		.unwrap_or("")
-		.to_string();
+	let message = body["error"]["message"].as_str().unwrap_or("").to_string();
 	let detail = if message.is_empty() {
 		status.to_string()
 	} else {
@@ -261,7 +254,7 @@ fn api_error(status: StatusCode, body: &Value) -> YtError {
 	}
 }
 
-/// Wait for Google's redirect on the loopback server and return the code it carries.
+/// Wait for Google's redirect and return its code
 async fn receive_code(listener: &TcpListener, state: &str) -> Result<String, YtError> {
 	loop {
 		let (mut stream, _) = listener
@@ -291,10 +284,12 @@ async fn receive_code(listener: &TcpListener, state: &str) -> Result<String, YtE
 			})
 		};
 		let (code, error) = (param("code"), param("error"));
-		// The browser may also ask for a favicon; only the redirect itself matters.
+		// The browser may also ask for a favicon; only the redirect itself matters
 		if code.is_none() && error.is_none() {
 			let _ = stream
-				.write_all(b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+				.write_all(
+					b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+				)
 				.await;
 			continue;
 		}
@@ -328,13 +323,13 @@ async fn receive_code(listener: &TcpListener, state: &str) -> Result<String, YtE
 	}
 }
 
-/// Whether this build can upload to YouTube (it has an OAuth client).
+/// Whether this build has an OAuth client
 #[tauri::command]
 pub fn youtube_available() -> bool {
 	client().is_ok()
 }
 
-/// The signed-in channel, or None when nobody is signed in.
+/// The signed-in channel, or None
 #[tauri::command]
 pub async fn youtube_account(yt: State<'_, YouTube>) -> Result<Option<Account>, YtError> {
 	client()?;
@@ -372,7 +367,7 @@ pub async fn youtube_account(yt: State<'_, YouTube>) -> Result<Option<Account>, 
 	}))
 }
 
-/// Sign in with Google in the browser and remember the sign-in. Returns the channel.
+/// Sign in through the browser and remember it. Returns the channel
 #[tauri::command]
 pub async fn youtube_sign_in(
 	app: AppHandle,
@@ -382,7 +377,10 @@ pub async fn youtube_sign_in(
 	let listener = TcpListener::bind("127.0.0.1:0")
 		.await
 		.map_err(|e| err("failed", format!("Couldn't start sign-in. ({e})")))?;
-	let port = listener.local_addr().map_err(|e| err("failed", e.to_string()))?.port();
+	let port = listener
+		.local_addr()
+		.map_err(|e| err("failed", e.to_string()))?
+		.port();
 	let redirect = format!("http://127.0.0.1:{port}");
 	let verifier = random_code(48);
 	let challenge = URL_SAFE_NO_PAD.encode(Sha256::digest(verifier.as_bytes()));
@@ -398,7 +396,7 @@ pub async fn youtube_sign_in(
 			("code_challenge_method", "S256"),
 			("state", &state),
 			("access_type", "offline"),
-			// Always ask, so Google returns a refresh token and lets you pick the account.
+			// Always ask, so Google returns a refresh token and lets you pick the account
 			("prompt", "select_account consent"),
 		],
 	)
@@ -425,7 +423,10 @@ pub async fn youtube_sign_in(
 		("grant_type", "authorization_code"),
 	])
 	.await?;
-	let Some(refresh) = body["refresh_token"].as_str().filter(|_| status.is_success()) else {
+	let Some(refresh) = body["refresh_token"]
+		.as_str()
+		.filter(|_| status.is_success())
+	else {
 		return Err(err(
 			"failed",
 			format!("Google refused the sign-in. ({status} {})", body["error"]),
@@ -441,20 +442,19 @@ pub async fn youtube_sign_in(
 	youtube_account(yt).await
 }
 
-/// Stop a sign-in that's waiting on the browser.
 #[tauri::command]
 pub fn youtube_cancel_sign_in(yt: State<'_, YouTube>) {
 	yt.cancel.notify_waiters();
 }
 
-/// Forget the sign-in here and revoke it at Google.
+/// Forget the sign-in here and revoke it at Google
 #[tauri::command]
 pub async fn youtube_sign_out(yt: State<'_, YouTube>) -> Result<(), YtError> {
 	*yt.token.lock().await = None;
 	let refresh = stored_refresh_token()?;
 	forget_refresh_token();
 	if let Some(t) = refresh {
-		// Best effort: the token is gone from this computer either way.
+		// Best effort: the token is gone from this computer either way
 		let _ = reqwest::Client::new()
 			.post(REVOKE_URL)
 			.form(&[("token", t.as_str())])
@@ -464,7 +464,7 @@ pub async fn youtube_sign_out(yt: State<'_, YouTube>) -> Result<(), YtError> {
 	Ok(())
 }
 
-/// "PT1H2M3S" → milliseconds.
+/// "PT1H2M3S" → milliseconds
 fn iso_duration_ms(s: &str) -> u64 {
 	let mut total = 0f64;
 	let mut num = String::new();
@@ -526,14 +526,14 @@ async fn videos_by_id(yt: &YouTube, ids: &[String]) -> Result<Vec<Video>, YtErro
 		.as_array()
 		.map(|a| a.iter().map(video).collect())
 		.unwrap_or_default();
-	// Keep the playlist's order (newest first).
+	// Keep the playlist's order (newest first)
 	Ok(ids
 		.iter()
 		.filter_map(|id| found.iter().find(|v| &v.id == id).cloned())
 		.collect())
 }
 
-/// A page of the channel's uploads (50 at a time), newest first.
+/// The channel's uploads, 50 per page, newest first
 #[tauri::command]
 pub async fn youtube_videos(
 	yt: State<'_, YouTube>,
@@ -564,13 +564,13 @@ pub async fn youtube_videos(
 	})
 }
 
-/// One video by ID (or None), e.g. when it's pasted into the search box.
+/// One video by ID, e.g. pasted into the search box
 #[tauri::command]
 pub async fn youtube_video(yt: State<'_, YouTube>, id: String) -> Result<Option<Video>, YtError> {
 	Ok(videos_by_id(&yt, &[id]).await?.into_iter().next())
 }
 
-/// A video's caption tracks, leaving out YouTube's automatic ones.
+/// A video's caption tracks, leaving out YouTube's automatic ones
 #[tauri::command]
 pub async fn youtube_captions(
 	yt: State<'_, YouTube>,
@@ -590,10 +590,7 @@ pub async fn youtube_captions(
 				.filter(|c| c["snippet"]["trackKind"] != "asr")
 				.map(|c| Caption {
 					id: c["id"].as_str().unwrap_or_default().into(),
-					language: c["snippet"]["language"]
-						.as_str()
-						.unwrap_or_default()
-						.into(),
+					language: c["snippet"]["language"].as_str().unwrap_or_default().into(),
 					name: c["snippet"]["name"].as_str().unwrap_or_default().into(),
 					is_draft: c["snippet"]["isDraft"].as_bool().unwrap_or(false),
 				})
@@ -602,7 +599,7 @@ pub async fn youtube_captions(
 		.unwrap_or_default())
 }
 
-/// A multipart/related body: the caption's metadata, then its file.
+/// A multipart/related body: the caption's metadata, then its file
 fn multipart(metadata: &Value, content: &str) -> (String, Vec<u8>) {
 	let boundary = format!("bytecaptions-{}", random_code(12));
 	let mut body = Vec::new();
@@ -618,9 +615,9 @@ fn multipart(metadata: &Value, content: &str) -> (String, Vec<u8>) {
 	(format!("multipart/related; boundary={boundary}"), body)
 }
 
-/// Upload a caption file to a video. `replace` is an existing track in the same language:
-/// with the same name its content is updated in place; otherwise the new track is added and
-/// the old one deleted afterwards, so a failed upload never loses captions.
+/// `replace` is an existing track in the same language: one with the same name is updated
+/// in place; otherwise the new track is added and the old one deleted after, so a failed
+/// upload never loses captions
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub async fn youtube_upload(
@@ -663,13 +660,19 @@ pub async fn youtube_upload(
 				None,
 			)
 			.await
-			.or_else(|e| if e.kind == "not-found" { Ok(Value::Null) } else { Err(e) })?;
+			.or_else(|e| {
+				if e.kind == "not-found" {
+					Ok(Value::Null)
+				} else {
+					Err(e)
+				}
+			})?;
 		}
 		id
 	};
 	let _ = on_event.send(UploadEvent::Uploaded);
 
-	// Read it back, so "done" means YouTube has it.
+	// Read it back, so "done" means YouTube has it
 	let tracks = youtube_captions(yt, video_id).await?;
 	let caption = tracks.into_iter().find(|c| c.id == id).ok_or_else(|| {
 		err(

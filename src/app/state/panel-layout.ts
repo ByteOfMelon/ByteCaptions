@@ -17,7 +17,7 @@ function stored(): Partial<Sizes> {
 	}
 }
 
-/** Editor panel sizes in px, as the user dragged them; remembered between sessions. */
+/** Editor panel sizes in px, as the user dragged them */
 @Injectable({ providedIn: 'root' })
 export class PanelLayout {
 	private readonly saved = stored();
@@ -36,12 +36,11 @@ export class PanelLayout {
 			try {
 				localStorage.setItem(KEY, JSON.stringify(sizes));
 			} catch {
-				// Storage can be unavailable (private windows); sizes just won't persist.
+				console.log('[UI] Failed to save panel layout to localStorage');
 			}
 		});
 	}
 
-	/** Back to the default sizes (Reset layout). */
 	reset(): void {
 		this.cues.set(PANEL_DEFAULTS.cues);
 		this.inspector.set(PANEL_DEFAULTS.inspector);

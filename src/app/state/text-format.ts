@@ -4,7 +4,7 @@ import { rangeOverride } from '../core/model/runs';
 import { CaptionStyle, CueId } from '../core/model/types';
 import { ProjectStore } from './project-store';
 
-/** Characters [start, end) of a cue's text, selected while editing it. */
+/** Characters [start, end) of a cue's text, selected while editing it */
 export interface TextSelection {
 	cueId: CueId;
 	start: number;
@@ -12,18 +12,15 @@ export interface TextSelection {
 }
 
 /**
- * The text selected in the caption being edited, and formatting it. Like a word processor,
- * the selection survives using the Inspector: its controls then format just that text.
- * The preview's caption editor reports the selection and applies changes (`attach`).
+ * The text selected in the caption being edited, and formatting
  */
 @Injectable({ providedIn: 'root' })
 export class TextFormat {
 	private readonly store = inject(ProjectStore);
-	/** The current selection, or null; empty ranges count as none. */
+	/** The current selection, or null; empty ranges count as none */
 	readonly selection = signal<TextSelection | null>(null);
 	private applier: ((change: Partial<CaptionStyle> | 'clear') => void) | null = null;
 
-	/** The selection with what the Inspector needs: its text and its formatting. */
 	readonly active = computed(() => {
 		const sel = this.selection();
 
@@ -38,13 +35,12 @@ export class TextFormat {
 		return {
 			...sel,
 			text: cueText(ref.cue).slice(sel.start, sel.end),
-			/** The cue's preset with the selection's shared formatting on top. */
+			/** The cue's preset with the selection's shared formatting on top */
 			style: { ...base, ...rangeOverride(ref.cue.runs, sel.start, sel.end) } as CaptionStyle,
 			base,
 		};
 	});
 
-	/** The caption editor: how to apply formatting to its selection. */
 	attach(apply: (change: Partial<CaptionStyle> | 'clear') => void): void {
 		this.applier = apply;
 	}
@@ -55,8 +51,7 @@ export class TextFormat {
 	}
 
 	/**
-	 * Format the selection. A value equal to the cue's preset removes the override, so text
-	 * set back to normal follows the preset again.
+	 * Format the selection
 	 */
 	apply(change: Partial<CaptionStyle> | 'clear'): void {
 		const a = this.active();
@@ -73,7 +68,7 @@ export class TextFormat {
 		this.applier(out);
 	}
 
-	/** Bold, italic or underline on or off for the whole selection. */
+	/** Bold, italic or underline on or off for the whole selection */
 	toggle(key: 'bold' | 'italic' | 'underline'): void {
 		const a = this.active();
 

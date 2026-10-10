@@ -6,15 +6,13 @@ import { splitWords, tappedWords } from '../core/model/words';
 import { Playback } from '../features/player/playback';
 import { ProjectStore } from './project-store';
 
-/** Tapping plays at this speed, so there's time to react to each word. */
+/** Tapping plays at this speed, so that there's time to react to each word */
 const TAP_RATE = 0.5;
-/** Playback starts this long before the cue, to catch its first word. */
+/** Playback starts this long before the cue, to catch its first word */
 const LEAD_IN_MS = 600;
 
 /**
- * Tap to time: the cue plays slowly and each Space press marks where the next word starts.
- * Esc (or the cue ending) stops it, keeping what was tapped; untapped words share the rest.
- * The result is one undo step.
+ * Tap to time - the cue plays slowly and each Space press marks where the next word starts
  */
 @Injectable({ providedIn: 'root' })
 export class WordTapping {
@@ -27,7 +25,7 @@ export class WordTapping {
 		rate: number;
 	} | null>(null);
 
-	/** What the timeline shows while tapping: which cue, how far, and the hint text. */
+	/** What the timeline shows while tapping */
 	readonly active = computed(() => {
 		const s = this.state();
 
@@ -43,7 +41,7 @@ export class WordTapping {
 	});
 
 	constructor() {
-		// Playback stopping (the cue ended, or it was paused) finishes tapping.
+		// Playback stopping will finish the tapping
 		effect(() => {
 			if (!this.store.playing() && untracked(this.state)) untracked(() => this.finish());
 		});
@@ -83,7 +81,7 @@ export class WordTapping {
 
 			const t = Math.max(ref.cue.start, Math.min(ref.cue.end - 1, this.store.playhead()));
 
-			// Taps only go forwards.
+			// Taps only go forwards
 			if (t > (s.taps.at(-1) ?? -1)) this.state.set({ ...s, taps: [...s.taps, t] });
 		}
 	}

@@ -1,5 +1,4 @@
 docs/
-PLAN.md
 src-tauri/gen/
 src-tauri/vendor/
 src-tauri/target/

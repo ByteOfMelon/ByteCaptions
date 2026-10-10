@@ -40,7 +40,7 @@ function rgba(hex: string, alpha: number): string {
 	return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
-/** Text-shadow for an edge type; `u` is the edge unit in px (scales with player size). */
+/** Text-shadow for an edge type - `u` is the edge unit in px (scales with player size) */
 export function edgeShadow(edge: EdgeType, color: string, u = 1): string {
 	const c = color;
 
@@ -58,7 +58,7 @@ export function edgeShadow(edge: EdgeType, color: string, u = 1): string {
 	}
 }
 
-/** Inline styles for a caption line span. */
+/** Inline styles for a caption line span */
 export function captionTextStyle(s: CaptionStyle, edgeUnitPx = 1): Record<string, string> {
 	return {
 		'font-family': YT_FONT_STACK[s.font],
@@ -73,14 +73,13 @@ export function captionTextStyle(s: CaptionStyle, edgeUnitPx = 1): Record<string
 }
 
 /**
- * YouTube's player keeps caption windows inside a safe area: SRV3's 0–100% maps to 2–98% of
- * the video (so 93% lands at 91.3%).
+ * YouTube's player keeps caption windows inside a safe area: SRV3's 0–100% maps to 2–98% of the video (so 93% lands at 91.3%)
  */
 export function ytSafeArea(percent: number): number {
 	return 2 + percent * 0.96;
 }
 
-/** Absolute placement of a caption window inside the video frame, as YouTube places it. */
+/** Absolute placement of a caption window inside the video frame, as YouTube places it */
 export function captionWindowStyle(p: Position): Record<string, string> {
 	const ax = (p.anchor % 3) * 50;
 	const ay = Math.floor(p.anchor / 3) * 50;

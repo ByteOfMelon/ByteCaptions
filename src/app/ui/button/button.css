@@ -38,7 +38,6 @@
 	box-shadow: var(--focus-ring);
 }
 
-/* Primary: brand fill (Export, Save, Transcribe) */
 :host(.primary) {
 	background: var(--color-brand);
 	color: var(--color-on-brand);
@@ -50,7 +49,6 @@
 	background: var(--color-brand-pressed);
 }
 
-/* Secondary: card fill with a 1px outline */
 :host(.secondary) {
 	background: var(--color-card);
 	color: var(--color-text);
@@ -68,7 +66,6 @@
 		var(--focus-ring);
 }
 
-/* Ghost: no fill */
 :host(.ghost) {
 	background: transparent;
 	color: var(--color-text);
@@ -79,7 +76,7 @@
 :host(.ghost:active:not(:disabled)) {
 	background: var(--color-selected);
 }
-/* Danger */
+
 :host(.danger) {
 	background: var(--color-danger);
 	color: var(--color-on-danger);
@@ -99,7 +96,6 @@
 	cursor: default;
 }
 
-/* Icon buttons keep their outline when disabled */
 :host(.secondary.icon:disabled) {
 	box-shadow: inset 0 0 0 var(--outline-width) var(--color-outline);
 }
@@ -107,12 +103,10 @@
 	background: transparent;
 }
 
-/* Toggled-on tool (e.g. snapping) */
 :host(.on:not(:disabled)) {
 	background: var(--color-selected);
 }
 
-/* Progress: card track with a brand fill growing behind the label */
 :host(.in-progress) {
 	background: var(--color-card);
 	color: var(--color-text);

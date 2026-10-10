@@ -5,7 +5,7 @@ import { Kbd } from '../../ui/kbd/kbd';
 
 interface Shortcut {
 	label: string;
-	/** Keys joined with `+`, as `bc-kbd` takes them. */
+	/** Keys joined with + */
 	keys: string;
 }
 
@@ -14,7 +14,7 @@ interface ShortcutGroup {
 	shortcuts: Shortcut[];
 }
 
-/** The editor's shortcuts (see Editor.onKey), labelled as the command palette labels them. */
+/** The editor's shortcuts, labelled as the command palette labels them */
 @Component({
 	selector: 'bc-shortcuts-dialog',
 	imports: [Dialog, Kbd],
@@ -87,7 +87,6 @@ export class ShortcutsDialog {
 					{ label: 'Open project', keys: 'Ctrl+O' },
 					{ label: 'Import captions', keys: 'Ctrl+I' },
 					{ label: 'Export', keys: 'Ctrl+E' },
-					// Transcription isn't in every build (e.g. the web).
 					...(this.transcription.available
 						? [{ label: 'Auto-transcribe', keys: 'Ctrl+T' }]
 						: []),

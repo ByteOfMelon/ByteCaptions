@@ -143,7 +143,7 @@ export class CommandRegistry {
 			},
 			{
 				id: 'preset',
-				label: 'Change style preset…',
+				label: 'Change style preset...',
 				icon: LucideType.icon,
 				scope: 'cue',
 				enabled: hasCue,
@@ -213,7 +213,7 @@ export class CommandRegistry {
 			},
 			{
 				id: 'goto',
-				label: 'Go to timecode…',
+				label: 'Go to timecode...',
 				icon: LucideClock.icon,
 				keys: 'Ctrl+G',
 				prompt: 'timecode',
@@ -221,7 +221,7 @@ export class CommandRegistry {
 			},
 			{
 				id: 'replace',
-				label: 'Find and replace…',
+				label: 'Find and replace...',
 				icon: LucideReplace.icon,
 				keys: 'Ctrl+H',
 				run: () => this.ui.openReplace(),
@@ -293,7 +293,7 @@ export class CommandRegistry {
 			},
 			{
 				id: 'shift-range',
-				label: 'Shift cues in range…',
+				label: 'Shift cues in range...',
 				icon: LucideMove.icon,
 				enabled: () => this.cmd.rangeCues().length > 0,
 				run: () => void this.dialogs.shiftTiming(this.cmd.rangeCues().map((r) => r.cue.id)),
@@ -398,7 +398,7 @@ export class CommandRegistry {
 				? [
 						{
 							id: 'transcribe',
-							label: 'Auto-transcribe…',
+							label: 'Auto-transcribe...',
 							icon: LucideCaptions.icon,
 							keys: 'Ctrl+T',
 							run: () => this.dialogs.transcribe(),
@@ -407,7 +407,7 @@ export class CommandRegistry {
 				: []),
 			{
 				id: 'export',
-				label: 'Export…',
+				label: 'Export...',
 				icon: LucideUpload.icon,
 				keys: 'Ctrl+E',
 				run: () => this.dialogs.export(),
@@ -417,7 +417,7 @@ export class CommandRegistry {
 				? [
 						{
 							id: 'youtube',
-							label: 'Upload to YouTube…',
+							label: 'Upload to YouTube...',
 							icon: LucideCloudUpload.icon,
 							run: () => this.dialogs.youtube(),
 						},
@@ -425,32 +425,32 @@ export class CommandRegistry {
 				: []),
 			{
 				id: 'presets',
-				label: 'Edit style presets…',
+				label: 'Edit style presets...',
 				icon: LucidePalette.icon,
 				run: () => this.dialogs.presets(),
 			},
 			{
 				id: 'project-settings',
-				label: 'Project settings…',
+				label: 'Project settings...',
 				icon: LucideSettings.icon,
 				run: () => this.dialogs.projectSettings(),
 			},
 			{
 				id: 'settings',
-				label: 'Settings…',
+				label: 'Settings...',
 				icon: LucideSlidersHorizontal.icon,
 				keys: 'Ctrl+,',
 				run: () => this.dialogs.settings(),
 			},
 			{
 				id: 'reset-layout',
-				label: 'Reset layout…',
+				label: 'Reset layout...',
 				icon: LucidePanelsTopLeft.icon,
 				run: () => void confirmResetLayout().then((ok) => ok && this.layout.reset()),
 			},
 			{
 				id: 'shortcuts',
-				label: 'Keyboard shortcuts…',
+				label: 'Keyboard shortcuts...',
 				icon: LucideKeyboard.icon,
 				keys: '?',
 				run: () => this.dialogs.shortcuts(),
@@ -464,21 +464,21 @@ export class CommandRegistry {
 			},
 			{
 				id: 'save-as',
-				label: 'Save project as…',
+				label: 'Save project as...',
 				icon: LucideSave.icon,
 				keys: 'Ctrl+Shift+S',
 				run: () => void this.files.save(true),
 			},
 			{
 				id: 'open',
-				label: 'Open project…',
+				label: 'Open project...',
 				icon: LucideFolderOpen.icon,
 				keys: 'Ctrl+O',
 				run: () => void this.files.open(),
 			},
 			{
 				id: 'import',
-				label: 'Import captions…',
+				label: 'Import captions...',
 				icon: LucideFileInput.icon,
 				keys: 'Ctrl+I',
 				run: () => void this.files.importCaptions(),

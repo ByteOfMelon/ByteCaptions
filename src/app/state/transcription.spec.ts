@@ -3,7 +3,7 @@ import { TranscribeDialog } from '../features/transcribe/transcribe-dialog';
 import { DialogRef } from '../ui/dialog/dialog';
 import { EngineEvent, Transcription, TranscriptionEngine } from './transcription';
 
-/** An engine whose run reports `events`, then fails with `message`. */
+/** An engine whose run reports `events`, then fails with `message` */
 function failingEngine(events: EngineEvent[], message: string): TranscriptionEngine {
 	return {
 		isDownloaded: () => true,

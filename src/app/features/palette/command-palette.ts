@@ -30,7 +30,7 @@ interface Section {
 }
 
 const RECENT_KEY = 'bc.recentCommands';
-// Commands missing from this build (transcribe, on the web) are skipped.
+// Commands missing from this build (transcribe, on the web) are skipped
 const DEFAULT_RECENT = ['transcribe', 'export'];
 const MAX_CUES = 5;
 
@@ -44,7 +44,7 @@ function loadRecent(): string[] {
 	}
 }
 
-/** Split `text` into plain / matched runs for highlighting. */
+/** Split text into plain / matched runs for highlighting */
 function highlight(text: string, q: string): { t: string; m: boolean }[] {
 	if (!q) return [{ t: text, m: false }];
 
@@ -59,7 +59,7 @@ function highlight(text: string, q: string): { t: string; m: boolean }[] {
 	].filter((s) => s.t);
 }
 
-/** Ctrl+K palette (PLAN §5.10): commands, cue text search and "go to timecode". */
+/** Commands, cue text search and "go to timecode" */
 @Component({
 	selector: 'bc-command-palette',
 	imports: [Kbd, Autofocus, LucideDynamicIcon, LucideSearch, LucideCaptions, LucideClock],
@@ -67,7 +67,7 @@ function highlight(text: string, q: string): { t: string; m: boolean }[] {
 	styleUrl: './command-palette.css',
 })
 export class CommandPalette implements OnInit {
-	/** 'timecode' opens straight into the Go to timecode prompt (Ctrl+G). */
+	/** 'timecode' opens straight into the Go to timecode prompt */
 	readonly startMode = input<'search' | 'timecode'>('search');
 	private readonly ref = inject(DialogRef);
 	private readonly registry = inject(CommandRegistry);
@@ -155,7 +155,7 @@ export class CommandPalette implements OnInit {
 	});
 
 	constructor() {
-		// Reset the highlight whenever the results change, and keep it in view.
+		// Reset the highlight whenever the results change, and keep it in view
 		effect(() => {
 			this.items();
 			this.active.set(0);
@@ -237,7 +237,7 @@ export class CommandPalette implements OnInit {
 			const next = [id, ...loadRecent().filter((r) => r !== id)].slice(0, 8);
 			localStorage.setItem(RECENT_KEY, JSON.stringify(next));
 		} catch {
-			// Storage unavailable (private window); recents just won't persist.
+			console.log(`[Command Palette] Storage unavailable; recent commands won't persist.`);
 		}
 	}
 }

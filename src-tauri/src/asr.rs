@@ -1,9 +1,5 @@
-//! Speech recognition with whisper.cpp (via whisper-rs), on the GPU when there's one (gpu.rs)
-//! and the CPU otherwise.
-//!
-//! `transcribe` decodes the video's audio with ffmpeg, runs a downloaded Whisper model over
-//! it and returns timed words; the frontend turns those into cues (core/segment). Progress
-//! and each recognized line stream back on a channel while it runs.
+//! Speech recognition with whisper.cpp. `transcribe` returns timed words; the frontend turns
+//! them into cues (core/segment)
 
 use std::ffi::c_void;
 use std::path::Path;
@@ -20,20 +16,20 @@ use whisper_rs::{
 use crate::jobs::{CANCELLED, Jobs};
 use crate::{gpu, media, models};
 
-/// Whisper expects 16 kHz mono.
+/// Whisper expects 16 kHz mono
 const SAMPLE_RATE: u32 = 16_000;
-/// Speech kept on each side of what the VAD detects, so word edges aren't clipped.
+/// Speech kept on each side of what the VAD detects, so word edges aren't clipped
 const SPEECH_PAD_MS: usize = 200;
 
 #[derive(Clone, Serialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum AsrEvent {
-	/// Audio decoded; transcription starts next.
+	/// Audio decoded; transcription starts next
 	#[serde(rename_all = "camelCase")]
 	Extracted { duration_ms: u64 },
-	/// Percent of the audio processed.
+	/// Percent of the audio processed
 	Progress { percent: i32 },
-	/// A recognized line, as it's finished.
+	/// A recognized line, as it's finished
 	#[serde(rename_all = "camelCase")]
 	Segment {
 		start_ms: i64,
@@ -47,19 +43,19 @@ pub struct Word {
 	text: String,
 	start: i64,
 	end: i64,
-	/// Mean token probability, 0–1.
+	/// Mean token probability, 0–1
 	confidence: f32,
 }
 
 #[derive(Serialize)]
 pub struct Transcript {
 	words: Vec<Word>,
-	/// The language spoken (detected, or the one asked for), as a Whisper code like "en".
+	/// The detected (or requested) language, as a Whisper code like "en"
 	language: String,
 }
 
 /// whisper-rs's own safe abort callback mismatches its closure types, so poll the job's
-/// cancel flag directly. `data` points at the AtomicBool, which outlives the run.
+/// cancel flag directly. `data` points at the AtomicBool, which outlives the run
 unsafe extern "C" fn should_abort(data: *mut c_void) -> bool {
 	unsafe { (*(data as *const AtomicBool)).load(Ordering::Relaxed) }
 }
@@ -74,7 +70,7 @@ fn run(
 	events: &Channel<AsrEvent>,
 ) -> Result<Transcript, String> {
 	static LOGGING: Once = Once::new();
-	// Routes whisper.cpp's console logging into the `log` crate (silent without a backend).
+	// Route whisper.cpp's logging into the `log` crate
 	LOGGING.call_once(whisper_rs::install_logging_hooks);
 
 	let model_path = models::model_path(app, model)?;
@@ -83,7 +79,7 @@ fn run(
 	}
 
 	let mut audio = Vec::new();
-	// Times come back relative to the audio decoded; shift them to the video's.
+	// Times come back relative to the audio decoded; shift them to the video's
 	let offset = range.map_or(0, |(from, _)| from as i64);
 	media::decode_audio(path, SAMPLE_RATE, range, |samples| {
 		audio.extend(samples.iter().map(|&s| s as f32 / 32768.0));
@@ -104,8 +100,8 @@ fn run(
 	let load = |device: Option<&gpu::Device>| -> Result<_, String> {
 		let mut ctx_params = WhisperContextParameters::default();
 		ctx_params.use_gpu(device.is_some());
-		// Flash attention stays off: on Vulkan it made large-v3-turbo repeat one line for
-		// half a minute at a time on long conversational audio, and gained little speed.
+		// Flash attention stays off: on Vulkan it made large-v3-turbo repeat lines on long
+		// conversational audio, for little speed gain
 		if let Some(d) = device {
 			ctx_params.gpu_device(d.index);
 		}
@@ -115,7 +111,7 @@ fn run(
 		let state = ctx.create_state().map_err(|e| e.to_string())?;
 		Ok((ctx, state))
 	};
-	// A GPU without the memory for the model (or with a broken driver) gets the CPU instead.
+	// A GPU without the memory for the model (or with a broken driver) gets the CPU instead
 	let (ctx, mut state) = match device.as_ref().map(|d| load(Some(d))) {
 		Some(Ok(loaded)) => {
 			log::info!("Transcribing on {}", device.as_ref().unwrap().name);
@@ -135,8 +131,8 @@ fn run(
 	params.set_n_threads(threads as i32);
 	params.set_language(Some(language.unwrap_or("auto")));
 	params.set_token_timestamps(true);
-	// Don't feed each window's text into the next: on long, unscripted audio that lets one
-	// bad stretch (no punctuation, repeated phrases) carry on for the rest of the file.
+	// Don't carry each window's text into the next: on long unscripted audio, one bad stretch
+	// would carry on for the rest of the file
 	params.set_no_context(true);
 	params.set_print_special(false);
 	params.set_print_progress(false);
@@ -176,10 +172,9 @@ fn run(
 	Ok(Transcript { words, language })
 }
 
-/// Silence everything the VAD model doesn't hear as speech. Whisper tends to invent text over
-/// music and noise ("Thanks for watching", lines from its training data); silence it skips.
-/// Muting instead of cutting keeps the timeline, so word timestamps need no remapping.
-/// Without the VAD model (not downloaded), the audio is left as is.
+/// Silence what the VAD doesn't hear as speech, since Whisper invents text over music and
+/// noise. Muting rather than cutting keeps word timestamps aligned. Without the VAD model,
+/// the audio is left as is
 fn gate_speech(app: &AppHandle, audio: &mut [f32]) {
 	let Ok(path) = models::model_path(app, models::VAD_MODEL) else {
 		return;
@@ -197,7 +192,7 @@ fn gate_speech(app: &AppHandle, audio: &mut [f32]) {
 		log::warn!("Voice activity detection failed; transcribing all audio");
 		return;
 	};
-	// Segment times are in centiseconds.
+	// Segment times are in centiseconds
 	let pad = SPEECH_PAD_MS * SAMPLE_RATE as usize / 1000;
 	let at = |cs: f32| ((cs as f64 / 100.0) * SAMPLE_RATE as f64) as usize;
 	let mut keep_from = 0;
@@ -209,12 +204,11 @@ fn gate_speech(app: &AppHandle, audio: &mut [f32]) {
 	audio[keep_from..].fill(0.0);
 }
 
-/// Whisper can get stuck repeating one line over speech it no longer follows. A line this many
-/// times in a row is taken as that and kept once; twice is left alone, as people repeat
-/// themselves.
+/// Whisper can get stuck repeating a line. This many in a row is taken as a loop and kept
+/// once; twice is left alone, as people repeat themselves
 const LOOP_REPEATS: usize = 3;
 
-/// A segment's words compared loosely: lowercase, letters and digits only.
+/// A segment's words compared loosely: lowercase, letters and digits only
 fn loop_key(segment: &[Word]) -> String {
 	segment
 		.iter()
@@ -230,7 +224,7 @@ fn loop_key(segment: &[Word]) -> String {
 		.join(" ")
 }
 
-/// Flatten segments into words, keeping only the first line of each repetition loop.
+/// Flatten segments into words, keeping only the first line of each repetition loop
 fn drop_loops(mut segments: Vec<Vec<Word>>) -> Vec<Word> {
 	let keys: Vec<String> = segments.iter().map(|s| loop_key(s)).collect();
 	let mut out = Vec::new();
@@ -254,17 +248,15 @@ fn drop_loops(mut segments: Vec<Vec<Word>>) -> Vec<Word> {
 	out
 }
 
-/// Whether a token starts with a Chinese or Japanese character (kana and CJK ideographs,
-/// U+3040–U+9FFF), by its UTF-8 lead bytes. Those languages don't put spaces between words,
-/// so each such token is a word of its own (a character or two). CJK punctuation
-/// (U+3000–U+303F) and tokens holding the rest of a split character stay attached.
+/// Whether a token starts with kana or a CJK ideograph (U+3040–U+9FFF), by its UTF-8 lead
+/// bytes. Chinese and Japanese don't space words, so each such token is a word of its own.
+/// CJK punctuation and the rest of a split character stay attached
 fn starts_unspaced(bytes: &[u8]) -> bool {
 	matches!(bytes, [0xE3, 0x81..=0xBF, ..] | [0xE4..=0xE9, ..])
 }
 
-/// Join the recognized tokens into words: a token starting with a space (or a Chinese or
-/// Japanese character) starts a new word, and so does every segment. Timestamps are in
-/// centiseconds; words get milliseconds.
+/// Join tokens into words: a token starting with a space or a CJK character starts a new
+/// word, and so does each segment. Centiseconds become milliseconds
 fn words(ctx: &WhisperContext, state: &whisper_rs::WhisperState) -> Vec<Word> {
 	struct Pending {
 		bytes: Vec<u8>,
@@ -296,7 +288,7 @@ fn words(ctx: &WhisperContext, state: &whisper_rs::WhisperState) -> Vec<Word> {
 			let Some(token) = segment.get_token(i) else {
 				continue;
 			};
-			// Special tokens (end of text, timestamps, language…) sort after the text ones.
+			// Special tokens (end of text, timestamps, language...) sort after the text ones
 			if token.token_id() >= eot {
 				continue;
 			}
@@ -328,9 +320,8 @@ fn words(ctx: &WhisperContext, state: &whisper_rs::WhisperState) -> Vec<Word> {
 	drop_loops(segments)
 }
 
-/// Transcribe a media file's speech with a downloaded model. `language` is a Whisper code
-/// ("en"), or None to detect it. `from_ms` and `to_ms` limit it to that stretch (the in/out
-/// range); word and line times are still the video's.
+/// `language` is a Whisper code ("en") or None to detect it. `from_ms` and `to_ms` limit it
+/// to that stretch; times stay the video's
 #[tauri::command]
 pub async fn transcribe(
 	app: AppHandle,

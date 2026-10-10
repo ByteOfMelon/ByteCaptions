@@ -3,7 +3,7 @@ import { Button } from '../../ui/button/button';
 import { Dialog, DialogRef } from '../../ui/dialog/dialog';
 import { Field } from '../../ui/field/field';
 
-/** Asks for a timing offset in seconds; closes with the offset in ms, or nothing on cancel. */
+/** Asks for a timing offset in seconds; closes with the offset in ms, or nothing on cancel */
 @Component({
 	selector: 'bc-shift-timing-dialog',
 	imports: [Dialog, Button, Field],

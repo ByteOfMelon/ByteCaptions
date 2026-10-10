@@ -7,7 +7,7 @@ import { Select } from '../../ui/select/select';
 import { Tooltip } from '../../ui/tooltip/tooltip';
 import { EDGE_LABEL, YT_FONT_LABEL } from '../player/caption-render';
 
-/** One property change of a caption style. */
+/** One property change of a caption style */
 export interface StyleChange<K extends keyof CaptionStyle = keyof CaptionStyle> {
 	key: K;
 	value: CaptionStyle[K];
@@ -22,8 +22,7 @@ const EDGE_OPTIONS = (Object.keys(EDGE_LABEL) as EdgeType[]).map((e) => ({
 }));
 
 /**
- * Caption style controls shared by the Inspector and the Style Presets dialog:
- * font, size + B/I/U, text and background colors, and optionally edge + edge color.
+ * Caption style controls shared by the Inspector and the Style Presets dialog
  */
 @Component({
 	selector: 'bc-style-fields',

@@ -131,7 +131,7 @@ export interface CaptionStyle {
 	edgeColor: string;
 }
 
-/** 3×3 grid, row-major, top-left = 0 … bottom-right = 8. Same IDs as SRV3 ap */
+/** 3×3 grid, row-major, top-left = 0 ... bottom-right = 8. Same IDs as SRV3 ap */
 export type Anchor = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export type TextDirection = 'horizontal' | 'verticalRtl' | 'verticalLtr';

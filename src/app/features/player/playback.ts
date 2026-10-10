@@ -5,16 +5,12 @@ import { MediaSource } from '../../state/media-source';
 import { ProjectStore } from '../../state/project-store';
 
 export const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
-/** Fastest J / L shuttle speed. */
+/** Fastest J / L shuttle speed */
 const MAX_SHUTTLE = 8;
 /** Reloads allowed in RECOVER_WINDOW_MS before a broken video is left alone. */
 const MAX_RECOVERIES = 3;
 const RECOVER_WINDOW_MS = 10_000;
 
-/**
- * Transport. Drives the store's playhead from the attached <video> when media is loaded,
- * otherwise from a requestAnimationFrame clock so captions can be previewed without media.
- */
 @Injectable({ providedIn: 'root' })
 export class Playback {
 	private readonly store = inject(ProjectStore);
@@ -22,21 +18,20 @@ export class Playback {
 	private raf = 0;
 	private lastTick = 0;
 	private recoveries: number[] = [];
-	/** Where `playSpan` stops. */
+	/** Where `playSpan` stops */
 	private stopAt: Ms | null = null;
-	/** Why the video can't play, shown over the preview; null while it's fine. */
+	/** Explain to the user why the video can't play, shown over the preview, if necessary */
 	readonly videoError = signal<string | null>(null);
 	/** URL of the loaded video, if any. */
 	readonly mediaUrl = inject(MediaSource).url;
 	/**
-	 * J / L shuttle multiplier on top of the playback rate: 1 for normal play, 2, 4, 8 after
-	 * repeated L presses, negative for playing backwards with J. Pausing resets it.
+	 * J / L shuttle multiplier on top of the playback rate: 1 for normal play, 2, 4, 8 after repeated L presses, negative for playing backwards with J. Pausing resets it
 	 */
 	readonly shuttle = signal(1);
-	/** In / out points (I / O); either may be unset. View state, not saved with the project. */
+	/** In / out points - either may be unset, view state, not saved with the project */
 	readonly inPoint = signal<Ms | null>(null);
 	readonly outPoint = signal<Ms | null>(null);
-	/** The in/out range once either point is set; a missing point means the start / end. */
+	/** The in/out range once either point is set - a missing point means the start/end. */
 	readonly range = computed(() => {
 		const a = this.inPoint();
 		const b = this.outPoint();
@@ -45,7 +40,7 @@ export class Playback {
 
 		return { start: a ?? 0, end: b ?? this.store.duration() };
 	});
-	/** Loop playback (Ctrl+L). */
+	/** Loop playback */
 	readonly loop = signal(false);
 
 	constructor() {
@@ -53,12 +48,10 @@ export class Playback {
 			if (this.video)
 				this.video.playbackRate = this.store.rate() * Math.max(1, this.shuttle());
 		});
-		// A new video starts paused.
 		effect(() => {
 			this.mediaUrl();
 			untracked(() => this.pause());
 		});
-		// A different project starts without an in/out range.
 		const projectId = computed(() => this.store.project().id);
 		effect(() => {
 			projectId();
@@ -66,10 +59,6 @@ export class Playback {
 		});
 	}
 
-	/**
-	 * Untracked: called from an effect, and reading the playhead there would re-attach
-	 * (and seek) the video on every tick, stalling playback.
-	 */
 	attach(video: HTMLVideoElement | null): void {
 		this.video = video;
 		this.videoError.set(null);
@@ -91,12 +80,12 @@ export class Playback {
 		else this.play();
 	}
 
-	/** Play at `speed` × the playback rate; negative plays backwards. */
+	/** Play at `speed` * the playback rate */
 	play(speed = 1): void {
 		const t = this.store.playhead();
 		const span = this.loop() ? this.loopSpan() : null;
 
-		// Looping starts inside the loop; otherwise playing from the very end starts over.
+		// Looping starts inside the loop, otherwise playing from the very end starts over
 		if (span && (t < span.start || t >= span.end)) this.seek(speed > 0 ? span.start : span.end);
 		else if (speed > 0 && t >= this.store.duration()) this.seek(0);
 
@@ -104,7 +93,7 @@ export class Playback {
 		this.store.playing.set(true);
 		this.lastTick = performance.now();
 
-		// Video elements can't play backwards; the clock in tick() scrubs the video instead.
+		// HTML video elements can't play backwards
 		if (this.video) {
 			if (speed > 0) this.startVideo(this.video);
 			else this.video.pause();
@@ -114,7 +103,7 @@ export class Playback {
 		this.raf = requestAnimationFrame(this.tick);
 	}
 
-	/** Play just this stretch, then pause (e.g. a sample of one speaker). */
+	/** Play just this stretch, then pause (e.g. a sample of one speaker) */
 	playSpan(start: Ms, end: Ms): void {
 		this.pause();
 		this.seek(start);
@@ -122,7 +111,7 @@ export class Playback {
 		this.stopAt = end;
 	}
 
-	/** J (-1) / L (1): play that way, or go twice as fast if already going that way. */
+	/** J (-1)/L (1) - play that way, or go twice as fast if already going that way */
 	shuttleBy(dir: 1 | -1): void {
 		const s = this.store.playing() ? this.shuttle() : 0;
 		this.play(Math.sign(s) === dir ? Math.min(Math.abs(s) * 2, MAX_SHUTTLE) * dir : dir);
@@ -142,21 +131,21 @@ export class Playback {
 		if (this.video) this.video.currentTime = this.store.playhead() / 1000;
 	}
 
-	/** Step by whole frames (← / →). */
+	/** Step by whole frames */
 	stepFrames(n: number): void {
 		this.pause();
 		const fps = this.store.project().fps;
 		this.seek(snapToFrame(this.store.playhead() + (n * 1000) / fps + 1, fps));
 	}
 
-	/** Step by whole seconds (Shift+← / →), landing on a frame. */
+	/** Step by whole seconds */
 	stepSeconds(n: number): void {
 		this.pause();
 		const fps = this.store.project().fps;
 		this.seek(snapToFrame(this.store.playhead() + n * 1000, fps));
 	}
 
-	/** Mark in (I). An out point before it is dropped, like Premiere. */
+	/** Mark in. An out point before it is dropped */
 	setIn(ms: Ms = this.store.playhead()): void {
 		const out = this.outPoint();
 
@@ -165,7 +154,7 @@ export class Playback {
 		this.inPoint.set(ms);
 	}
 
-	/** Mark out (O). An in point after it is dropped. */
+	/** Mark out. An in point after it is dropped */
 	setOut(ms: Ms = this.store.playhead()): void {
 		const at = this.inPoint();
 
@@ -179,14 +168,13 @@ export class Playback {
 		this.outPoint.set(null);
 	}
 
-	/** Shift+I / Shift+O. */
 	goTo(edge: 'in' | 'out'): void {
 		const r = this.range();
 
 		if (r) this.seek(edge === 'in' ? r.start : r.end);
 	}
 
-	/** What looping plays: the in/out range, else the selected cues, else the whole video. */
+	/** What looping plays - the in/out range, else the selected cues, else the whole video */
 	loopSpan(): { start: Ms; end: Ms } {
 		const r = this.range();
 
@@ -203,7 +191,7 @@ export class Playback {
 		return { start: 0, end: this.store.duration() };
 	}
 
-	/** Jump to the previous / next cue start across all tracks. */
+	/** Jump to the previous/next cue start across all tracks */
 	jumpCue(dir: 1 | -1): void {
 		const t = this.store.playhead();
 		const starts = this.store.allCues().map((r) => r.cue.start);
@@ -213,7 +201,7 @@ export class Playback {
 		if (target !== undefined) this.seek(target);
 	}
 
-	/** The video reached its end: start the loop over, or stop. */
+	/** The video reached its end - start the loop over, or stop */
 	private onEnded(): void {
 		if (!this.loop() || !this.store.playing() || this.shuttle() < 0) return this.pause();
 
@@ -222,24 +210,18 @@ export class Playback {
 		if (this.video) this.startVideo(this.video);
 	}
 
-	/**
-	 * A pause before play() finishes rejects it with an AbortError, which is expected. Any
-	 * other refusal means the video won't play, so the transport shows paused to match.
-	 */
 	private startVideo(video: HTMLVideoElement): void {
 		video.play().catch((e: DOMException) => {
 			if (e.name === 'AbortError' || video !== this.video || video.error) return;
 
-			console.warn('The video would not play', e);
+			console.warn('[Playback] Video playback failure: ', e);
 			this.pause();
 			this.videoError.set(`The video won't play. ${e.message}`);
 		});
 	}
 
 	/**
-	 * The desktop app's video stream can fail mid-seek (WebView2 drops the request when
-	 * seeks pile up), and a <video> with an error never plays again. Reload it where it
-	 * was and carry on, unless it keeps failing.
+	 * The desktop app's video stream can fail mid-seek, this attempts to recover it, has been successful so far but lmk if it doesn't work
 	 */
 	private recover(video: HTMLVideoElement): void {
 		if (video !== this.video) return;
@@ -284,7 +266,6 @@ export class Playback {
 				this.store.playhead() + (now - this.lastTick) * this.store.rate() * speed,
 			);
 
-			// Backwards: scrub the video along, skipping frames while a seek is still loading.
 			if (this.video && !this.video.seeking)
 				this.video.currentTime = this.store.playhead() / 1000;
 		}
@@ -305,7 +286,7 @@ export class Playback {
 	};
 }
 
-/** A plain explanation of why a <video> failed. */
+/** Am explanation of why a <video> element failed */
 export function mediaErrorText(error: MediaError | null): string {
 	switch (error?.code) {
 		case MediaError.MEDIA_ERR_NETWORK:

@@ -3,10 +3,10 @@ import { invoke } from '@tauri-apps/api/core';
 import { isDesktop } from './file-io';
 import { MediaSource } from './media-source';
 
-/** Waveform resolution. Keep in sync with PEAKS_PER_SECOND in src-tauri/src/media.rs. */
+/** Waveform resolution (keep in sync with PEAKS_PER_SECOND in src-tauri/src/media.rs) */
 export const PEAKS_PER_SECOND = 100;
 
-/** Silence for snapping: quieter than this fraction of the loudest peak, for this long. */
+/** Silence values for snapping */
 const QUIET = 0.05;
 const MIN_SILENCE_MS = 300;
 
@@ -17,8 +17,7 @@ export type AudioWaveform =
 	| { status: 'error'; message: string };
 
 /**
- * The loaded video's waveform for the timeline's audio lane. The desktop app decodes it with
- * the bundled ffmpeg (cached per file); the browser build has no decoder and shows none.
+ * The loaded video's waveform for the timeline's audio lane
  */
 @Injectable({ providedIn: 'root' })
 export class AudioPeaks {
@@ -26,8 +25,7 @@ export class AudioPeaks {
 	readonly waveform = signal<AudioWaveform>({ status: 'none' });
 
 	/**
-	 * Where silences start and end, in ms, for timeline snapping: stretches of at least
-	 * MIN_SILENCE_MS quieter than QUIET of the loudest peak.
+	 * Where silences start and end, in ms, for timeline snapping
 	 */
 	readonly silenceEdges = computed(() => {
 		const w = this.waveform();
@@ -67,7 +65,7 @@ export class AudioPeaks {
 			this.waveform.set({ status: 'loading' });
 			invoke<ArrayBuffer>('media_peaks', { path }).then(
 				(buf) => {
-					// Ignore results for a video that has since been replaced.
+					// Ignore results for a video that has since been replaced
 					if (this.media.path() === path)
 						this.waveform.set({ status: 'ready', peaks: new Uint8Array(buf) });
 				},

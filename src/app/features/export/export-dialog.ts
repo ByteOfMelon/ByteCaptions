@@ -35,7 +35,6 @@ const CARDS: { id: FormatId; name: string; description: string }[] = [
 	{ id: 'sbv', name: 'SBV', description: 'Older YouTube format. Text only.' },
 ];
 
-/** Export captions (PLAN §5.9): format, tracks to combine, destination, and lint warnings. */
 @Component({
 	selector: 'bc-export-dialog',
 	imports: [Dialog, Button, Field, Notice, ShowEnd, TrackChecklist, TrackProblems, LucideFolder],
@@ -46,7 +45,7 @@ export class ExportDialog implements OnInit {
 	private readonly store = inject(ProjectStore);
 	private readonly ui = inject(EditorUi);
 	protected readonly ref = inject(DialogRef);
-	/** Tracks to start with ("Export this track…"); defaults to the visible ones. */
+	/** Tracks to start with, defaults to the visible ones */
 	readonly trackIds = input<TrackId[]>();
 	protected readonly cards = CARDS;
 	protected readonly canBrowse = canPickSaveTarget();
@@ -61,11 +60,11 @@ export class ExportDialog implements OnInit {
 		),
 	);
 	private readonly files = inject(ProjectFiles);
-	/** Browser save handle from Browse (desktop uses the path in the field). */
+	/** Browser save handle from Browse (desktop uses the path in the field) */
 	private handle: FileSystemFileHandle | undefined;
-	/** Path chosen in the save dialog, which already asked about replacing it. */
+	/** Path chosen in the save dialog */
 	private browsedPath: string | null = null;
-	/** What the user typed or browsed to; empty means the default. */
+	/** What the user typed or browsed to */
 	protected readonly fileName = signal('');
 	protected readonly error = signal<string | null>(null);
 	protected readonly busy = signal(false);
@@ -91,7 +90,7 @@ export class ExportDialog implements OnInit {
 				}
 			: { title: 'Some styling will be lost', detail: this.loses().join(' • ') },
 	);
-	/** Default: next to the project file (or the video) on desktop, a bare name in the browser. */
+
 	protected readonly path = computed(() => {
 		if (this.fileName()) return this.fileName();
 
@@ -101,7 +100,6 @@ export class ExportDialog implements OnInit {
 		return isDesktop && near && isAbsolute(near) ? `${dirname(near)}${sep(near)}${name}` : name;
 	});
 
-	/** The selected tracks combined, regardless of preview mute/solo. */
 	private readonly subset = computed<Project>(() => {
 		const ids = this.included();
 		const p = this.project();
@@ -114,7 +112,6 @@ export class ExportDialog implements OnInit {
 		};
 	});
 
-	/** SRV3 files near the safe size may not load on YouTube (PLAN §4.1). */
 	protected readonly heavy = computed(() => {
 		if (this.format() !== 'srv3' || !this.included().size) return null;
 
@@ -134,7 +131,6 @@ export class ExportDialog implements OnInit {
 
 	protected setFormat(id: FormatId): void {
 		this.format.set(id);
-		// Keep a chosen file name but swap its extension.
 		const name = this.fileName();
 
 		if (name)
@@ -168,7 +164,7 @@ export class ExportDialog implements OnInit {
 		if (!this.included().size) return;
 
 		const subset = this.subset();
-		// On desktop a bare file name has no folder yet, so ask where.
+
 		let target: SaveTarget | null = isDesktop
 			? isAbsolute(this.path())
 				? { name: basename(this.path()), path: this.path() }
@@ -177,7 +173,6 @@ export class ExportDialog implements OnInit {
 
 		if (!target) return;
 
-		// The save dialog asks before replacing a file; a typed path doesn't, so ask here.
 		if (
 			isDesktop &&
 			isAbsolute(this.path()) &&

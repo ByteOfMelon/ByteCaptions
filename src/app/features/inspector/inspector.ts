@@ -12,20 +12,18 @@ import { AnchorPicker } from './anchor-picker';
 import { StyleChange, StyleFields } from './style-fields';
 
 /**
- * Style and position of the selected cue(s). Edits change the preset itself, so
- * every cue using it updates (PLAN §5.7); applying a different preset or position is per cue.
+ * Edit the style and position of the selected cue(s)
  */
 @Component({
 	selector: 'bc-inspector',
 	imports: [Select, StyleFields, AnchorPicker, Toggle],
 	templateUrl: './inspector.html',
 	styleUrl: './inspector.css',
-	// Using the Inspector keeps the text selected in the caption editor.
 	host: { 'data-keeps-text-selection': '', tabindex: '-1' },
 })
 export class Inspector {
 	protected readonly store = inject(ProjectStore);
-	/** Text selected in the caption being edited: then the style fields format just that. */
+	/** Text selected in the caption which is currently being edited */
 	protected readonly text = inject(TextFormat).active;
 	private readonly format = inject(TextFormat);
 
@@ -82,7 +80,7 @@ export class Inspector {
 
 	protected readonly karaokeColors = KARAOKE_COLORS;
 
-	/** Karaoke on or off, or the sung-word colour, for every selected cue. */
+	/** Karaoke on or off, or the sung-word colour, for every selected cue */
 	protected setKaraoke(changes: { on?: boolean; color?: string }): void {
 		const ids = this.store.selectedCues().map((r) => r.cue.id);
 		const label = changes.color
@@ -93,7 +91,7 @@ export class Inspector {
 		this.store.apply(label, setKaraoke(ids, changes));
 	}
 
-	/** Positions are per cue: reuse a matching one, or add it, and point the selection at it. */
+	/** Positions are per cue - reuse a matching one, or add it, and point the selection at i. */
 	protected setPosition(changes: Partial<Position>): void {
 		const s = this.subject();
 

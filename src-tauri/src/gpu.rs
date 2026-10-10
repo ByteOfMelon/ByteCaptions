@@ -1,14 +1,11 @@
-//! GPU acceleration for whisper.cpp through Vulkan, with the CPU as the fallback.
+//! Whisper on the GPU through Vulkan, falling back to the CPU
 //!
-//! The Windows build links the Vulkan loader (vulkan-1.dll) delay-loaded (build.rs), so the
-//! app starts without one. Before whisper.cpp first runs, `prepare` makes sure a loader is in
-//! the process: the system's (GPU drivers install it) or, failing that, the copy bundled with
-//! the app. With a loader but no usable GPU, whisper.cpp finds no Vulkan device and runs on
-//! the CPU.
+//! The Windows build delay-loads vulkan-1.dll (build.rs) so the app starts without it.
+//! `prepare` loads the system's loader, or the bundled copy if there isn't one
 
 use tauri::AppHandle;
 
-/// The GPU to transcribe on: whisper.cpp's `gpu_device` index and a display name.
+/// whisper.cpp's `gpu_device` index and a display name
 pub struct Device {
 	pub index: i32,
 	pub name: String,
@@ -26,7 +23,7 @@ fn ensure_loader(app: &AppHandle) -> Result<(), String> {
 	unsafe extern "system" {
 		fn LoadLibraryExW(name: *const u16, file: *mut c_void, flags: u32) -> *mut c_void;
 	}
-	// SAFETY: loads a DLL; the handle is kept for the life of the process.
+	// SAFETY: loads a DLL; the handle is kept for the life of the process
 	let load = |path: &std::ffi::OsStr, flags: u32| {
 		let wide: Vec<u16> = path.encode_wide().chain([0]).collect();
 		!unsafe { LoadLibraryExW(wide.as_ptr(), std::ptr::null_mut(), flags) }.is_null()
@@ -35,7 +32,7 @@ fn ensure_loader(app: &AppHandle) -> Result<(), String> {
 	static LOADED: OnceLock<Result<(), String>> = OnceLock::new();
 	LOADED
 		.get_or_init(|| {
-			// Set to test the fallback on a PC that has a system loader.
+			// Set to test the fallback on a PC that has a system loader
 			let skip_system = std::env::var_os("BYTECAPTIONS_BUNDLED_VULKAN").is_some();
 			if !skip_system && load("vulkan-1.dll".as_ref(), LOAD_LIBRARY_SEARCH_SYSTEM32) {
 				return Ok(());
@@ -50,7 +47,7 @@ fn ensure_loader(app: &AppHandle) -> Result<(), String> {
 				log::info!("Using the bundled Vulkan loader: {}", bundled.display());
 				Ok(())
 			} else {
-				// whisper.cpp would crash resolving its delay-loaded Vulkan import.
+				// whisper.cpp would crash resolving its delay-loaded Vulkan import
 				Err("A file transcription needs is missing (vulkan-1.dll). Reinstalling ByteCaptions should fix it.".into())
 			}
 		})
@@ -62,14 +59,14 @@ fn ensure_loader(_app: &AppHandle) -> Result<(), String> {
 	Ok(())
 }
 
-/// Get whisper.cpp ready to use the GPU and pick the device: the first dedicated GPU, else an
-/// integrated one, else None for the CPU. (whisper.cpp would otherwise take the first one
-/// Vulkan lists, which on many PCs is the processor's integrated graphics.)
+/// Get whisper.cpp ready for the GPU and pick a device: the first dedicated GPU, else an
+/// integrated one, else None (CPU). Left alone, whisper.cpp takes the first Vulkan device,
+/// which is often the integrated graphics
 pub fn prepare(app: &AppHandle) -> Result<Option<Device>, String> {
 	ensure_loader(app)?;
 	use whisper_rs::whisper_rs_sys as sys;
 	let mut gpus = Vec::new();
-	// SAFETY: plain queries of ggml's device registry (initialized on first use).
+	// SAFETY: plain queries of ggml's device registry (initialized on first use)
 	unsafe {
 		for i in 0..sys::ggml_backend_dev_count() {
 			let dev = sys::ggml_backend_dev_get(i);
@@ -84,7 +81,7 @@ pub fn prepare(app: &AppHandle) -> Result<Option<Device>, String> {
 			}
 		}
 	}
-	// whisper.cpp counts GPU and integrated GPU devices together, in registry order.
+	// whisper.cpp counts GPU and integrated GPU devices together, in registry order
 	let Some(index) = gpus
 		.iter()
 		.position(|(kind, _)| *kind == sys::ggml_backend_dev_type_GGML_BACKEND_DEVICE_TYPE_GPU)
@@ -98,7 +95,7 @@ pub fn prepare(app: &AppHandle) -> Result<Option<Device>, String> {
 	}))
 }
 
-/// The GPU transcription will run on, by name, or None when it'll use the CPU.
+/// The GPU transcription will run on, or None for the CPU
 #[tauri::command]
 pub async fn gpu_device(app: AppHandle) -> Result<Option<String>, String> {
 	tauri::async_runtime::spawn_blocking(move || Ok(prepare(&app)?.map(|d| d.name)))

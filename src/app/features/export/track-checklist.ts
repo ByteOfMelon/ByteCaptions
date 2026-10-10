@@ -6,7 +6,6 @@ import { CountPipe } from '../../ui/count/count';
 
 let nextId = 0;
 
-/** The "Tracks" checklist the Export and YouTube dialogs combine into one file. */
 @Component({
 	selector: 'bc-track-checklist',
 	imports: [Checkbox, CountPipe],
@@ -74,7 +73,6 @@ export class TrackChecklist {
 	private readonly store = inject(ProjectStore);
 	protected readonly tracks = computed(() => this.store.project().tracks);
 	readonly selected = model.required<ReadonlySet<TrackId>>();
-	/** What happens to the selected tracks. */
 	readonly hint = input.required<string>();
 	protected readonly labelId = `track-checklist-${nextId++}`;
 

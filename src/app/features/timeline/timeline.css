@@ -5,7 +5,6 @@
 	min-height: 0;
 }
 
-/* Equal-width sides keep the tools truly centered. */
 .bar {
 	display: grid;
 	grid-template-columns: 1fr auto 1fr;
@@ -88,7 +87,6 @@ h2 {
 	height: 24px;
 	flex-shrink: 0;
 }
-/* Track headers scroll with the lanes (the canvas paints them offset by the same amount). */
 .header-scroll {
 	flex: 1;
 	min-height: 0;
@@ -218,7 +216,6 @@ canvas {
 	touch-action: none;
 }
 
-/* Horizontal scrollbar for the canvas; its position maps onto viewStart. */
 .hscroll {
 	flex-shrink: 0;
 	overflow-x: auto;
@@ -228,7 +225,6 @@ canvas {
 	height: 1px;
 }
 
-/* Drag labels: trim delta, snap target, box-select count. */
 .hud {
 	position: absolute;
 	padding: 4px var(--spacing-sm);
@@ -242,13 +238,11 @@ canvas {
 .hud.left {
 	transform: translateX(-100%);
 }
-/* Tap to time's hint, centred over the cue being tapped. */
 .hud.tap-hint {
 	top: 2px;
 	transform: translateX(-50%);
 }
 
-/* Click the playhead time to switch the timeline between frames and milliseconds. */
 .timecode {
 	padding: 0;
 	border: none;
@@ -265,7 +259,6 @@ canvas {
 	box-shadow: var(--focus-ring);
 }
 
-/* In/out range readout; brand green, darker on light for contrast. */
 .range {
 	overflow: hidden;
 	color: var(--color-brand);

@@ -17,7 +17,6 @@
 	padding: var(--spacing-xxl) 0;
 }
 
-/* Brand */
 .brand {
 	display: flex;
 	flex-direction: column;
@@ -54,7 +53,6 @@ p {
 	box-shadow: var(--focus-ring);
 }
 
-/* Start actions */
 .actions {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
@@ -84,7 +82,6 @@ button.card:hover {
 	outline: none;
 	box-shadow: var(--focus-ring);
 }
-/* The drop target is outlined dashed in brand until a file is dragged over it. */
 .card.new {
 	box-shadow: none;
 	outline: 1.5px dashed var(--color-brand);
@@ -139,7 +136,6 @@ button.card:hover {
 	width: 100%;
 }
 
-/* Recent projects */
 .recent {
 	display: flex;
 	flex-direction: column;
@@ -207,7 +203,6 @@ button.card:hover {
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
-/* Long folders lose their start, keeping the folder name visible. */
 .path {
 	direction: rtl;
 	text-align: left;

@@ -2,7 +2,7 @@
 	<input
 		[id]="find.fieldId"
 		aria-label="Find"
-		placeholder="Search cues…"
+		placeholder="Search cues..."
 		[value]="query()"
 		(input)="query.set($any($event.target).value)"
 	/>
@@ -15,7 +15,7 @@
 			<input
 				[id]="rep.fieldId"
 				aria-label="Replace with"
-				placeholder="Replace with…"
+				placeholder="Replace with..."
 				bcAutofocus
 				[value]="replacement()"
 				(input)="replacement.set($any($event.target).value)"

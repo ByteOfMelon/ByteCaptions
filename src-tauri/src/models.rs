@@ -1,6 +1,5 @@
-//! Whisper model files (ggml format), downloaded on first use from the whisper.cpp model
-//! repository on Hugging Face into the app's data folder. Each download is checked against
-//! the SHA-256 Hugging Face publishes for the file before it's put in place.
+//! Whisper models (ggml), downloaded from Hugging Face on first use and checked against the
+//! SHA-256 it publishes
 
 use std::io::Write;
 use std::path::PathBuf;
@@ -16,10 +15,9 @@ use crate::jobs::{CANCELLED, Jobs};
 const BASE_URL: &str = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main";
 const VAD_BASE_URL: &str = "https://huggingface.co/ggml-org/whisper-vad/resolve/main";
 
-/// Voice activity detection model (Silero, 0.9 MB), used to skip stretches without speech.
+/// Silero VAD, used to skip stretches without speech
 pub const VAD_MODEL: &str = "silero-v6.2.0";
 
-/// Models the app may download (PLAN §5.2.1: the default and alternatives for each tier).
 const MODELS: &[&str] = &[
 	"base",
 	"small",
@@ -41,7 +39,7 @@ pub fn models_dir(app: &AppHandle) -> Result<PathBuf, String> {
 		.join("models"))
 }
 
-/// Where a model lives once downloaded. Errors for names outside the catalog.
+/// Errors for names outside the catalog
 pub fn model_path(app: &AppHandle, name: &str) -> Result<PathBuf, String> {
 	if !MODELS.contains(&name) {
 		return Err(format!("Unknown model: {name}"));
@@ -55,7 +53,6 @@ pub struct InstalledModel {
 	bytes: u64,
 }
 
-/// The models that are downloaded, with their size on disk.
 #[tauri::command]
 pub fn models_installed(app: AppHandle) -> Vec<InstalledModel> {
 	MODELS
@@ -70,7 +67,6 @@ pub fn models_installed(app: AppHandle) -> Vec<InstalledModel> {
 		.collect()
 }
 
-/// Delete a downloaded model to free up space. It downloads again when next used.
 #[tauri::command]
 pub fn model_delete(app: AppHandle, name: String) -> Result<(), String> {
 	match std::fs::remove_file(model_path(&app, &name)?) {
@@ -88,7 +84,7 @@ pub struct DownloadProgress {
 	pub total: u64,
 }
 
-/// Download a model, reporting progress. Resolves once it's verified and in place.
+/// Resolves once the model is verified and in place
 #[tauri::command]
 pub async fn model_download(
 	app: AppHandle,
@@ -111,7 +107,7 @@ pub async fn model_download(
 		format!("Couldn't reach Hugging Face to download the model. Check your connection. ({e})")
 	};
 
-	// The first response is a redirect to the CDN that carries the file's hash and size.
+	// The first response is a redirect to the CDN that carries the file's hash and size
 	let probe = reqwest::Client::builder()
 		.redirect(reqwest::redirect::Policy::none())
 		.build()
@@ -135,8 +131,8 @@ pub async fn model_download(
 	download_verified(&url, &target, &sha256, total, &cancel, &on_progress).await
 }
 
-/// Download `url` to `target`, reporting progress, and keep it only if its SHA-256 matches.
-/// `total` is the expected size, used when the response doesn't say.
+/// Download `url` to `target`, keeping it only if its SHA-256 matches. `total` is the
+/// expected size, for when the response doesn't say
 pub async fn download_verified(
 	url: &str,
 	target: &std::path::Path,

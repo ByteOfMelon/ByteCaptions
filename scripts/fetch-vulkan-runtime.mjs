@@ -1,11 +1,7 @@
-// Downloads the pinned Vulkan loader (vulkan-1.dll) that the Windows build bundles, verifies
-// it, and puts it where tauri.windows.conf.json's resources expect it. Skips the download when
-// the right file is already in place. Run with: npm run fetch:vulkan
+// Downloads the pinned Vulkan loader (vulkan-1.dll) that the Windows build bundles, verifies it, and puts it where tauri.windows.conf.json's resources expect it
 //
-// Transcription runs on the GPU through Vulkan. GPU drivers install the loader, so the app
-// normally uses the system's copy; the bundled one is only loaded when a PC has none (no GPU
-// driver, VMs), so whisper.cpp can find no GPU and fall back to the CPU instead of failing
-// (src-tauri/src/gpu.rs). The loader is open source (src-tauri/licenses/VULKAN-RUNTIME-LICENSE.txt).
+// Transcription runs on the GPU through Vulkan.
+// Licensing: The loader is open source (see src-tauri/licenses/VULKAN-RUNTIME-LICENSE.txt)
 
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -68,7 +64,6 @@ try {
 		throw new Error('Extracted vulkan-1.dll has the wrong checksum.');
 
 	mkdirSync(dirname(target), { recursive: true });
-	// Copy, not rename: the temp folder can be on another drive (as on CI).
 	copyFileSync(dll, target);
 	console.log(`Vulkan loader ready: ${target}`);
 } finally {

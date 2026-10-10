@@ -24,7 +24,7 @@ import { Select } from '../../ui/select/select';
 import { TrackChecklist } from '../export/track-checklist';
 import { TrackProblems } from '../export/track-problems';
 
-/** The video last uploaded to, per project, so the dialog picks it again. */
+/** The video last uploaded to, per project, so the dialog picks it again */
 const LAST_VIDEO_KEY = 'bc.youtube.lastVideo';
 
 function lastVideos(): Record<string, string> {
@@ -35,7 +35,7 @@ function lastVideos(): Record<string, string> {
 	}
 }
 
-/** A YouTube video ID, from the ID itself or a watch / youtu.be / Studio link. */
+/** A YouTube video ID, from the ID itself or a watch / youtu.be / Studio link */
 export function videoIdFrom(text: string): string | null {
 	const s = text.trim();
 
@@ -46,7 +46,7 @@ export function videoIdFrom(text: string): string | null {
 	return m ? m[1] : null;
 }
 
-/** Messages for the ways an upload can fail. */
+/** Messages for the ways an upload can fail */
 const ERRORS: Record<YtError['kind'], { title: string; detail?: string }> = {
 	'signed-out': {
 		title: 'Your YouTube sign-in has expired',
@@ -72,7 +72,7 @@ const ERRORS: Record<YtError['kind'], { title: string; detail?: string }> = {
 	failed: { title: 'Upload failed' },
 };
 
-/** Upload to YouTube (PLAN §5.12): sign in, pick the video, upload the tracks as SRV3. */
+/** Upload to YouTube */
 @Component({
 	selector: 'bc-youtube-dialog',
 	imports: [
@@ -101,7 +101,7 @@ export class YouTubeDialog {
 	protected readonly ref = inject(DialogRef);
 
 	protected readonly project = this.store.project;
-	/** The video's length, which the matching upload should share. */
+	/** The video's length, which the matching upload should share */
 	private readonly lengthMs = computed(
 		() => this.project().media?.durationMs ?? this.store.duration(),
 	);
@@ -111,9 +111,9 @@ export class YouTubeDialog {
 
 	protected readonly view = signal<'main' | 'choose'>('main');
 	protected readonly video = signal<YtVideo | null>(null);
-	/** The chosen video's caption tracks; null while loading. */
+	/** The chosen video's caption tracks */
 	protected readonly captions = signal<YtCaption[] | null>(null);
-	/** Set when the video's existing captions couldn't be listed. */
+	/** Set when the video's existing captions couldn't be listed */
 	protected readonly captionsFailed = signal(false);
 	protected readonly included = signal<ReadonlySet<TrackId>>(
 		new Set(
@@ -126,8 +126,7 @@ export class YouTubeDialog {
 	protected readonly name = signal('');
 	protected readonly draft = signal(false);
 	/**
-	 * Hidden for now: YouTube Studio doesn't show drafts uploaded through the API, so the only
-	 * way to publish one is to upload again with this off.
+	 * Hidden for now as YouTube Studio doesn't show drafts uploaded through the API yet (thanks Google)
 	 */
 	protected readonly showDraftToggle = false;
 
@@ -136,12 +135,13 @@ export class YouTubeDialog {
 		label: l.name,
 	}));
 
-	/** The track this upload replaces: same language, preferring the same name. */
+	/** The track this upload replaces - same language, preferring the same name */
 	protected readonly replace = computed(() => {
 		const same = (this.captions() ?? []).filter((c) => c.language === this.language());
 
 		return same.find((c) => c.name === this.name().trim()) ?? same[0] ?? null;
 	});
+
 	protected readonly languageNote = computed(() => {
 		const lang = languageName(this.language());
 		const blank = `Leave the name blank to show just "${lang}".`;
@@ -164,11 +164,11 @@ export class YouTubeDialog {
 
 	// Choose a video
 	protected readonly query = signal('');
-	/** The video picked in the list, before "Use this video". */
+	/** The video picked in the list */
 	protected readonly picked = signal<YtVideo | null>(null);
-	/** A video found by a pasted ID or link that isn't in the loaded list. */
+	/** A video found by a pasted ID or link that isn't in the loaded list */
 	protected readonly found = signal<YtVideo | null | 'searching' | 'none'>(null);
-	/** Why looking up a pasted ID failed. */
+	/** Tell the user why looking up a pasted ID failed */
 	protected readonly findError = signal<YtError | null>(null);
 	protected readonly filtered = computed(() => {
 		const q = this.query().trim().toLowerCase();
@@ -184,7 +184,6 @@ export class YouTubeDialog {
 
 		return typeof f === 'object' && f && f.channelId !== this.yt.account()?.id ? f : null;
 	});
-	/** The list shown: a found video of this channel first, then the loaded matches. */
 	protected readonly listed = computed(() => {
 		const f = this.found();
 		const own = typeof f === 'object' && f && !this.foundOther() ? [f] : [];
@@ -219,7 +218,7 @@ export class YouTubeDialog {
 	});
 
 	constructor() {
-		// Signed in: load the uploads, then pick the video last used or the one that matches.
+		// If signed in - load the uploads, then pick the video last used or the one that matches
 		effect(() => {
 			if (!this.yt.account()) return;
 
@@ -227,6 +226,7 @@ export class YouTubeDialog {
 				if (!this.yt.videos().length) void this.yt.loadVideos();
 			});
 		});
+
 		effect(() => {
 			const videos = this.yt.videos();
 
@@ -234,6 +234,7 @@ export class YouTubeDialog {
 
 			untracked(() => void this.pickInitial());
 		});
+
 		effect(() => {
 			const v = this.video();
 			this.captions.set(null);
@@ -250,7 +251,8 @@ export class YouTubeDialog {
 					if (this.video()?.id === v.id) this.captionsFailed.set(true);
 				});
 		});
-		// A pasted ID or link that isn't loaded is looked up on YouTube.
+
+		// A pasted ID or link that isn't loaded is looked up on YouTube
 		effect(() => {
 			const id = videoIdFrom(this.query());
 			this.findError.set(null);
@@ -317,7 +319,7 @@ export class YouTubeDialog {
 				JSON.stringify({ ...lastVideos(), [this.project().id]: video.id }),
 			);
 		} catch {
-			/* Remembering the video is a convenience. */
+			console.log('[YouTube] Failed to store last video into localStorage');
 		}
 
 		void this.yt.upload({
@@ -332,7 +334,7 @@ export class YouTubeDialog {
 		});
 	}
 
-	/** Sign in again after the sign-in expired mid-upload, then retry. */
+	/** Sign in again after the sign-in expired mid-upload, then retry */
 	protected async signInAndRetry(): Promise<void> {
 		const job = this.yt.job();
 
@@ -367,7 +369,6 @@ export class YouTubeDialog {
 		return { title: m.title, detail: m.detail ?? e.message };
 	}
 
-	/** Leaving Done (or an error) returns to setup for next time. */
 	protected finish(): void {
 		this.yt.reset();
 		this.ref.close();
@@ -384,7 +385,7 @@ export class YouTubeDialog {
 	protected readonly languageName = languageName;
 }
 
-/** "Uploaded Sep 30", with the year when it isn't this year. */
+/** Format the upload date for the user */
 function uploaded(iso: string): string {
 	const d = new Date(iso);
 

@@ -1,4 +1,3 @@
-/* Checkbox / Radio / Toggle */
 .control {
 	display: inline-flex;
 	align-items: center;
@@ -8,7 +7,7 @@
 	cursor: pointer;
 	user-select: none;
 }
-/* Toggle with its label first, filling the row. */
+
 :host(.label-start) {
 	display: flex;
 }
@@ -46,16 +45,6 @@
 input:checked + .box {
 	background: var(--color-brand);
 	box-shadow: none;
-}
-
-.box.radio {
-	border-radius: 50%;
-}
-input:checked + .box.radio {
-	background: var(--color-brand);
-	box-shadow:
-		inset 0 0 0 5px var(--color-brand),
-		inset 0 0 0 10px var(--color-on-brand);
 }
 
 .track {
@@ -96,59 +85,6 @@ input:disabled + .track {
 	opacity: 0.5;
 }
 
-/* Slider */
-:host(.slider) {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-sm);
-	min-width: 0;
-}
-.slider-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--spacing-sm);
-	height: 20px;
-	color: var(--color-text);
-}
-input[type='range'] {
-	--fill: 0%;
-	width: 100%;
-	height: 16px;
-	margin: 0;
-	background: transparent;
-	appearance: none;
-	cursor: pointer;
-}
-input[type='range']::-webkit-slider-runnable-track {
-	height: 4px;
-	border-radius: 2px;
-	background: linear-gradient(
-		to right,
-		var(--color-brand) var(--fill),
-		var(--color-control-border) var(--fill)
-	);
-}
-input[type='range']::-webkit-slider-thumb {
-	width: 16px;
-	height: 16px;
-	margin-top: -6px;
-	border-radius: 50%;
-	background: var(--color-text);
-	appearance: none;
-}
-input[type='range']:focus-visible {
-	outline: none;
-}
-input[type='range']:focus-visible::-webkit-slider-thumb {
-	box-shadow: var(--focus-ring);
-}
-input[type='range']:disabled {
-	opacity: 0.5;
-	cursor: default;
-}
-
-/* Color field */
 :host(.color-field) {
 	display: flex;
 	flex-direction: column;
@@ -209,7 +145,7 @@ input[type='range']:disabled {
 .opacity:focus {
 	color: var(--color-text);
 }
-/* WebView2/Chromium size the input to its value; elsewhere fit "100". */
+
 @supports not (field-sizing: content) {
 	.opacity {
 		width: 3ch;

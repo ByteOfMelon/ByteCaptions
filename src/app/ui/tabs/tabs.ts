@@ -6,7 +6,7 @@ export interface TabItem<T = string> {
 	disabled?: boolean;
 }
 
-/** Segmented tab bar (Cues / Transcript / Problems). Arrow keys move between tabs. */
+/** Segmented tab bar */
 @Component({
 	selector: 'bc-tabs',
 	template: `
@@ -56,11 +56,9 @@ export interface TabItem<T = string> {
 			color: var(--color-text);
 			font-weight: 800;
 		}
-		/* Narrower tabs, so four fit in the cue list at its minimum width. */
 		:host(.compact) button {
 			padding-inline: var(--spacing-sm);
 		}
-		/* Inside a panel the bar sits one step darker, on the page background. */
 		:host(.on-panel) {
 			background: var(--color-bg);
 		}

@@ -8,7 +8,6 @@
 	background: var(--color-bg);
 }
 
-/* Equal-width sides keep undo/redo truly centered. */
 .toolbar {
 	display: grid;
 	grid-template-columns: 1fr auto 1fr;
@@ -113,7 +112,6 @@
 	flex: 1;
 	min-width: 0;
 }
-/* Widths and the timeline height come from PanelLayout (resizable). */
 .inspector {
 	flex-shrink: 0;
 }

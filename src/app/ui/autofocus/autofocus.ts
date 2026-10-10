@@ -1,6 +1,6 @@
 import { Directive, ElementRef, afterNextRender, inject, input } from '@angular/core';
 
-/** Focuses (and optionally selects) the element when it is rendered. */
+/** Focuses (and optionally selects) the element when it is rendered */
 @Directive({ selector: '[bcAutofocus]' })
 export class Autofocus {
 	readonly selectAll = input(false, {

@@ -1,10 +1,6 @@
-// Downloads the pinned ffmpeg build that ByteCaptions bundles as a Tauri sidecar, verifies
-// it, and puts it where tauri.conf.json's externalBin expects it. Skips the download when the
-// right binary is already in place. Run with: npm run fetch:ffmpeg
+// Downloads the pinned ffmpeg build that ByteCaptions bundles as a Tauri sidecar, verifies it, and puts it where tauri.conf.json's externalBin expects it
 //
-// The Windows and Linux builds are LGPL (src-tauri/licenses/FFMPEG-LICENSE.txt), the macOS
-// ones GPLv3 (FFMPEG-MACOS.txt). Old builds get deleted, so for releases, re-host the zips
-// on our own GitHub release and point `url` there (the checksums don't change).
+// Licensing: The Windows and Linux builds are LGPL (src-tauri/licenses/FFMPEG-LICENSE.txt), the macOS ones GPLv3 (FFMPEG-MACOS.txt)
 
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -31,7 +27,7 @@ const BUILDS = {
 		exeSha256: '2818280f1325c966a81f13fcc7222070930fc8df1012bc017c755bed1c180b42',
 		ext: '.exe',
 	},
-	// Martin Riedl's static macOS builds (GPLv3, see licenses/FFMPEG-MACOS.txt): BtbN has none.
+	// Martin Riedl's static macOS builds (GPLv3, see licenses/FFMPEG-MACOS.txt)
 	'darwin-arm64': {
 		triple: 'aarch64-apple-darwin',
 		url: 'https://ffmpeg.martin-riedl.de/download/macos/arm64/1789931890_9.0.2/ffmpeg.zip',
@@ -58,13 +54,12 @@ const BUILDS = {
 	},
 };
 
-// Windows' own bsdtar reads zips; a GNU tar earlier on PATH (Git Bash) doesn't.
 const tar =
 	process.platform === 'win32' ? join(process.env.SystemRoot, 'System32', 'tar.exe') : 'tar';
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
 
-// A build for another target than the machine's: npm run fetch:ffmpeg -- linux-x64
+// A build for another target than the machine's - npm run fetch:ffmpeg -- linux-x64
 const key = process.argv[2] ?? `${process.platform}-${process.arch}`;
 const build = BUILDS[key];
 
@@ -95,7 +90,6 @@ const work = mkdtempSync(join(tmpdir(), 'bc-ffmpeg-'));
 try {
 	const zipPath = join(work, 'ffmpeg-archive');
 	writeFileSync(zipPath, zip);
-	// Extract just the one binary.
 	execFileSync(tar, ['-xf', zipPath, '-C', work, build.member]);
 	const exe = join(work, build.member);
 
@@ -103,7 +97,6 @@ try {
 		throw new Error('Extracted ffmpeg has the wrong checksum.');
 
 	mkdirSync(dirname(target), { recursive: true });
-	// Copy, not rename: the temp folder can be on another drive (as on CI).
 	copyFileSync(exe, target);
 
 	if (process.platform !== 'win32') chmodSync(target, 0o755);

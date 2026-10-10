@@ -28,8 +28,7 @@ function load(): RecentProject[] {
 }
 
 /**
- * Recently opened or saved projects for the Start screen. The desktop app reopens them by
- * path; the browser build can't, so picking one there asks for the file again.
+ * Recently opened or saved projects for the Start screen
  */
 @Injectable({ providedIn: 'root' })
 export class RecentProjects {
@@ -59,12 +58,12 @@ export class RecentProjects {
 		try {
 			localStorage.setItem(KEY, JSON.stringify(this.list()));
 		} catch {
-			// Storage can be unavailable (private mode); the list just won't persist.
+			console.log('[Project List] Failed to persist recent projects into localStorage');
 		}
 	}
 }
 
-/** "Edited 2 hours ago", "Edited yesterday", "Edited Sep 12". */
+/** Convert into a human-readable label like "Edited 2 hours ago" */
 export function editedLabel(at: number, now = Date.now()): string {
 	const min = Math.round((now - at) / 60_000);
 

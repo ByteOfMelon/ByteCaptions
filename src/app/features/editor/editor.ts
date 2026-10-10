@@ -31,7 +31,7 @@ import { CommandPalette } from '../palette/command-palette';
 import { EditorCommands } from './editor-commands';
 import { EditorDialogs } from './editor-dialogs';
 
-/** Keys handled while focus is in a text field are limited to these. */
+/** Keys handled while focus is in a text field are limited to these */
 const FIELD_SAFE = new Set([
 	'ctrl+z',
 	'ctrl+shift+z',
@@ -45,14 +45,14 @@ const FIELD_SAFE = new Set([
 	'ctrl+h',
 ]);
 
-/** `--spacing-sm` gap between the editor's panels, and the toolbar height (editor.css). */
+/** `--spacing-sm` gap between the editor's panels, and the toolbar height (see editor.css) */
 const GAP = 8;
 const TOOLBAR_H = 36;
 
 const clamp = (v: number, min: number, max: number) =>
 	Math.min(Math.max(v, min), Math.max(min, max));
 
-/** The main editor: toolbar, cue list / preview / inspector, and the timeline (PLAN §5). */
+/** The main editor component, holds toolbar, cue list / preview / inspector, and the timeline */
 @Component({
 	selector: 'bc-editor',
 	imports: [
@@ -95,9 +95,9 @@ export class Editor implements OnDestroy {
 	protected readonly defaults = PANEL_DEFAULTS;
 	protected readonly min = PANEL_MIN;
 
-	/** The editor's content box (inside its padding), for the panels' maximum sizes. */
+	/** The editor's content box (inside its padding), for the panels' maximum sizes */
 	private readonly box = signal({ width: 1424, height: 884 });
-	/** Width shared by the cue list, inspector and preview (two 8px gaps between them). */
+	/** Width shared by the cue list, inspector and preview (two 8px gaps between them */
 	private readonly panelsWidth = computed(() => this.box().width - 2 * GAP);
 	protected readonly inspectorWidth = computed(() =>
 		clamp(
@@ -186,7 +186,7 @@ export class Editor implements OnDestroy {
 
 		if (inField && !FIELD_SAFE.has(key)) return;
 
-		// Let menus, listboxes and sliders keep their own arrow / space handling.
+		// Let menus, listboxes and sliders keep their own arrow/space handling
 		const inWidget = !!t.closest(
 			'[role="menu"], [role="listbox"], [role="tablist"], [role="radiogroup"], button, input[type="range"]',
 		);
@@ -233,8 +233,7 @@ export class Editor implements OnDestroy {
 			case 'ctrl+shift+z':
 			case 'ctrl+y':
 				return run(() => this.commands.redo());
-			// Space plays even with a toolbar button focused (it would otherwise press it,
-			// e.g. turning loop off); open menus and dropdowns keep it.
+			// Ensure spacebar will always run the Play command
 			case ' ':
 				if (
 					!t.closest(

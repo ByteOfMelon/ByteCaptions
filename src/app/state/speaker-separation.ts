@@ -14,10 +14,10 @@ import { MediaSource } from './media-source';
 import { trackColors } from './project-files';
 import { ProjectStore } from './project-store';
 
-/** Size of the speaker models (src-tauri/src/speakers.rs), for messages before they download. */
+/** Size of the speaker models (see src-tauri/src/speakers.rs) for messages before they download */
 export const SPEAKER_MODELS_SIZE = '60 MB';
 
-/** "Speakers" choices: Auto, then exact counts. */
+/** "Speakers" choices - Auto, then exact counts */
 export const SPEAKER_COUNTS = [null, 2, 3, 4, 5, 6] as const;
 
 export type SpeakerEvent =
@@ -25,30 +25,28 @@ export type SpeakerEvent =
 	| { type: 'extracted' }
 	| { type: 'separating' };
 
-/** One speaker's track in a finished separation. Names and colours are read live from it. */
+/** One speaker's track in a finished separation */
 export interface SpeakerRow {
 	trackId: TrackId;
 	cues: number;
 	talkMs: Ms;
-	/** The line that's most clearly this speaker, for Listen. */
+	/** The line that's most clearly this speaker */
 	sample: CueId;
 }
 
 export interface SpeakerResult {
 	rows: SpeakerRow[];
-	/** Lines flagged as an unsure speaker (in the Problems tab). */
 	unsure: number;
 }
 
 /**
- * Speaker separation (desktop only): runs the backend's speaker model over the video and
- * splits a track's cues into one track per speaker.
+ * Speaker separation (desktop only) - runs the backend's speaker model over the video and splits a track's cues into one track per speaker.
  */
 @Injectable({ providedIn: 'root' })
 export class SpeakerSeparation {
 	private readonly store = inject(ProjectStore);
 	private readonly media = inject(MediaSource);
-	/** The speaker models are downloaded (null until checked). */
+	/** The speaker models that are downloaded */
 	readonly installed = signal<boolean | null>(null);
 
 	constructor() {
@@ -65,7 +63,7 @@ export class SpeakerSeparation {
 		}
 	}
 
-	/** Who speaks when in the project's video, downloading the models first if needed. */
+	/** Who speaks when in the project's video, downloading the models first if needed */
 	async turns(
 		speakers: number | null,
 		signal: AbortSignal,
@@ -120,8 +118,7 @@ export class SpeakerSeparation {
 	}
 
 	/**
-	 * Split `track` by speaker, with track colours following on from the project's.
-	 * `detected`: the speaker count was Auto, so tiny stray speakers are folded in.
+	 * Split `track` by speaker, with track colours following on from the project's
 	 */
 	split(
 		track: Track,
@@ -140,7 +137,7 @@ export class SpeakerSeparation {
 		);
 	}
 
-	/** Recipe: put the split's tracks where `trackId` is (or at the end), replacing it. */
+	/** Put the split's tracks where `trackId` is (or at the end), replacing it */
 	static replace(trackId: TrackId | null, split: SpeakerSplit) {
 		return (p: Draft<Project>) => {
 			const at = p.tracks.findIndex((t) => t.id === trackId);

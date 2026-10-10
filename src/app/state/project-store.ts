@@ -7,12 +7,12 @@ import { demoProject } from './demo-project';
 export interface CueRef {
 	track: Track;
 	cue: Cue;
-	/** 1-based position across all tracks, ordered by start time. */
+	/** 1-based position across all tracks, ordered by start time */
 	index: number;
 }
 
 /**
- * Root editor state: the project (through undoable History), selection and playhead.
+ * Root editor state: the project, selection and playhead.
  * All document mutations go through `apply()` so they can be undone.
  */
 @Injectable({ providedIn: 'root' })
@@ -29,9 +29,9 @@ export class ProjectStore {
 	readonly canRedo = computed(() => (this.version(), this.history.canRedo));
 	readonly undoLabel = computed(() => (this.version(), this.history.undoLabel));
 	readonly redoLabel = computed(() => (this.version(), this.history.redoLabel));
-	/** Whether the project differs from what was last saved or opened. */
+	/** Whether the project differs from what was last saved or opened */
 	readonly dirty = signal(false);
-	/** The project as last saved or opened; null when that copy is unknown (always unsaved). */
+	/** The project as last saved or opened */
 	private saved: Project | null = null;
 
 	readonly selection = signal<ReadonlySet<CueId>>(new Set(['d13']));
@@ -39,7 +39,7 @@ export class ProjectStore {
 	readonly playing = signal(false);
 	readonly rate = signal(1);
 
-	/** Every cue across tracks, ordered by start; index is what the cue list shows. */
+	/** Every cue across tracks, ordered by start; index is what the cue list shows */
 	readonly allCues = computed<CueRef[]>(() =>
 		this.project()
 			.tracks.flatMap((track) => track.cues.map((cue) => ({ track, cue, index: 0 })))
@@ -59,7 +59,7 @@ export class ProjectStore {
 	readonly selectedCues = computed(() =>
 		this.allCues().filter((r) => this.selection().has(r.cue.id)),
 	);
-	/** The single selected cue (the inspector's subject), or null. */
+	/** The single selected cue (the inspector's subject) */
 	readonly primary = computed(() => this.selectedCues()[0] ?? null);
 
 	readonly duration = computed(() => {
@@ -70,7 +70,7 @@ export class ProjectStore {
 	});
 
 	constructor() {
-		// Deleting the last cues can shorten the project; keep the playhead inside it.
+		// Deleting the last cues can shorten the project, this ensures the playhead stays within the project's duration
 		effect(() => {
 			const end = this.duration();
 
@@ -117,21 +117,20 @@ export class ProjectStore {
 		this.markSaved();
 	}
 
-	/** The file now holds `project` (just saved or opened); edits since then stay unsaved. */
+	/** The file now holds `project` (just saved or opened) - edits since then stay unsaved */
 	markSaved(project = this.history.current): void {
 		this.saved = project;
 		this.dirty.set(this.history.current !== project);
 	}
 
-	/** The project differs from its file in a way edits can't tell (e.g. recovered work). */
+	/** If the project differs from its file in a way edits can't tell */
 	markUnsaved(): void {
 		this.saved = null;
 		this.dirty.set(true);
 	}
 
 	/**
-	 * Edits that change nothing (a click on a cue, Undo with nothing to undo) leave the project
-	 * as it was, so they don't count as unsaved changes.
+	 * Edits that change nothing (a click on a cue, Undo with nothing to undo) leave the project as it was, so they don't count as unsaved changes
 	 */
 	private changed(): void {
 		this.version.update((v) => v + 1);
@@ -146,7 +145,6 @@ export class ProjectStore {
 		return this.allCues().find((r) => r.cue.id === cueId);
 	}
 
-	/** Plain click selects one; additive (Ctrl/Cmd) toggles; range (Shift) extends in list order. */
 	select(cueId: CueId, mode: 'replace' | 'toggle' | 'range' = 'replace'): void {
 		if (mode === 'replace') return this.selection.set(new Set([cueId]));
 
@@ -178,7 +176,7 @@ export class ProjectStore {
 		this.playhead.set(Math.max(0, Math.min(this.duration(), ms)));
 	}
 
-	/** Cues on screen at the playhead from tracks visible in preview. */
+	/** Cues on screen at the playhead from tracks visible in preview */
 	readonly activeCues = computed(
 		() => {
 			const t = this.playhead();
@@ -193,7 +191,6 @@ export class ProjectStore {
 						.map((cue) => ({ track, cue })),
 				);
 		},
-		// Same cues as last frame: don't wake the preview during playback.
 		{
 			equal: (a, b) =>
 				a.length === b.length &&

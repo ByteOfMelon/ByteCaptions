@@ -1,5 +1,3 @@
-# Builds ByteCaptions for Windows, macOS and Linux. Run it from the Actions tab; the
-# installers are attached to the run.
 name: Build
 
 on:
@@ -18,13 +16,13 @@ on:
   push:
     tags: ['v*']
 
-# A newer run replaces an older one still going on the same branch.
+# A newer run replaces an older one still going on the same branch
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # All platforms, or the one picked for a manual run.
+  # Allow picking only one job to run if need be
   plan:
     runs-on: ubuntu-24.04
     outputs:
@@ -48,8 +46,8 @@ jobs:
           JSON
           echo "matrix=$(jq -c --arg t "$TARGET" '{include: map(select($t == "all" or .target == $t))}' all.json)" >> "$GITHUB_OUTPUT"
 
-  # Intel Mac: ONNX Runtime is built from source below and needs macOS 14.
-  # Linux: ubuntu-24.04 for glibc 2.38+, which ONNX Runtime needs.
+  # Intel Macs - ONNX Runtime is built from source below and needs macOS 14
+  # Linux - ubuntu-24.04 for glibc 2.38+, which ONNX Runtime needs
   build:
     needs: plan
     strategy:
@@ -68,19 +66,17 @@ jobs:
           # GStreamer plays video in WebKitGTK; the AppImage bundles it.
           sudo apt-get install -y libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav
 
-      # whisper.cpp's GPU backend on Windows is Vulkan; it needs the SDK's headers and shader
-      # compiler to build. The app bundles only the loader (npm run fetch:vulkan).
+      # whisper.cpp's GPU backend on Windows is Vulkan - it needs the SDK's headers and shader compiler to build
       - name: Vulkan SDK
         if: runner.os == 'Windows'
         uses: jakoch/install-vulkan-sdk-action@v1
         with:
-          vulkan_version: 1.4.363.0 # same as the dev machine
+          vulkan_version: 1.4.363.0
           install_runtime: false
           cache: true
           stripdown: true
 
-      # ort has no prebuilt ONNX Runtime for Intel Macs, so build the version it expects (CPU
-      # only) and cache it. The build takes about 30 minutes.
+      # ort has no prebuilt ONNX Runtime for Intel Macs, so it has to be built manually and it takes forever
       - name: ONNX Runtime cache
         if: matrix.ort-from-source
         id: ort-cache
@@ -116,7 +112,6 @@ jobs:
           ./check
           otool -l check | grep -A4 LC_BUILD_VERSION
 
-      # Saved here, not at the end, so a failed app build still keeps it.
       - name: Save ONNX Runtime
         if: matrix.ort-from-source && steps.ort-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
@@ -147,9 +142,7 @@ jobs:
       - run: npm ci
       - run: npm run fetch:ffmpeg -- ${{ matrix.ffmpeg }}
 
-      # The bundle needs DirectML.dll, which ort only downloads while it builds; build.rs copies
-      # it to binaries/directml. On a clean checkout that happens after Tauri checks its
-      # resources, so build once and put it in place by hand if it's still missing.
+      # The bundle needs DirectML.dll, which ort only downloads while it builds
       - name: Windows extras
         if: runner.os == 'Windows'
         shell: bash
@@ -162,7 +155,7 @@ jobs:
           [ -f src-tauri/binaries/directml/DirectML.dll ] || cp "$dll" src-tauri/binaries/directml/
 
       - name: Build
-        # Public builds have no Google sign-in client, so YouTube upload is off (BUILDING.md).
+        # Public builds have no Google sign-in client, so YouTube upload is off (see BUILDING.md for details)
         uses: tauri-apps/tauri-action@v0
         with:
           args: --target ${{ matrix.target }} ${{ matrix.tauri-args }}

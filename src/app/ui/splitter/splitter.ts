@@ -4,10 +4,7 @@ const KEY_STEP = 16;
 const KEY_STEP_LARGE = 64;
 
 /**
- * Resize handle that sits in the gap between two panels and sets one panel's size in px.
- * `vertical` edges resize widths; `horizontal` edges resize heights. With `reverse` the
- * resized panel is after the edge (inspector, timeline), so dragging toward it shrinks it.
- * Double-click resets to `defaultValue`; arrows resize from the keyboard.
+ * Resize handle that sits in the gap between two panels and sets one panel's size in px
  */
 @Component({
 	selector: 'bc-splitter',

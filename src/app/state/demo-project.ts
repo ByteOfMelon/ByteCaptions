@@ -1,10 +1,10 @@
 import { DEFAULT_STYLE_ID, createCue, createProject, createTrack } from '../core/model/defaults';
 import { Cue, Project, WordTiming } from '../core/model/types';
 
-/** Words the mock "transcriber" was unsure about, to exercise low-confidence UI. */
+/** Words the mock "transcriber" was unsure about, to exercise low-confidence UI */
 const LOW_CONFIDENCE = new Set(['Projekt', 'Sony', '2020.', 'E3']);
 
-/** Spread words across the cue proportionally to their length, like ASR output would. */
+/** Spread words across the cue proportionally to their length, like ASR output would */
 function estimateWords(cue: Cue): WordTiming[] {
 	const words = cue.runs
 		.map((r) => r.text)
@@ -28,7 +28,7 @@ function estimateWords(cue: Cue): WordTiming[] {
 	});
 }
 
-/** HH:MM:SS:FF at 60 fps → ms. */
+/** HH:MM:SS:FF at 60 fps -> ms */
 function tc(s: string): number {
 	const [h, m, sec, f] = s.split(':').map(Number);
 
@@ -45,7 +45,7 @@ const DIALOGUE: [string, string, string][] = [
 	['00:00:19:10', '00:00:22:30', 'turned the game into something else entirely.'],
 	['00:00:23:00', '00:00:26:00', 'So how did we get here?'],
 	['00:00:26:20', '00:00:28:40', 'And more importantly,'],
-	['00:00:28:50', '00:00:31:00', '…since the game’s launch'],
+	['00:00:28:50', '00:00:31:00', '...since the game’s launch'],
 	['00:00:31:02', '00:00:33:18', 'Has CD Projekt Red finally'],
 	['00:00:33:20', '00:00:36:04', 'fixed Cyberpunk 2077? If so,'],
 	['00:00:38:05', '00:00:41:22', 'what does this mean for the\ngaming industry going forward?'],
@@ -70,7 +70,7 @@ const SFX: [string, string, string][] = [
 	['00:01:16:00', '00:01:17:10', '[crowd cheering]'],
 ];
 
-/** Sample project mirroring the Penpot editor mockups; the editor starts with it. */
+/** Sample project for testing */
 export function demoProject(): Project {
 	const p = createProject('legacy-of-cyberpunk-2077');
 	p.fps = 60;

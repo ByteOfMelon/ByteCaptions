@@ -256,7 +256,7 @@
 							>Downloading the model. This only happens once.</span
 						>
 					} @else if (job.separating()) {
-						<span class="text-small text-faded">Working out who speaks when…</span>
+						<span class="text-small text-faded">Working out who speaks when...</span>
 					} @else {
 						<span class="text-mono-small text-faded"
 							>{{ position() }} &nbsp;•&nbsp; {{ job.remaining() }}</span
@@ -282,7 +282,7 @@
 				<div dialogFooter>
 					<span class="footer-note">You can keep editing while this runs.</span>
 					<button bcButton [disabled]="job.stopping()" (click)="job.stop()">
-						{{ job.stopping() ? 'Stopping…' : 'Stop' }}
+						{{ job.stopping() ? 'Stopping...' : 'Stop' }}
 					</button>
 					<button bcButton variant="primary" (click)="ref.close()">
 						Run in background

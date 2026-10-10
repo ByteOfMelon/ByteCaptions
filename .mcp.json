@@ -1,8 +1,0 @@
-{
-	"mcpServers": {
-		"penpot": {
-			"type": "http",
-			"url": "https://penpot.daydreamstudio.cc/mcp/stream?userToken=${PENPOT_MCP_TOKEN}"
-		}
-	}
-}

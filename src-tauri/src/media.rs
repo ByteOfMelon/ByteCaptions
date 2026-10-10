@@ -1,9 +1,4 @@
-//! Media jobs that need ffmpeg (bundled next to the app as a sidecar).
-//! `decode_audio` is shared with transcription (asr.rs).
-//!
-//! `media_peaks` decodes a video's audio and returns its waveform: one byte per 1/100 s,
-//! the loudest sample in that slice scaled to 0–255. Results are cached per file (path,
-//! size and modified time), so a video is only decoded once.
+//! ffmpeg jobs: decoding audio (shared with asr.rs) and waveform peaks, cached per file
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -13,15 +8,15 @@ use std::process::{Command, Stdio};
 
 use tauri::{AppHandle, Manager, ipc::Response};
 
-/// Waveform resolution. Keep in sync with PEAKS_PER_SECOND in src/app/state/audio-peaks.ts.
+/// Waveform resolution. Keep in sync with PEAKS_PER_SECOND in src/app/state/audio-peaks.ts
 const PEAKS_PER_SECOND: u32 = 100;
-/// Decode rate: plenty for a waveform, and cheap.
+/// Decode rate: plenty for a waveform, and cheap
 const SAMPLE_RATE: u32 = 8000;
 const SAMPLES_PER_PEAK: usize = (SAMPLE_RATE / PEAKS_PER_SECOND) as usize;
-/// Bump to invalidate cached peaks when the format or scaling changes.
+/// Bump to invalidate cached peaks when the format or scaling changes
 const CACHE_VERSION: u32 = 1;
 
-/// The bundled ffmpeg: Tauri places sidecars next to the app's executable.
+/// Tauri places sidecars next to the app's executable
 fn ffmpeg_path() -> Result<PathBuf, String> {
 	let exe = std::env::current_exe().map_err(|e| e.to_string())?;
 	let name = if cfg!(windows) {
@@ -46,7 +41,7 @@ fn ffmpeg() -> Result<Command, String> {
 	#[cfg(windows)]
 	{
 		use std::os::windows::process::CommandExt;
-		// CREATE_NO_WINDOW: don't flash a console window.
+		// CREATE_NO_WINDOW: don't flash a console window
 		cmd.creation_flags(0x0800_0000);
 	}
 	Ok(cmd)
@@ -60,9 +55,8 @@ fn cache_file(app: &AppHandle, path: &Path) -> Option<PathBuf> {
 	Some(dir.join(format!("{:016x}.bin", h.finish())))
 }
 
-/// Decode a file's first audio track to mono 16-bit samples at `rate`, passing them to `sink`
-/// as they arrive. `range` limits it to that stretch, in ms. `sink` returns false to stop
-/// early (the job was cancelled).
+/// Decode the first audio track to mono 16-bit samples at `rate`, streamed to `sink`.
+/// `range` is in ms. `sink` returns false to stop early
 pub fn decode_audio(
 	path: &Path,
 	rate: u32,
@@ -71,7 +65,7 @@ pub fn decode_audio(
 ) -> Result<(), String> {
 	let mut cmd = ffmpeg()?;
 	cmd.args(["-nostdin", "-v", "error"]);
-	// Seeking on the input skips straight there; decoding makes it sample-accurate.
+	// Seeking on the input skips straight there; decoding makes it sample-accurate
 	if let Some((from, to)) = range {
 		let secs = |ms: u64| format!("{:.3}", ms as f64 / 1000.0);
 		cmd.args(["-ss", &secs(from), "-t", &secs(to.saturating_sub(from))]);
@@ -88,7 +82,7 @@ pub fn decode_audio(
 		.spawn()
 		.map_err(|e| format!("Couldn't start ffmpeg: {e}"))?;
 
-	// Drain stderr on its own thread so a chatty ffmpeg can't block on a full pipe.
+	// Drain stderr on its own thread so a chatty ffmpeg can't block on a full pipe
 	let mut stderr = child.stderr.take().unwrap();
 	let errors = std::thread::spawn(move || {
 		let mut s = String::new();
@@ -107,7 +101,7 @@ pub fn decode_audio(
 		}
 		let mut bytes = &buf[..n];
 		samples.clear();
-		// Samples are 2 bytes; a read can end halfway through one.
+		// Samples are 2 bytes; a read can end halfway through one
 		if let Some(lo) = carry.take() {
 			samples.push(i16::from_le_bytes([lo, bytes[0]]));
 			bytes = &bytes[1..];
@@ -164,14 +158,14 @@ fn peaks(app: &AppHandle, path: &Path) -> Result<Vec<u8>, String> {
 	}
 	let peaks = decode_peaks(path)?;
 	if let Some(c) = cache {
-		// Caching is best-effort; a failure just means decoding again next time.
+		// Caching is best-effort; a failure just means decoding again next time
 		let _ = c.parent().map(std::fs::create_dir_all);
 		let _ = std::fs::write(c, &peaks);
 	}
 	Ok(peaks)
 }
 
-/// Waveform peaks for a media file, as raw bytes (an ArrayBuffer in JS).
+/// Waveform peaks as raw bytes (an ArrayBuffer in JS)
 #[tauri::command]
 pub async fn media_peaks(app: AppHandle, path: String) -> Result<Response, String> {
 	tauri::async_runtime::spawn_blocking(move || peaks(&app, Path::new(&path)))

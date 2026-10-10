@@ -1,13 +1,8 @@
-//! Linux only: serves local video files over http://127.0.0.1 for the preview player.
-//! WebKitGTK's media player can't read Tauri's asset:// URLs (the video errors with "source
-//! not supported"), so on Linux the front end loads media from here instead. Windows and
-//! macOS keep using asset://.
-//!
-//! The server listens on loopback only, on a random port, and every request must carry a
-//! random token from this run of the app, so other programs can't use it to read files.
+//! Linux only: serves local videos over loopback HTTP, since WebKitGTK's player can't read
+//! asset:// URLs. Requests need a random per-run token so other programs can't read files
 
-/// The base URL for media, e.g. `http://127.0.0.1:41234/<token>/`, followed by the
-/// URL-encoded file path. None where asset:// works (Windows and macOS).
+/// Base URL for media (`http://127.0.0.1:<port>/<token>/` + the URL-encoded path), or
+/// None where asset:// works
 #[tauri::command]
 pub fn media_server() -> Result<Option<String>, String> {
 	#[cfg(target_os = "linux")]
@@ -28,7 +23,7 @@ mod linux {
 	use tokio::net::{TcpListener, TcpStream};
 
 	static BASE: OnceLock<Result<String, String>> = OnceLock::new();
-	/// Bytes sent per write while streaming a file.
+	/// Bytes sent per write while streaming a file
 	const CHUNK: usize = 256 * 1024;
 
 	pub fn base() -> Result<String, String> {
@@ -44,7 +39,9 @@ mod linux {
 		let port = listener.local_addr().map_err(|e| e.to_string())?.port();
 		let prefix = format!("/{token}/");
 		tauri::async_runtime::spawn(async move {
-			let Ok(listener) = TcpListener::from_std(listener) else { return };
+			let Ok(listener) = TcpListener::from_std(listener) else {
+				return;
+			};
 			while let Ok((stream, _)) = listener.accept().await {
 				let prefix = prefix.clone();
 				tauri::async_runtime::spawn(async move {
@@ -57,8 +54,7 @@ mod linux {
 		Ok(format!("http://127.0.0.1:{port}/{token}/"))
 	}
 
-	/// Answers one request (the connection then closes): GET or HEAD, with Range support
-	/// so the player can seek.
+	/// One request per connection: GET or HEAD, with Range support for seeking
 	async fn serve(mut stream: TcpStream, prefix: &str) -> std::io::Result<()> {
 		let mut head = Vec::new();
 		let mut buf = [0u8; 4096];
@@ -92,7 +88,12 @@ mod linux {
 			Some((s, e)) => (s, e, "206 Partial Content"),
 			None if range.is_some() => {
 				let cr = format!("bytes */{size}");
-				return respond(&mut stream, "416 Range Not Satisfiable", &[("Content-Range", &cr)]).await;
+				return respond(
+					&mut stream,
+					"416 Range Not Satisfiable",
+					&[("Content-Range", &cr)],
+				)
+				.await;
 			}
 			None => (0, size.saturating_sub(1), "200 OK"),
 		};
@@ -117,7 +118,7 @@ mod linux {
 			if n == 0 {
 				break;
 			}
-			// The player closes the connection when it seeks: not an error worth reporting.
+			// The player closes the connection when it seeks: not an error worth reporting
 			if stream.write_all(&chunk[..n]).await.is_err() {
 				return Ok(());
 			}
@@ -126,7 +127,7 @@ mod linux {
 		Ok(())
 	}
 
-	/// Write the status line and headers; the body, if any, is the caller's to send.
+	/// Write the status line and headers; the body, if any, is the caller's to send
 	async fn respond(
 		stream: &mut TcpStream,
 		status: &str,
@@ -145,7 +146,7 @@ mod linux {
 		stream.write_all(out.as_bytes()).await
 	}
 
-	/// "bytes=START-END", "bytes=START-" or "bytes=-SUFFIX" → inclusive (start, end).
+	/// "bytes=START-END", "bytes=START-" or "bytes=-SUFFIX" → inclusive (start, end)
 	fn parse_range(value: &str, size: u64) -> Option<(u64, u64)> {
 		let spec = value.strip_prefix("bytes=")?.split(',').next()?.trim();
 		let (a, b) = spec.split_once('-')?;
@@ -176,7 +177,12 @@ mod linux {
 	}
 
 	fn mime(path: &str) -> &'static str {
-		match path.rsplit('.').next().map(|e| e.to_ascii_lowercase()).as_deref() {
+		match path
+			.rsplit('.')
+			.next()
+			.map(|e| e.to_ascii_lowercase())
+			.as_deref()
+		{
 			Some("mp4" | "m4v") => "video/mp4",
 			Some("mov") => "video/quicktime",
 			Some("webm") => "video/webm",
@@ -204,7 +210,10 @@ mod linux {
 
 		#[test]
 		fn decodes_paths() {
-			assert_eq!(urlencoding_decode("%2Fhome%2Fa%20b.mp4").as_deref(), Some("/home/a b.mp4"));
+			assert_eq!(
+				urlencoding_decode("%2Fhome%2Fa%20b.mp4").as_deref(),
+				Some("/home/a b.mp4")
+			);
 		}
 	}
 }

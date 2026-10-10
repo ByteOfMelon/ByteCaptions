@@ -8,7 +8,7 @@ import { CountPipe } from '../../ui/count/count';
 import { Field } from '../../ui/field/field';
 import { Markers } from './markers';
 
-/** Markers tab: every marker in time order. Click to jump there, double-click to edit. */
+/** Markers tab, shows every marker in time order */
 @Component({
 	selector: 'bc-markers-view',
 	imports: [CountPipe, Field, LucideSearch],

@@ -90,7 +90,9 @@
 								[disabled]="yt.signingIn()"
 								(click)="signInAndRetry()"
 							>
-								{{ yt.signingIn() ? 'Waiting for the browser…' : 'Sign in again' }}
+								{{
+									yt.signingIn() ? 'Waiting for the browser...' : 'Sign in again'
+								}}
 							</button>
 						}
 						@case ('not-found') {
@@ -115,7 +117,7 @@
 	</bc-dialog>
 } @else if (yt.account() === undefined) {
 	<bc-dialog heading="Upload to YouTube" [subtitle]="subtitle()">
-		<p class="text-small text-faded loading">Checking your YouTube sign-in…</p>
+		<p class="text-small text-faded loading">Checking your YouTube sign-in...</p>
 		<div dialogFooter>
 			<button bcButton (click)="ref.close()">Cancel</button>
 		</div>
@@ -190,7 +192,7 @@
 					<bc-notice tone="danger" [heading]="errorText(e).title" [detail]="e.message" />
 				}
 				@if (yt.loadingVideos()) {
-					<p class="text-small text-faded empty">Loading videos…</p>
+					<p class="text-small text-faded empty">Loading videos...</p>
 				} @else if (yt.hasMoreVideos()) {
 					<button bcButton variant="ghost" class="more" (click)="yt.loadVideos()">
 						Load more videos
@@ -217,7 +219,7 @@
 				<div class="video-card empty-card">
 					<span class="text-small text-faded">{{
 						yt.loadingVideos()
-							? 'Looking for this project’s video…'
+							? 'Looking for this project’s video...'
 							: 'No video chosen yet.'
 					}}</span>
 					<button bcButton (click)="choose()">Choose a video</button>
@@ -289,7 +291,7 @@
 						[disabled]="yt.signingIn()"
 						(click)="yt.signIn()"
 					>
-						{{ yt.signingIn() ? 'Waiting for the browser…' : 'Switch account' }}
+						{{ yt.signingIn() ? 'Waiting for the browser...' : 'Switch account' }}
 					</button>
 				</div>
 			}

@@ -46,7 +46,7 @@ Thumbs.db
 /src-tauri/target
 /dist
 
-# Local secrets
+# Local secrets and settings
 .env
 .env.*
-.claude/settings.local.json
+.claude/*

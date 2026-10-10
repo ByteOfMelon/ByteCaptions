@@ -72,11 +72,10 @@ export class PreviewPanel {
 	private readonly editor = viewChild<ElementRef<HTMLElement>>('editor');
 	protected readonly format = inject(TextFormat);
 	/**
-	 * The selection kept while focus is in the Inspector or the format bar, shown with a
-	 * highlight (the editor's own selection hides when it loses focus).
+	 * The selection kept while focus is in the Inspector or the format bar
 	 */
 	protected readonly keptRange = signal<{ start: number; end: number } | null>(null);
-	/** Where the format bar sits: above the selection, in stage pixels. */
+	/** Where the format bar sits - above the selection, in stage pixels */
 	private readonly barAt = signal<{ x: number; y: number } | null>(null);
 	protected readonly formatBar = computed(() => {
 		const at = this.barAt();
@@ -94,23 +93,19 @@ export class PreviewPanel {
 	];
 	protected readonly mode = signal<PreviewMode>('desktop');
 	protected readonly showCaptions = signal(true);
-	/** Cue whose caption is being edited in place (double-click). */
+	/** Cue whose caption is being edited in place (double-click) */
 	protected readonly editing = signal<string | null>(null);
 	private readonly drop = inject(FileDrop);
-	/** A file is being dragged over the window (the editor handles the drop). */
+	/** State of when file is being dragged over the window) */
 	protected readonly dragging = computed(() => !!this.drop.hover());
 	private readonly files = inject(ProjectFiles);
 	protected readonly isDesktop = isDesktop;
-	/**
-	 * The project's video when it isn't playing: moved on desktop, or not picked yet in the
-	 * browser.
-	 */
 	protected readonly missingVideo = computed(() => {
 		const path = this.store.project().media?.path;
 
 		return path && !this.playback.mediaUrl() ? { path, name: basename(path) } : null;
 	});
-	/** Player height drives caption size, like YouTube's player. */
+	/** Player height drives caption size, like YouTube's player */
 	private readonly frameHeight = signal(360);
 
 	protected readonly timecode = computed(() =>
@@ -129,14 +124,13 @@ export class PreviewPanel {
 		return this.store.activeCues().map(({ track, cue }) => {
 			let style = resolveStyle(p, track, cue);
 
-			// YouTube's mobile apps draw every caption on a black box, at one fixed size.
+			// YouTube's mobile apps draw every caption on a black box, at one fixed size
 			if (mobile) style = { ...style, bgColor: '#080808', bgOpacity: 0.75, scale: 1 };
 
 			const pos = resolvePosition(p, track, cue);
 			const textStyle = captionTextStyle(style, Math.max(1, fontPx / 18));
 
 			if (plain) {
-				// Plain formats drop styling and positioning: YouTube default look at the bottom.
 				Object.assign(
 					textStyle,
 					captionTextStyle({
@@ -158,7 +152,7 @@ export class PreviewPanel {
 				id: cue.id,
 				locked: track.locked,
 				selected: this.store.selection().has(cue.id),
-				// Karaoke: words already sung take the karaoke colour.
+				// Karaoke - words already sung take the karaoke color
 				lines: lines(
 					cue.karaoke && !plain
 						? karaokeRuns(cue, sungAt(cue, this.store.playhead()))
@@ -189,7 +183,7 @@ export class PreviewPanel {
 		});
 		effect(() => this.playback.attach(this.video()?.nativeElement ?? null));
 
-		// Fill the editor with the cue's formatted text when editing starts.
+		// Fill the editor with the cue's formatted text when editing starts
 		effect(() => {
 			const el = this.editor()?.nativeElement;
 			const id = this.editing();
@@ -201,7 +195,6 @@ export class PreviewPanel {
 				this.format.attach((change) => this.applyFormat(change));
 			});
 		});
-		// The kept selection shows as a highlight while focus is elsewhere.
 		effect(() => {
 			const kept = this.keptRange();
 			const el = this.editor()?.nativeElement;
@@ -227,8 +220,7 @@ export class PreviewPanel {
 			const r = sel.getRangeAt(0);
 			const start = offsetIn(el, r.startContainer, r.startOffset);
 			let end = offsetIn(el, r.endContainer, r.endOffset);
-			// Double-clicking a word also selects the space after it; leave that out, like
-			// word processors do.
+			// Double-clicking a word also selects the space after it; leave that out, like word processors do
 			const text = textOf(el);
 
 			while (end > start + 1 && /\s/.test(text[end - 1])) end--;
@@ -236,8 +228,7 @@ export class PreviewPanel {
 			this.format.selection.set({ cueId: id, start, end });
 			this.placeBar(r);
 		};
-		// With the selection kept, going anywhere but the caption, Inspector or format bar
-		// ends editing.
+		// With the selection kept, going anywhere but the caption, Inspector or format bar ends editing
 		const onOutside = (e: Event) => {
 			const id = this.editing();
 
@@ -262,7 +253,7 @@ export class PreviewPanel {
 		});
 	}
 
-	/** Put the cue's runs into the editor as styled spans. */
+	/** Put the cue's runs into the editor as styled spans */
 	private renderEditor(el: HTMLElement, id: string): void {
 		const ref = this.store.find(id);
 
@@ -284,7 +275,7 @@ export class PreviewPanel {
 		);
 	}
 
-	/** Position the format bar above a range in the editor. */
+	/** Position the format bar above a range in the editor */
 	private placeBar(r: Range): void {
 		if (r.collapsed) return this.barAt.set(null);
 
@@ -293,7 +284,7 @@ export class PreviewPanel {
 		this.barAt.set({ x: box.left + box.width / 2 - stage.left, y: box.top - stage.top });
 	}
 
-	/** Format the selection: save the typed text and the change as one undo step. */
+	/** Format the selection */
 	private applyFormat(change: Partial<CaptionStyle> | 'clear'): void {
 		const el = this.editor()?.nativeElement;
 		const id = this.editing();
@@ -318,13 +309,13 @@ export class PreviewPanel {
 		if (range) this.placeBar(range);
 	}
 
-	/** Format bar buttons keep the caption focused, and with it the selection. */
+	/** Format bar buttons keep the caption focused, and with it the selection */
 	protected keepFocus(e: MouseEvent): void {
 		if (!(e.target as HTMLElement).closest('input')) e.preventDefault();
 	}
 
 	protected onEditorBlur(id: string): void {
-		// Wait for focus to land: the Inspector and format bar keep the selection.
+		// Wait for focus to land
 		setTimeout(() => {
 			if (this.editing() !== id) return;
 
@@ -357,7 +348,7 @@ export class PreviewPanel {
 		if (file) await this.files.linkVideo(file, 'Relink video');
 	}
 
-	/** Clicking a caption selects its cue instead of toggling playback. */
+	/** Clicking a caption selects its cue instead of toggling playback */
 	protected select(e: MouseEvent, id: string): void {
 		e.stopPropagation();
 		this.store.select(id);
@@ -390,11 +381,10 @@ export class PreviewPanel {
 			e.stopPropagation();
 			this.stopEditing();
 		} else if (e.key === 'Enter' && !e.shiftKey) {
-			// Enter saves; Shift+Enter adds a line break.
+			// Enter saves - Shift+Enter adds a line break
 			e.preventDefault();
 			this.commit(id, textOf(el));
 		} else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && toggles[key]) {
-			// Ctrl+B / I / U format the selection.
 			e.preventDefault();
 			e.stopPropagation();
 			this.format.toggle(toggles[key]);
@@ -418,7 +408,7 @@ export class PreviewPanel {
 	);
 }
 
-/** A cue's runs cut into lines at its line breaks. */
+/** A cue's runs cut into lines at its line breaks */
 function lines(runs: readonly TextRun[]): TextRun[][] {
 	const out: TextRun[][] = [[]];
 
@@ -432,7 +422,7 @@ function lines(runs: readonly TextRun[]): TextRun[][] {
 	return out;
 }
 
-/** The editor's text: its text nodes, with <br> and new blocks as line breaks. */
+/** The editor's text - its text nodes, with <br> and new blocks as line breaks */
 function textOf(node: Node): string {
 	let out = '';
 	node.childNodes.forEach((n) => {
@@ -449,7 +439,7 @@ function textOf(node: Node): string {
 	return out;
 }
 
-/** Character offset of a DOM position within the editor. */
+/** Character offset of a DOM position within the editor */
 function offsetIn(root: HTMLElement, node: Node, offset: number): number {
 	const r = document.createRange();
 	r.setStart(root, 0);
@@ -458,7 +448,7 @@ function offsetIn(root: HTMLElement, node: Node, offset: number): number {
 	return textOf(r.cloneContents()).length;
 }
 
-/** A DOM range over characters [start, end) of the editor's text. */
+/** A DOM range over characters [start, end) of the editor's text */
 function rangeAt(root: HTMLElement, start: number, end: number): Range | null {
 	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
 	const r = document.createRange();
@@ -486,8 +476,7 @@ function rangeAt(root: HTMLElement, start: number, end: number): Range | null {
 }
 
 /**
- * A formatted run's style inside its line. The line already paints the background, so a run
- * paints one only when it changes it (else the see-through colour would show twice).
+ * A formatted run's style inside its line
  */
 function runStyle(
 	base: CaptionStyle,

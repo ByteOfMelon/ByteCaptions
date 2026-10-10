@@ -14,17 +14,15 @@ export function dropKind(name: string, mimeType = ''): DropKind {
 	return 'other';
 }
 
-/** What is being dragged over the window. */
+/** Defines what is being dragged over the window */
 export interface DragHover {
-	/** Known on desktop; the browser only reveals files on drop. */
+	/** Desktop only */
 	file: PickedFile | null;
 	kind: DropKind | null;
 }
 
 /**
- * Files dragged onto the window. The desktop app gets paths from Tauri's drag-drop events
- * (the webview's own HTML5 drop events don't fire there); the browser uses HTML5 events.
- * The active screen sets `handler` to receive drops.
+ * Files dragged onto the window
  */
 @Injectable({ providedIn: 'root' })
 export class FileDrop {
@@ -54,6 +52,7 @@ export class FileDrop {
 
 	private listenBrowser(): void {
 		const hasFiles = (e: DragEvent) => !!e.dataTransfer?.types.includes('Files');
+
 		addEventListener('dragenter', (e) => {
 			if (!hasFiles(e)) return;
 
@@ -64,15 +63,18 @@ export class FileDrop {
 				this.hover.set({ file: null, kind: type.startsWith('video/') ? 'video' : null });
 			}
 		});
+
 		addEventListener('dragover', (e) => {
 			if (!hasFiles(e)) return;
 
 			e.preventDefault();
 			e.dataTransfer!.dropEffect = this.handler ? 'copy' : 'none';
 		});
+
 		addEventListener('dragleave', (e) => {
 			if (hasFiles(e) && --this.depth <= 0) this.reset();
 		});
+
 		addEventListener('drop', (e) => {
 			if (!hasFiles(e)) return;
 

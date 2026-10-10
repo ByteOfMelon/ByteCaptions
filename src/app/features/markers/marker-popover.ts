@@ -109,7 +109,6 @@ export class MarkerPopover {
 	protected readonly colors = MARKER_COLOR_NAMES;
 	protected readonly hex = MARKER_COLORS;
 
-	/** Typed note; resets only when a different marker is shown, not on color changes. */
 	protected readonly draft = signal('');
 	private shownId: MarkerId | null = null;
 	protected readonly number = computed(() => this.markers.number(this.marker().id));
@@ -129,7 +128,7 @@ export class MarkerPopover {
 			this.shownId = m.id;
 			untracked(() => this.draft.set(m.note));
 		});
-		// Closing by switching to another marker, or the tab, still keeps the note.
+		// Closing by switching to another marker, or the tab, still keeps the note
 		inject(DestroyRef).onDestroy(() => {
 			if (!this.closed) this.markers.setNote(this.marker().id, this.draft());
 		});
@@ -151,7 +150,7 @@ export class MarkerPopover {
 		if (!this.host.contains(e.target as Node)) this.close(true);
 	}
 
-	/** Arrow keys pick the next / previous color, like a radio group. */
+	/** Arrow keys pick the next/previous color, like a radio group */
 	protected onSwatchKey(e: KeyboardEvent): void {
 		const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
 

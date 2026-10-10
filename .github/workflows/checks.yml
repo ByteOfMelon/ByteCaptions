@@ -1,4 +1,4 @@
-# Formatting (Prettier) and blank lines (ESLint).
+# Ensure proper formatting
 name: Checks
 
 on:

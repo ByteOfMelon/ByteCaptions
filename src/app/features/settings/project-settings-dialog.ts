@@ -16,7 +16,6 @@ export type SettingsTab = 'general' | 'rules';
 
 const FRAME_RATES = [23.976, 24, 25, 29.97, 30, 48, 50, 59.94, 60];
 
-/** Project settings: name, frame rate and video (General), and the caption rules Problems checks. */
 @Component({
 	selector: 'bc-project-settings-dialog',
 	imports: [Dialog, Button, Field, NumberField, Select, ShowEnd, Tabs, LucideFolder],
@@ -44,7 +43,7 @@ export class ProjectSettingsDialog implements OnInit {
 		() => this.video()?.ref.path ?? this.project.media?.path ?? '',
 	);
 
-	// Durations are edited in seconds; the project stores ms.
+	// Durations are edited in seconds (the project stores ms)
 	protected readonly maxChars = signal(this.project.settings.maxCharsPerLine);
 	protected readonly maxLines = signal(this.project.settings.maxLines);
 	protected readonly maxCps = signal(this.project.settings.maxCps);
@@ -67,7 +66,7 @@ export class ProjectSettingsDialog implements OnInit {
 	protected readonly nameError = computed(() =>
 		this.name().trim() ? null : 'Project name can’t be empty.',
 	);
-	/** The duration changed last shows the error when min isn't below max. */
+	/** The duration changed last shows the error when min isn't below max */
 	protected readonly lastDuration = signal<'min' | 'max'>('min');
 	protected readonly durationError = computed(() => {
 		if (this.minDuration() < this.maxDuration()) return null;
@@ -109,7 +108,6 @@ export class ProjectSettingsDialog implements OnInit {
 		this.maxDuration.set(d.maxDurationMs / 1000);
 	}
 
-	/** Applies every change as one undo step. */
 	protected save(): void {
 		if (this.durationError() || this.nameError()) return;
 

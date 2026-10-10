@@ -149,7 +149,7 @@ export class EditorCommands {
 			this.store.apply('Set end', setTiming(r.cue.id, r.cue.start, t));
 	}
 
-	/** Nudge selected cues by whole frames (Alt+← / Alt+→). */
+	/** Nudge selected cues by whole frames */
 	nudge(frames: number): void {
 		const sel = this.store.selectedCues().filter((r) => !r.track.locked);
 
@@ -166,7 +166,7 @@ export class EditorCommands {
 		});
 	}
 
-	/** Select and seek to the next / previous cue with a problem (F8 / Shift+F8). */
+	/** Select and seek to the next / previous cue with a problem */
 	goToProblem(dir: 1 | -1): void {
 		const flagged = this.store
 			.allCues()
@@ -187,9 +187,9 @@ export class EditorCommands {
 		this.playback.toggle();
 	}
 
-	// ---- Cue and track operations (timeline menus) -----------------------
+	// Cue and track operations (timeline menus)
 
-	/** Track new cues go to: the selected cue's, else the first unlocked one. */
+	/** Track new cues go to: the selected cue's, else the first unlocked one */
 	private targetTrack(trackId?: TrackId): TrackId | undefined {
 		if (trackId) return trackId;
 
@@ -209,7 +209,7 @@ export class EditorCommands {
 		return copy;
 	}
 
-	/** Add an empty two-second cue and select it. */
+	/** Add an empty two-second cue and select it */
 	newCueAt(atMs: Ms = this.store.playhead(), trackId?: TrackId): void {
 		const id = this.targetTrack(trackId);
 
@@ -229,7 +229,7 @@ export class EditorCommands {
 		this.clipboard = sel.map((r) => this.freshCopy(r.cue, -t0));
 	}
 
-	/** Copy the selection, then delete it (cues on locked tracks are copied but kept). */
+	/** Copy the selection, then delete it (cues on locked tracks are copied but kept) */
 	cut(): void {
 		this.copy();
 		const ids = this.store
@@ -259,7 +259,7 @@ export class EditorCommands {
 		this.store.selection.set(new Set(cues.map((c) => c.id)));
 	}
 
-	/** Copies of the selection placed right after it, on the same tracks. */
+	/** Copies of the selection placed right after it, on the same tracks */
 	duplicateSelected(): void {
 		const sel = this.store.selectedCues().filter((r) => !r.track.locked);
 
@@ -274,14 +274,14 @@ export class EditorCommands {
 		this.store.selection.set(new Set(copies.map((c) => c.cue.id)));
 	}
 
-	/** Ctrl+A: the selected cue's track, or the first unlocked one when nothing is selected. */
+	/** The selected cue's track, or the first unlocked one when nothing is selected */
 	selectAllOnTrack(trackId = this.targetTrack()): void {
 		const t = trackId ? this.store.track(trackId) : undefined;
 
 		if (t) this.store.selection.set(new Set(t.cues.map((c) => c.id)));
 	}
 
-	/** Set the preset on cues; picking the track default clears the override. */
+	/** Set the preset on cues - picking the track default clears the override */
 	setPreset(ids: CueId[], styleId: StyleId): void {
 		const name = this.store.project().styles[styleId]?.name ?? 'preset';
 		this.store.apply(`Set style to ${name}`, (p) => {
@@ -305,7 +305,7 @@ export class EditorCommands {
 		this.store.apply(`Move to ${name}`, moveCues(ids, 0, trackId));
 	}
 
-	/** Shift cues by `deltaMs` keeping their spacing (clamped at 0). */
+	/** Shift cues by `deltaMs` keeping their spacing (clamped at 0) */
 	shiftTiming(ids: CueId[], deltaMs: Ms): void {
 		if (!deltaMs) return;
 
@@ -314,11 +314,10 @@ export class EditorCommands {
 		this.store.apply('Shift timing', moveCues(ids, Math.max(-minStart, deltaMs)));
 	}
 
-	// ---- In/out range operations ------------------------------------------
+	// In/out range operations
 
 	/**
-	 * Cues in the in/out range: those whose middle falls inside it, so a cue that only
-	 * pokes in or out by a little still counts the way it looks. Locked tracks are left out.
+	 * Cues in the in/out ranges - those whose middle falls inside it, so a cue that only pokes in or out by a little still counts the way it looks
 	 */
 	rangeCues(): CueRef[] {
 		const r = this.playback.range();
@@ -337,8 +336,7 @@ export class EditorCommands {
 	}
 
 	/**
-	 * Delete the cues in the range. Ripple also closes the range's time: later cues on
-	 * unlocked tracks move earlier by its length, and the range is cleared.
+	 * Delete the cues in the range. Ripple also closes the range's time
 	 */
 	deleteRange(ripple: boolean): void {
 		const r = this.playback.range();
@@ -364,7 +362,7 @@ export class EditorCommands {
 		}
 	}
 
-	/** Add an empty track ("Track 3"…) below `afterId`, or at the bottom. Returns its id. */
+	/** Add an empty track below `afterId`, or at the bottom */
 	newTrack(afterId?: TrackId): TrackId {
 		const p = this.store.project();
 		let n = p.tracks.length + 1;
@@ -379,7 +377,7 @@ export class EditorCommands {
 		return track.id;
 	}
 
-	/** Move a track one place up (-1) or down (1) the stack. */
+	/** Move a track one place up (-1) or down (1) the stack */
 	moveTrack(trackId: TrackId, by: -1 | 1): void {
 		const tracks = this.store.project().tracks;
 		const from = tracks.findIndex((t) => t.id === trackId);

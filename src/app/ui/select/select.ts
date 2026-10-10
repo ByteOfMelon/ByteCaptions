@@ -18,7 +18,7 @@ export interface SelectOption<T> {
 
 let nextId = 0;
 
-/** Dropdown select: a field-style trigger with a listbox menu. */
+/** Dropdown select */
 @Component({
 	selector: 'bc-select',
 	imports: [LucideCheck, LucideChevronDown],
@@ -86,7 +86,7 @@ export class Select<T = string> {
 
 	protected readonly id = `bc-select-${nextId++}`;
 	protected readonly open = signal(false);
-	/** Where the open list sits: below the field, or above it when there's no room below. */
+	/** Where the open list sits */
 	protected readonly place = signal<{
 		left: number;
 		width: number;

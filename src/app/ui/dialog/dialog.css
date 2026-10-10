@@ -38,7 +38,6 @@ h2 {
 	padding: 0 var(--spacing-lg);
 	overflow-y: auto;
 }
-/* Bodies without a footer still need bottom padding. */
 .body:last-child {
 	padding-bottom: var(--spacing-lg);
 }

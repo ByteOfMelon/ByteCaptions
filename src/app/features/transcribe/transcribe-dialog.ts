@@ -21,7 +21,6 @@ import { Tooltip } from '../../ui/tooltip/tooltip';
 import { Playback } from '../player/playback';
 import { SpeakerRows } from '../speakers/speaker-rows';
 
-/** Auto-transcribe (PLAN §5.11): setup → running → done / error. Closing keeps it running. */
 @Component({
 	selector: 'bc-transcribe-dialog',
 	imports: [
@@ -57,7 +56,8 @@ export class TranscribeDialog {
 		value: n ?? 0,
 		label: n ? String(n) : 'Auto',
 	}));
-	/** Mentions the one-off download until the speaker models are there. */
+
+	/** Mentions the one-off download for the models */
 	protected readonly speakerModelNote = computed(() =>
 		this.speakers.installed() === false
 			? `Downloads ${SPEAKER_MODELS_SIZE} the first time.`
@@ -65,11 +65,13 @@ export class TranscribeDialog {
 	);
 
 	protected readonly languageOptions = LANGUAGES.map((l) => ({ value: l, label: l }));
-	/** Tracks a range run can replace cues on. */
+
+	/** Tracks a range run can replace cues on */
 	private readonly unlocked = computed(() =>
 		this.store.project().tracks.filter((t) => !t.locked),
 	);
-	/** A range run redoes part of a track, so it only offers existing tracks (when there are). */
+
+	/** A range run redoes part of a track, so it only offers existing tracks (when there are any) */
 	private readonly rangeOnTrack = computed(
 		() => !!this.job.options().range && this.unlocked().length > 0,
 	);
@@ -84,7 +86,7 @@ export class TranscribeDialog {
 				],
 	);
 
-	/** The in/out range when one is set; the dialog then offers to transcribe just that. */
+	/** The in/out range when one is set; the dialog then offers to transcribe just that */
 	protected readonly range = this.playback.range;
 	protected readonly scopeOptions = computed(() => {
 		const r = this.range();
@@ -104,7 +106,8 @@ export class TranscribeDialog {
 			{ value: 'all', label: 'Whole video' },
 		];
 	});
-	/** What a range run will do to the chosen track. */
+
+	/** Tell the user what a range run will do to the chosen track */
 	protected readonly rangeNote = computed(() => {
 		const o = this.job.options();
 		const r = o.range;
@@ -131,9 +134,11 @@ export class TranscribeDialog {
 	protected readonly selectedModel = computed(() =>
 		MODELS.find((m) => m.id === this.job.options().model)!,
 	);
+
 	protected readonly needsDownload = computed(
 		() => !this.job.isDownloaded(this.job.options().model),
 	);
+
 	protected readonly unusedDetail = computed(() => {
 		const names = this.job.unused()?.names ?? [];
 		const list =
@@ -141,6 +146,7 @@ export class TranscribeDialog {
 
 		return `Whisper ${list} ${names.length > 1 ? 'are' : 'is'} no longer offered here.`;
 	});
+
 	protected readonly position = computed(
 		() =>
 			`${formatClock(this.job.mediaMs()).slice(0, 8)} of ${formatClock(this.job.durationMs()).slice(0, 8)}`,
@@ -149,11 +155,11 @@ export class TranscribeDialog {
 	constructor() {
 		this.job.refreshModels();
 
-		// Opening with a range set defaults to transcribing just that.
+		// Opening with a range set defaults to transcribing just that
 		if (!this.job.running() && this.job.phase() === 'setup')
 			this.setScope(this.range() ? 'range' : 'all');
 
-		// Closing on an error (close button, Escape) starts over next time.
+		// Closing on an error (close button, Escape) starts over next time
 		void this.ref.closed.then(() => {
 			if (this.job.phase() === 'error') this.job.reset();
 		});
@@ -167,7 +173,7 @@ export class TranscribeDialog {
 		if (!valid) this.job.setOptions({ target: this.defaultTrack() ?? 'new' });
 	}
 
-	/** The selected cue's track if it can be changed, else the first one that can. */
+	/** The selected cue's track if it can be changed, else the first one that can */
 	private defaultTrack(): TrackId | null {
 		const primary = this.store.primary()?.track;
 
@@ -184,7 +190,6 @@ export class TranscribeDialog {
 		return formatClock(ms).slice(0, 8);
 	}
 
-	/** "Retry download" only when the download is what failed. */
 	protected readonly retryLabel = computed(() =>
 		this.job.steps().find((s) => s.status === 'error')?.id === 'download'
 			? 'Retry download'
@@ -205,7 +210,6 @@ export class TranscribeDialog {
 		this.finish();
 	}
 
-	/** Leaving the Done state returns the job to setup for next time. */
 	protected finish(): void {
 		this.job.reset();
 		this.ref.close();

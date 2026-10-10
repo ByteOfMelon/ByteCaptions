@@ -13,7 +13,6 @@ import { TranscribeDialog } from '../transcribe/transcribe-dialog';
 import { YouTubeDialog } from '../youtube/youtube-dialog';
 import { EditorCommands } from './editor-commands';
 
-/** Opens the editor's modal dialogs; one place so toolbar, palette and shortcuts agree. */
 @Injectable({ providedIn: 'root' })
 export class EditorDialogs {
 	private readonly dialogs = inject(Dialogs);
@@ -37,13 +36,13 @@ export class EditorDialogs {
 		if (this.transcription.available) this.dialogs.open(TranscribeDialog);
 	}
 
-	/** Split a transcribed track into one track per speaker (desktop only). */
+	/** Split a transcribed track into one track per speaker (desktop only) */
 	separateSpeakers(trackId: TrackId): void {
 		if (this.transcription.available && !this.transcription.running())
 			this.dialogs.open(SeparateSpeakersDialog, { inputs: { trackId } });
 	}
 
-	/** Upload captions to YouTube (desktop only). */
+	/** Upload captions to YouTube (desktop only) */
 	youtube(): void {
 		this.dialogs.open(YouTubeDialog);
 	}
@@ -52,7 +51,7 @@ export class EditorDialogs {
 		this.dialogs.open(ProjectSettingsDialog, { inputs: initialTab ? { initialTab } : {} });
 	}
 
-	/** App-wide settings (not the project's). */
+	/** App-wide settings */
 	settings(): void {
 		this.dialogs.open(SettingsDialog);
 	}

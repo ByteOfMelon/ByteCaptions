@@ -2,11 +2,11 @@ import { Injectable, signal } from '@angular/core';
 import { Project } from '../core/model/types';
 import { PickedFile, fileExists, fromPath, isDesktop } from './file-io';
 
-/** The video the preview plays. Desktop streams it from disk by path. */
+/** The video the preview plays */
 @Injectable({ providedIn: 'root' })
 export class MediaSource {
 	readonly url = signal<string | null>(null);
-	/** Path of the loaded video on disk (desktop only). */
+	/** Path of the loaded video on disk (desktop only) */
 	readonly path = signal<string | null>(null);
 
 	load(file: PickedFile): void {
@@ -24,7 +24,7 @@ export class MediaSource {
 		this.path.set(null);
 	}
 
-	/** Reconnect a project's video after opening it (desktop; the browser needs a drop). */
+	/** Reconnect a project's video after opening it */
 	async loadForProject(p: Project): Promise<void> {
 		this.clear();
 		const path = p.media?.path;

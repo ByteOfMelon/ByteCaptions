@@ -2,8 +2,7 @@ import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angula
 import { keyCaps } from '../kbd/keys';
 
 /**
- * Hover/focus tooltip: `<button bcIconButton bcTooltip="Split at playhead" tooltipKeys="Ctrl+B">`.
- * Rendered into <body> so panels with overflow:hidden don't clip it.
+ * Hover/focus tooltip
  */
 @Directive({
 	selector: '[bcTooltip]',
@@ -74,9 +73,7 @@ export class Tooltip implements OnDestroy {
 let nextErrorId = 0;
 
 /**
- * Error message for an inline editor with no room for helper text (cue times, track names):
- * `<input [bcErrorTip]="error()" />`. While set, a tooltip in danger text stays below the host,
- * and the host is marked invalid and described by it.
+ * Error message for an inline editor with no room for helper text
  */
 @Directive({
 	selector: '[bcErrorTip]',
@@ -90,7 +87,6 @@ export class ErrorTip implements OnDestroy {
 	protected readonly id = `bc-error-tip-${nextErrorId++}`;
 	private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 	private el: HTMLElement | null = null;
-	// Panels scroll under a fixed tooltip; follow the host.
 	private readonly place = () => this.position();
 
 	constructor() {

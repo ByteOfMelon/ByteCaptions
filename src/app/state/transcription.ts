@@ -20,16 +20,16 @@ export type Phase = 'setup' | 'running' | 'error' | 'done';
 export interface ModelInfo {
 	id: ModelId;
 	name: string;
-	/** Default whisper.cpp (ggml) model for this tier; alternatives are in PLAN §5.2.1. */
+	/** Default whisper.cpp (ggml) model for this tier */
 	whisper: string;
 	description: string;
 	size: string;
-	/** Rough processing time as a fraction of media duration on the CPU (PLAN §5.2.1). */
+	/** Rough processing time as a fraction of media duration on the CPU */
 	speed: number;
-	/** The same on a GPU. */
+	/** Rough processing time on a GPU */
 	gpuSpeed: number;
 	recommended?: boolean;
-	/** Not offered in the dialog (see the tier's comment). */
+	/** Not offered in the dialog (see the tier's comment) */
 	hidden?: boolean;
 }
 
@@ -53,8 +53,7 @@ export const MODELS: ModelInfo[] = [
 		gpuSpeed: 0.04,
 		recommended: true,
 	},
-	// Hidden until a model beats Balanced: large-v2 and large-v3 both fell into repetition
-	// loops on long conversational audio, losing minutes of speech (PLAN §5.2.1).
+	// Currently hidden until a model beats Balanced. large-v2 and large-v3 both fell into repetition loops on long conversational audio in my tests
 	{
 		id: 'accurate',
 		name: 'Accurate',
@@ -67,7 +66,7 @@ export const MODELS: ModelInfo[] = [
 	},
 ];
 
-/** Spoken-language choices and their Whisper codes (null: let the model detect it). */
+/** Spoken-language choices and their Whisper codes */
 export const LANGUAGE_CODES: Record<string, string | null> = {
 	'Detect automatically': null,
 	English: 'en',
@@ -94,18 +93,17 @@ export const LANGUAGES = Object.keys(LANGUAGE_CODES);
 export interface TranscribeOptions {
 	language: string;
 	/**
-	 * 'new' adds a "Transcript" track. A whole-video run onto a track adds to its cues; a
-	 * range run replaces the track's cues inside the range (one undo step).
+	 * 'new' adds a "Transcript" track
 	 */
 	target: 'new' | TrackId;
-	/** Transcribe only this stretch (the in/out range), or null for the whole video. */
+	/** Transcribe only this stretch (the in/out range), or null for the whole video */
 	range: { start: Ms; end: Ms } | null;
 	model: ModelId;
 	wordTimings: boolean;
 	flagLowConfidence: boolean;
-	/** Put each speaker on their own new track (whole-video runs only). */
+	/** Put each speaker on their own new track (whole-video runs only) */
 	separateSpeakers: boolean;
-	/** How many people speak, or null to detect it. */
+	/** How many people speak, or null to auto-detect */
 	speakers: number | null;
 }
 
@@ -116,25 +114,21 @@ export interface Step {
 	detail: string;
 }
 
-/** Progress events an engine reports while it works. */
+/** Progress events an engine reports while it works */
 export type EngineEvent =
 	| { type: 'step'; step: StepId; status: StepStatus; detail?: string }
 	| { type: 'progress'; mediaMs: Ms; line?: { at: Ms; text: string } }
 	| { type: 'download'; received: number; total: number };
 
-/**
- * What the backend implements (Tauri command running whisper locally). Must honor `signal`
- * and resolve with the recognized cues, or reject with a user-facing Error.
- */
 export interface TranscriptionEngine {
 	isDownloaded(model: ModelId): boolean;
-	/** Check which models are downloaded again (files may have changed outside the app). */
+	/** Check which models are downloaded again (files may have changed outside the app) */
 	refresh(): Promise<void>;
-	/** Downloaded Whisper models by name, with their size in bytes. */
+	/** Downloaded Whisper models by name, with their size in bytes */
 	downloaded(): ReadonlyMap<string, number>;
-	/** Delete a downloaded model by whisper name. */
+	/** Delete a downloaded model by Whisper name */
 	delete(name: string): Promise<void>;
-	/** The GPU transcription runs on, or null for the CPU. */
+	/** The GPU transcription runs on, or null for the CPU */
 	device(): Promise<string | null>;
 	run(
 		opts: TranscribeOptions,
@@ -144,7 +138,7 @@ export interface TranscriptionEngine {
 	): Promise<Cue[]>;
 }
 
-/** A cue is in a range when its middle is, as for the other in/out range operations. */
+/** A cue is in a range when its middle is, as for the other in/out range operations */
 function inside(c: { start: Ms; end: Ms }, r: { start: Ms; end: Ms }): boolean {
 	const mid = (c.start + c.end) / 2;
 
@@ -152,8 +146,7 @@ function inside(c: { start: Ms; end: Ms }, r: { start: Ms; end: Ms }): boolean {
 }
 
 /**
- * Keep a range run's cues inside the range, so they can't overlap the cues on either side:
- * cues mostly outside go, the rest are trimmed to it (and their words with them).
+ * Keep a range run's cues inside the range, so they can't overlap the cues on either side
  */
 function clipToRange(cues: Cue[], r: { start: Ms; end: Ms }): Cue[] {
 	return cues
@@ -169,7 +162,7 @@ function clipToRange(cues: Cue[], r: { start: Ms; end: Ms }): Cue[] {
 		});
 }
 
-/** "About 30 s" / "About 4 min": an estimate, rounded to what's worth showing. */
+/** Show a user a formatted estimate */
 function roughly(ms: Ms): string {
 	return ms < 50_000
 		? `About ${Math.max(5, Math.round(ms / 5000) * 5)} s`
@@ -177,8 +170,7 @@ function roughly(ms: Ms): string {
 }
 
 /**
- * Auto-transcribe job state (PLAN §5.11). Lives outside the dialog so the job keeps
- * running in the background and the toolbar can show its progress.
+ * Auto-transcribe job state
  */
 @Injectable({ providedIn: 'root' })
 export class Transcription {
@@ -187,8 +179,7 @@ export class Transcription {
 	private readonly media = inject(MediaSource);
 	private readonly speakerSeparation = inject(SpeakerSeparation);
 	/**
-	 * Transcription runs Whisper locally, so it only exists in the desktop app; the browser
-	 * build hides every way into it.
+	 * Transcription runs Whisper locally, so this only exists in the desktop app
 	 */
 	readonly available = isDesktop;
 	private readonly engine: TranscriptionEngine | null = isDesktop
@@ -199,10 +190,9 @@ export class Transcription {
 			)
 		: null;
 
-	/** The GPU transcription runs on, or null for the CPU (also before it's known). */
+	/** The GPU transcription runs on, or null for the CPU */
 	readonly gpu = signal<string | null>(null);
 	readonly phase = signal<Phase>('setup');
-	/** Bumped when model downloads change, so `isDownloaded` reads stay reactive. */
 	readonly downloads = signal(0);
 	readonly options = signal<TranscribeOptions>({
 		language: 'English',
@@ -222,36 +212,36 @@ export class Transcription {
 		trackName: string;
 		trackColor: string;
 		cues: number;
-		/** Cues the range run replaced. */
+		/** Cues the range run replaced */
 		replaced: number;
 		lowConfidence: number;
 		speedWarnings: number;
 		took: string;
-		/** Set when the run separated speakers. */
+		/** Set when the run separated speakers */
 		speakers?: SpeakerResult;
 	} | null>(null);
 	private startedAt = 0;
 	private abort: AbortController | null = null;
 
-	/** Length of what's transcribed: the range, or the whole video. */
+	/** Length of what's transcribed - either the range or the whole video. */
 	readonly durationMs = computed(() => {
 		const r = this.options().range;
 
 		return r ? r.end - r.start : this.store.duration();
 	});
-	/** Model download progress while the download step runs; null otherwise. */
+	/** Model download progress while the download step runs */
 	readonly download = signal<{ received: number; total: number } | null>(null);
-	/** Stop was pressed; the engine takes a moment to finish the chunk it's on. */
+	/** If stop was pressed - the engine takes a moment to finish the chunk it's on */
 	readonly stopping = signal(false);
-	/** The speaker step is running (it reports no progress of its own). */
+	/** The speaker step is running (it reports no progress of its own) */
 	readonly separating = signal(false);
-	/** This run puts each speaker on their own track. */
+	/** This run puts each speaker on their own track */
 	readonly separatesSpeakers = computed(() => {
 		const o = this.options();
 
 		return o.separateSpeakers && !o.range;
 	});
-	/** Fraction done: of the download while downloading, else of the media. */
+	/** Fraction done of the download */
 	readonly progress = computed(() => {
 		const d = this.download();
 
@@ -261,7 +251,7 @@ export class Transcription {
 	});
 	readonly running = computed(() => this.phase() === 'running');
 
-	/** Name for a new track: "Transcript", then "Transcript 2", "Transcript 3"… */
+	/** Name for a new track - "Transcript", then "Transcript 2", "Transcript 3", etc */
 	readonly nextTrackName = computed(() => {
 		const names = new Set(this.store.project().tracks.map((t) => t.name));
 
@@ -273,7 +263,7 @@ export class Transcription {
 
 		return `Transcript ${n}`;
 	});
-	/** The new track's name for the job that's running or just finished. */
+	/** The new track's name for the job that's running or just finished */
 	private readonly trackName = signal('Transcript');
 
 	readonly summary = computed(() => {
@@ -292,7 +282,7 @@ export class Transcription {
 		return `${model.name} model • ${language} • ${target}`;
 	});
 
-	/** Remaining-time estimate from the chosen model's speed. */
+	/** Remaining-time estimate from the chosen model's speed */
 	readonly remaining = computed(() => {
 		const model = MODELS.find((m) => m.id === this.options().model)!;
 		const left = (this.durationMs() - this.mediaMs()) * this.speed(model);
@@ -300,7 +290,7 @@ export class Transcription {
 		return `${roughly(left).toLowerCase()} left`;
 	});
 
-	/** Setup subtitle: where transcription runs. */
+	/** Set up text to tell user where transcription runs */
 	readonly privacyNote = computed(() => {
 		const gpu = this.gpu();
 
@@ -321,7 +311,7 @@ export class Transcription {
 		return !!this.engine?.isDownloaded(model);
 	}
 
-	/** Downloaded models the dialog doesn't offer (e.g. a hidden tier's), with their total size. */
+	/** Downloaded models the dialog doesn't offer (e.g. a hidden tier's), with their total size */
 	readonly unused = computed(() => {
 		this.downloads();
 		const offered = new Set(MODELS.filter((m) => !m.hidden).map((m) => m.whisper));
@@ -335,16 +325,16 @@ export class Transcription {
 		};
 	});
 
-	/** Check which models are downloaded again, unless a job is downloading one. */
+	/** Check which models are downloaded again, unless a job is downloading one */
 	refreshModels(): void {
 		if (!this.running()) void this.engine?.refresh();
 	}
 
-	/** A model delete is in progress. */
+	/** Whether a model delete is in progress */
 	readonly deleting = signal(false);
 	readonly deleteError = signal<string | null>(null);
 
-	/** Delete downloaded models by whisper name, to free up space. */
+	/** Delete multiple downloaded models by Whisper name */
 	async deleteModels(names: string[]): Promise<void> {
 		if (!this.engine) return;
 
@@ -444,7 +434,7 @@ export class Transcription {
 				if (e.status === 'running' && !stepStarted.has(e.step))
 					stepStarted.set(e.step, performance.now());
 
-				// Finished compute steps show how long they took.
+				// Finished compute steps show how long they took
 				const took =
 					e.status === 'done' && !e.detail && stepStarted.has(e.step)
 						? formatSpan(performance.now() - stepStarted.get(e.step)!)
@@ -496,7 +486,6 @@ export class Transcription {
 			}
 
 			this.error.set(jobErrorText(err));
-			// The step that was running is the one that failed.
 			this.steps.update((steps) =>
 				steps.map((s) => (s.status === 'running' ? { ...s, status: 'error' } : s)),
 			);
@@ -518,8 +507,7 @@ export class Transcription {
 	}
 
 	/**
-	 * The part of the range a range run can fill: a kept cue on either side may reach into it,
-	 * and new cues stop where it does (so words it already has aren't repeated).
+	 * The part of the range a range run can fill
 	 */
 	private freeSpan(target: TranscribeOptions['target'], range: { start: Ms; end: Ms }) {
 		let { start, end } = range;

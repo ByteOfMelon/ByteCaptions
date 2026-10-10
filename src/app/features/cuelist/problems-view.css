@@ -14,7 +14,6 @@
 	display: flex;
 	justify-content: space-between;
 	gap: var(--spacing-md);
-	/* Reads as part of the summary above. */
 	margin-top: calc(var(--spacing-sm) - var(--spacing-md));
 }
 .link {
@@ -88,7 +87,6 @@
 	display: flex;
 	gap: var(--spacing-sm);
 }
-/* Fix buttons sit on a card, so they use the page background to stand out (per design). */
 .actions .fix {
 	background: var(--color-bg);
 }

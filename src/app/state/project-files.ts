@@ -25,30 +25,23 @@ import { MediaSource } from './media-source';
 import { ProjectStore } from './project-store';
 import { RecentProject, RecentProjects } from './recent-projects';
 
-/**
- * The --color-track-1..4 tokens as hex: projects save track colors, and the timeline canvas
- * can't read CSS variables.
- */
 export function trackColors(): string[] {
 	const css = getComputedStyle(document.documentElement);
 
 	return [1, 2, 3, 4].map((n) => css.getPropertyValue(`--color-track-${n}`).trim());
 }
 
-/** An error's text without the "Error: " prefix, for messages. */
 export const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-/** New, open, save and import. Paths on desktop; File objects and downloads in the browser. */
 @Injectable({ providedIn: 'root' })
 export class ProjectFiles {
 	private readonly store = inject(ProjectStore);
 	private readonly recent = inject(RecentProjects);
 	private readonly media = inject(MediaSource);
-	/** Last error to show the user (e.g. a bad project file). */
+	/** Last error to show the user (e.g. a bad project file) */
 	readonly error = signal<string | null>(null);
-	/** Where the open project is saved; Save writes here without asking (desktop only). */
+	/** Where the open project is saved - save writes here without asking (desktop only). */
 	readonly currentPath = signal<string | null>(null);
-	/** False for a new project until its first save (the browser saves by download, without a path). */
 	readonly saved = signal(false);
 
 	nextTrackColor(p: Project = this.store.project()): string {
@@ -64,7 +57,6 @@ export class ProjectFiles {
 		this.error.set(null);
 	}
 
-	/** Ask before replacing a project with unsaved changes. Resolves true to go ahead. */
 	async confirmDiscard(): Promise<boolean> {
 		if (!this.store.dirty()) return true;
 
@@ -75,7 +67,7 @@ export class ProjectFiles {
 		);
 	}
 
-	/** Start an empty project (e.g. before importing captions on the Start screen). */
+	/** Start an empty project */
 	newEmpty(name = 'Untitled'): void {
 		const p = createProject(name);
 		p.tracks = [];
@@ -83,7 +75,7 @@ export class ProjectFiles {
 		this.loadProject(p, null, false);
 	}
 
-	/** Start a fresh project named after a video. Resolves false if cancelled. */
+	/** Start a fresh project named after a video */
 	async newFromVideo(file?: PickedFile | null): Promise<boolean> {
 		file ??= await openFile(VIDEO_FILTER);
 
@@ -107,7 +99,7 @@ export class ProjectFiles {
 		return true;
 	}
 
-	/** Open a project file (picked, dropped or by path). Resolves false on cancel or error. */
+	/** Open a project file */
 	async open(file?: PickedFile | string | null): Promise<boolean> {
 		if (typeof file === 'string') file = fromPath(file);
 
@@ -136,8 +128,7 @@ export class ProjectFiles {
 	}
 
 	/**
-	 * Reopen a recovered copy (see Recovery). Its changes stay unsaved, and Save writes to
-	 * where it was saved before, if anywhere.
+	 * Reopen a recovered copy
 	 */
 	async restore(p: Project, path: string | null): Promise<boolean> {
 		if (!(await this.confirmDiscard())) return false;
@@ -151,8 +142,7 @@ export class ProjectFiles {
 	}
 
 	/**
-	 * When the video isn't at its saved path but a file with its name sits next to the project
-	 * file (the folder was moved), point the project there. Save then keeps the new path.
+	 * When the video isn't at its saved path but a file with its name sits next to the project file (the folder was moved), point the project there instead
 	 */
 	private async findMovedVideo(
 		p: Project,
@@ -171,7 +161,7 @@ export class ProjectFiles {
 		return { project: { ...p, media: { ...p.media, path: nearby } }, relinked: true };
 	}
 
-	/** Reopen a recent project: by path on desktop, by asking for the file in the browser. */
+	/** Reopen a recent project */
 	async openRecent(r: RecentProject): Promise<boolean> {
 		if (!isDesktop || !r.path) return this.open();
 
@@ -185,7 +175,7 @@ export class ProjectFiles {
 		return this.open(r.path);
 	}
 
-	/** Save to the current path, or ask where on first save (and always with `saveAs`). */
+	/** Save to the current path, or ask where on first save/SaveAs */
 	async save(saveAs = false): Promise<boolean> {
 		const p = this.store.project();
 		const suggested = `${p.name}.${PROJECT_EXTENSION}`;
@@ -216,7 +206,7 @@ export class ProjectFiles {
 		return true;
 	}
 
-	/** Import a caption file as a new track of the current project. */
+	/** Import a caption file as a new track of the current project */
 	async importCaptions(file?: PickedFile | null): Promise<boolean> {
 		file ??= await openFile(CAPTION_FILTER);
 
@@ -244,7 +234,7 @@ export class ProjectFiles {
 		return true;
 	}
 
-	/** Start a new project with a caption file as its first track (Start screen, menu). */
+	/** Start a new project with a caption file as its first track */
 	async importAsNewProject(file?: PickedFile | null): Promise<boolean> {
 		file ??= await openFile(CAPTION_FILTER);
 
@@ -255,7 +245,7 @@ export class ProjectFiles {
 		return this.importCaptions(file);
 	}
 
-	/** Link a video to the open project (dropped on the editor, or located when it moved). */
+	/** Link a video to the open project */
 	async linkVideo(file: PickedFile, label = 'Link video'): Promise<void> {
 		const media = await this.videoRef(file);
 		this.media.load(file);
@@ -264,7 +254,7 @@ export class ProjectFiles {
 		});
 	}
 
-	/** Probe `file` for the project's media reference (Link video, Project settings). */
+	/** Probe `file` for the project's media reference */
 	async videoRef(file: PickedFile): Promise<MediaRef> {
 		const info = await probeVideo(file.mediaUrl());
 
@@ -277,7 +267,7 @@ export class ProjectFiles {
 		};
 	}
 
-	/** Play `file` in the preview (its project media is set separately). */
+	/** Play `file` in the preview */
 	loadVideo(file: PickedFile): void {
 		this.media.load(file);
 	}

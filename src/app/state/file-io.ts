@@ -5,14 +5,13 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { Ms } from '../core/model/types';
 
 /**
- * File I/O. The desktop app (Tauri) works with real paths through native dialogs; the
- * browser build falls back to <input type=file>, the File System Access API and downloads.
+ * Checks how file I/O should be handled depending on web vs desktop
  */
 export const isDesktop = isTauri();
+export const WEBSITE = 'https://github.com/ByteOfMelon/ByteCaptions';
 
 export interface FileFilter {
 	name: string;
-	/** Without dots: ['mp4', 'mov']. */
 	extensions: string[];
 }
 
@@ -26,15 +25,15 @@ export const CAPTION_FILTER: FileFilter = {
 	extensions: ['srv3', 'ytt', 'srt', 'vtt', 'sbv'],
 };
 
-/** A file the user picked or dropped: a path on desktop, a File in the browser. */
+/** A file the user picked or dropped - a path on desktop, a File in the browser */
 export interface PickedFile {
 	name: string;
-	/** Absolute path (desktop only). */
+	/** Absolute path (desktop only) */
 	path: string | null;
 	text(): Promise<string>;
-	/** Size in bytes, if it can be read. */
+	/** Size in bytes, if it can be read */
 	size(): Promise<number | null>;
-	/** URL a <video> can play. */
+	/** URL a <video> element can play */
 	mediaUrl(): string;
 }
 
@@ -53,17 +52,16 @@ export function stripExtension(name: string): string {
 }
 
 /**
- * Linux only: the app's local media server (see src-tauri/src/media_server.rs), because
- * WebKitGTK's player can't play asset:// URLs. Null elsewhere, where asset:// is used.
+ * Linux only - the app's local media server (see src-tauri/src/media_server.rs), because WebKitGTK SUCKS
  */
 let mediaServer: string | null = null;
 
-/** Look up the media server once at startup, before any video is opened. */
+/** Look up the media server once at startup, before any video is opened */
 export async function initMediaUrls(): Promise<void> {
 	if (isDesktop) mediaServer = await invoke<string | null>('media_server').catch(() => null);
 }
 
-/** A URL the preview's <video> can play for a local file. */
+/** A URL the preview's <video> can play for a local file */
 function localMediaUrl(path: string): string {
 	return mediaServer ? mediaServer + encodeURIComponent(path) : convertFileSrc(path);
 }
@@ -98,7 +96,6 @@ export async function fileExists(path: string): Promise<boolean> {
 	return isDesktop ? exists(path).catch(() => false) : false;
 }
 
-/** Ask for one file. Resolves null if the user cancels. */
 export async function openFile(filter: FileFilter): Promise<PickedFile | null> {
 	if (isDesktop) {
 		const path = await openDialog({ multiple: false, directory: false, filters: [filter] });
@@ -117,7 +114,7 @@ export async function openFile(filter: FileFilter): Promise<PickedFile | null> {
 	});
 }
 
-/** Where to write a file: a path on desktop, a picked handle or a download in the browser. */
+/** Where to write a file - a path on desktop, a picked handle or a download in the browser */
 export interface SaveTarget {
 	name: string;
 	path: string | null;
@@ -131,7 +128,7 @@ interface SavePickerWindow {
 export const canPickSaveTarget = () =>
 	isDesktop || !!(window as unknown as SavePickerWindow).showSaveFilePicker;
 
-/** Ask where to save. Resolves null if the user cancels or the browser can't pick. */
+/** Ask the user where to save */
 export async function pickSaveTarget(
 	suggested: string,
 	filter: FileFilter,
@@ -155,7 +152,7 @@ export async function pickSaveTarget(
 	}
 }
 
-/** Write text to a target; without a path or handle the browser downloads it. */
+/** Write text to a target */
 export async function writeText(target: SaveTarget, text: string): Promise<void> {
 	if (target.path) return writeTextFile(target.path, text);
 
@@ -173,7 +170,7 @@ export async function writeText(target: SaveTarget, text: string): Promise<void>
 	setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** Yes/no question in a native dialog (browser: confirm()). */
+/** Yes/no question in a native dialog */
 export async function confirmAction(
 	message: string,
 	title: string,
@@ -184,7 +181,7 @@ export async function confirmAction(
 	return confirm(message);
 }
 
-/** Save / Don't save / Cancel before closing with unsaved changes (desktop). */
+/** Save / Don't save / Cancel before closing with unsaved changes */
 export async function askSaveChanges(name: string): Promise<'save' | 'discard' | 'cancel'> {
 	const choice = await message(`Do you want to save the changes to ${name}?`, {
 		title: 'Unsaved changes',
@@ -192,7 +189,6 @@ export async function askSaveChanges(name: string): Promise<'save' | 'discard' |
 		buttons: { yes: 'Save', no: "Don't save", cancel: 'Cancel' },
 	});
 
-	// Custom buttons resolve to their label; older versions resolve to Yes/No/Cancel.
 	if (choice === 'Save' || choice === 'Yes') return 'save';
 
 	if (choice === "Don't save" || choice === 'No') return 'discard';
@@ -200,10 +196,7 @@ export async function askSaveChanges(name: string): Promise<'save' | 'discard' |
 	return 'cancel';
 }
 
-/** ByteCaptions on GitHub (the desktop app may only open the links allowed in its capabilities). */
-export const WEBSITE = 'https://github.com/ByteOfMelon/ByteCaptions';
-
-/** Open a web page in the system browser. */
+/** Open a web page in the system browser */
 export function openExternal(url: string): void {
 	if (isDesktop) void openUrl(url);
 	else window.open(url, '_blank', 'noopener');
@@ -215,7 +208,7 @@ export interface VideoInfo {
 	height: number;
 }
 
-/** Read a video's duration and size from its metadata. Resolves null if it can't be decoded. */
+/** Read a video's duration and size from its metadata */
 export function probeVideo(url: string): Promise<VideoInfo | null> {
 	return new Promise((resolve) => {
 		const v = document.createElement('video');

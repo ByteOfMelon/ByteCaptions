@@ -1,7 +1,6 @@
 @import '@fontsource-variable/inter';
 @import '@fontsource/space-mono/400.css';
 @import '@fontsource/space-mono/700.css';
-/* Roboto: YouTube's caption font, for a faithful preview. */
 @import '@fontsource/roboto/400.css';
 @import '@fontsource/roboto/400-italic.css';
 @import '@fontsource/roboto/700.css';
@@ -42,14 +41,12 @@ textarea,
 	outline-offset: 2px;
 }
 
-/* Lucide icons: 2px stroke, round caps, colored with text tokens via currentColor. */
 svg.lucide {
 	flex-shrink: 0;
 	stroke-linecap: round;
 	stroke-linejoin: round;
 }
 
-/* Tooltip (rendered into <body> by the bcTooltip directive) */
 .bc-tooltip {
 	position: fixed;
 	z-index: 1000;
@@ -79,14 +76,12 @@ svg.lucide {
 	margin-left: var(--spacing-xs);
 }
 
-/* Modal overlay (ui/dialog). */
 .bc-overlay {
 	position: fixed;
 	inset: 0;
 	z-index: 900;
 	display: grid;
 	justify-items: center;
-	/* Centred vertically by ui/dialog, on whole pixels. */
 	align-items: start;
 	padding: 16px;
 	background: var(--scrim);
@@ -112,7 +107,6 @@ svg.lucide {
 	font-size: 12px;
 }
 
-/* Text kept selected in the caption editor while the Inspector formats it. */
 ::highlight(bc-kept-selection) {
 	background-color: Highlight;
 	color: HighlightText;

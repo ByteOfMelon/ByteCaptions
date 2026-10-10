@@ -3,9 +3,7 @@ import { Component, input } from '@angular/core';
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 /**
- * Text button. Put a leading Lucide icon before the label as content:
- * `<button bcButton variant="primary"><svg lucidePlus></svg> New preset</button>`.
- * Set `progress` (0–100) for the progress state, e.g. "Transcribing… 4%".
+ * Regular text button
  */
 @Component({
 	selector: 'button[bcButton], a[bcButton]',
@@ -28,8 +26,7 @@ export class Button {
 }
 
 /**
- * Square 36×36 icon-only button. Always give it an aria-label.
- * Bind `[pressed]` for on/off tools (snapping, karaoke); "on" uses the selected fill.
+ * Square icon-only button
  */
 @Component({
 	selector: 'button[bcIconButton]',

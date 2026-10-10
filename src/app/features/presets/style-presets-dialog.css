@@ -4,7 +4,6 @@
 	min-height: 0;
 }
 
-/* Preset list */
 .presets {
 	display: flex;
 	flex-direction: column;
@@ -60,7 +59,6 @@
 	justify-content: center;
 }
 
-/* Preview column */
 .preview-col {
 	display: flex;
 	flex-direction: column;
@@ -85,7 +83,6 @@
 	overflow: hidden;
 	border-radius: var(--radius-control);
 }
-/* Stand-in until the backend can grab a real frame from the project's video. */
 .stage.frame {
 	background:
 		radial-gradient(ellipse at 30% 35%, #5d6b74 0%, transparent 55%),
@@ -142,7 +139,6 @@
 	margin: 0;
 }
 
-/* Properties column */
 .properties {
 	display: flex;
 	flex-direction: column;

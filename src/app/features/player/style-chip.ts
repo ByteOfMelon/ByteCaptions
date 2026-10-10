@@ -2,7 +2,7 @@ import { Component, booleanAttribute, computed, input } from '@angular/core';
 import { CaptionStyle } from '../../core/model/types';
 import { captionTextStyle } from './caption-render';
 
-/** "Aa" sample rendered with a caption style's real font, colors and edge. */
+/** Text sample rendered with a caption style's real font, colors and edge for the timeline */
 @Component({
 	selector: 'bc-style-chip',
 	template: `<span [style]="css()" aria-hidden="true">Aa</span>`,

@@ -1,7 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { keyCaps } from './keys';
 
-/** Shortcut keys, e.g. `<bc-kbd keys="Ctrl+Shift+Z" />`. Each key renders as its own cap. */
+/** Shortcut keys - each key renders as its own cap */
 @Component({
 	selector: 'bc-kbd',
 	template: `@for (k of parts(); track $index) {

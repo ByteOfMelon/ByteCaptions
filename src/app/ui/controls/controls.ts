@@ -1,7 +1,7 @@
-import { Component, booleanAttribute, computed, input, model } from '@angular/core';
+import { Component, booleanAttribute, input, model } from '@angular/core';
 import { LucideCheck } from '@lucide/angular';
 
-/** Checkbox with its label as part of the clickable control. */
+/** Checkbox with its label as part of the clickable control */
 @Component({
 	selector: 'bc-checkbox',
 	imports: [LucideCheck],
@@ -28,32 +28,6 @@ export class Checkbox {
 	readonly disabled = input(false, { transform: booleanAttribute });
 }
 
-/** Radio option; give options in a group the same `name` and bind `group` to the selected value. */
-@Component({
-	selector: 'bc-radio',
-	template: `
-		<label class="control">
-			<input
-				type="radio"
-				[name]="name()"
-				[value]="value()"
-				[checked]="group() === value()"
-				[disabled]="disabled()"
-				(change)="group.set(value())"
-			/>
-			<span class="box radio" aria-hidden="true"></span>
-			<span class="text"><ng-content /></span>
-		</label>
-	`,
-	styleUrl: './controls.css',
-})
-export class Radio<T = string> {
-	readonly name = input.required<string>();
-	readonly value = input.required<T>();
-	readonly group = model<T>();
-	readonly disabled = input(false, { transform: booleanAttribute });
-}
-
 @Component({
 	selector: 'bc-toggle',
 	template: `
@@ -75,50 +49,10 @@ export class Radio<T = string> {
 export class Toggle {
 	readonly checked = model(false);
 	readonly disabled = input(false, { transform: booleanAttribute });
-	/** Label on the left and the switch on the right, spanning the row (settings lists). */
 	readonly labelStart = input(false, { transform: booleanAttribute });
 }
 
-/** Labelled range slider with the value readout on the right ("Background opacity  60%"). */
-@Component({
-	selector: 'bc-slider',
-	template: `
-		<label class="slider-header text-small">
-			<span>{{ label() }}</span>
-			<span class="text-mono-small">{{ display() }}</span>
-		</label>
-		<input
-			type="range"
-			[attr.aria-label]="label()"
-			[min]="min()"
-			[max]="max()"
-			[step]="step()"
-			[value]="value()"
-			[disabled]="disabled()"
-			[style.--fill.%]="percent()"
-			(input)="value.set(+$any($event.target).value)"
-		/>
-	`,
-	styleUrl: './controls.css',
-	host: { class: 'slider' },
-})
-export class Slider {
-	readonly label = input('');
-	readonly value = model(0);
-	readonly min = input(0);
-	readonly max = input(100);
-	readonly step = input(1);
-	readonly unit = input('%');
-	readonly disabled = input(false, { transform: booleanAttribute });
-	protected readonly percent = computed(() => {
-		const range = this.max() - this.min();
-
-		return range ? ((this.value() - this.min()) / range) * 100 : 0;
-	});
-	protected readonly display = computed(() => `${this.value()}${this.unit()}`);
-}
-
-/** Hex color + opacity field. Clicking the swatch opens the OS color picker. */
+/** Hex color + opacity field. Clicking the swatch opens the OS color picker */
 @Component({
 	selector: 'bc-color-field',
 	template: `

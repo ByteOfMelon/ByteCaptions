@@ -7,7 +7,7 @@ import { Button } from '../../ui/button/button';
 import { Dialog } from '../../ui/dialog/dialog';
 import { Select } from '../../ui/select/select';
 
-/** App-wide settings (not saved with a project). Changes apply right away. */
+/** App-wide settings (not saved with a project) */
 @Component({
 	selector: 'bc-settings-dialog',
 	imports: [Dialog, Button, Select],
@@ -43,7 +43,6 @@ export class SettingsDialog {
 	}
 }
 
-/** Asks before Reset layout (Settings, View menu). */
 export function confirmResetLayout(): Promise<boolean> {
 	return confirmAction(
 		'Put the cue list, inspector and timeline back to their default sizes?',

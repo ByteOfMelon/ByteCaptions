@@ -4,7 +4,7 @@ import { Problem } from '../../core/lint/rules';
 import { formatClock, formatTimecode } from '../../core/time/timecode';
 import { AudioWaveform, PEAKS_PER_SECOND } from '../../state/audio-peaks';
 
-/** Vertical layout of the lanes canvas; the track header column mirrors it. */
+/** Vertical layout of the lanes canvas; the track header column mirrors it */
 export const RULER_H = 24;
 export const LANES_TOP = 28;
 export const LANE_H = 56;
@@ -46,16 +46,16 @@ export function readPalette(el: Element): Palette {
 }
 
 export interface View {
-	/** Time at the left edge. */
+	/** Time at the left edge */
 	start: Ms;
 	pxPerMs: number;
 	width: number;
 	height: number;
-	/** Vertical scroll of the lanes (the ruler stays put). */
+	/** Vertical scroll of the lanes (the ruler stays put) */
 	scrollY: number;
 }
 
-/** Total height of the lanes below the ruler, for vertical scrolling. */
+/** Total height of the lanes below the ruler, for vertical scrolling */
 export const contentHeight = (trackCount: number) =>
 	LANES_TOP + trackCount * (LANE_H + LANE_GAP) + AUDIO_H;
 
@@ -71,24 +71,24 @@ export interface PaintInput {
 	playhead: Ms;
 	duration: Ms;
 	fps: number;
-	/** Ruler labels in milliseconds instead of frames. */
+	/** Ruler labels in milliseconds instead of frames */
 	msLabels: boolean;
 	snapAt: Ms | null;
 	box: { x0: number; y0: number; x1: number; y1: number } | null;
-	/** Edge being trimmed, with its time before the drag. */
+	/** Edge being trimmed, with its time before the drag */
 	trim: { cueId: CueId; edge: 'start' | 'end'; original: Ms } | null;
 	audio: AudioWaveform;
-	/** In/out range (I / O). */
+	/** In/out range */
 	range: { start: Ms; end: Ms } | null;
 	/** Markers in time order, with their flag colors. */
 	markers: { at: Ms; color: string; selected: boolean }[];
-	/** The line between two words being dragged (before word `index`). */
+	/** The line between two words being dragged (before word `index`) */
 	wordEdge: { cueId: CueId; index: number } | null;
-	/** Tap to time: the cue being tapped and how far it's been tapped. */
+	/** Tap to time: the cue being tapped and how far it's been tapped */
 	tapping: { cueId: CueId; tappedUntil: Ms | null } | null;
 }
 
-/** Ruler steps (ms); the major step is the smallest one leaving room for a timecode label. */
+/** Ruler steps (ms) */
 const STEPS = [
 	200, 500, 1000, 2000, 5000, 10_000, 15_000, 30_000, 60_000, 120_000, 300_000, 600_000,
 	1_800_000,
@@ -101,7 +101,7 @@ function paintWaveform(ctx: CanvasRenderingContext2D, input: PaintInput, mid: nu
 	if (audio.status !== 'ready') {
 		const label =
 			audio.status === 'loading'
-				? 'Reading audio…'
+				? 'Reading audio...'
 				: audio.status === 'error'
 					? audio.message
 					: null;
@@ -122,7 +122,7 @@ function paintWaveform(ctx: CanvasRenderingContext2D, input: PaintInput, mid: nu
 	const full = AUDIO_H - 8;
 	ctx.fillStyle = c.border;
 
-	// One 2px bar every 3px, showing the loudest peak in its time slice.
+	// One 2px bar every 3px, showing the loudest peak in its time slice
 	for (let x = 0; x < v.width; x += 3) {
 		const i0 = Math.max(0, Math.floor(xToMs(v, x) * perMs));
 
@@ -133,7 +133,6 @@ function paintWaveform(ctx: CanvasRenderingContext2D, input: PaintInput, mid: nu
 
 		for (let i = i0; i < i1; i++) if (peaks[i] > loudest) loudest = peaks[i];
 
-		// Square root so quiet speech is still visible next to loud music.
 		const h = Math.max(1, Math.sqrt(loudest / 255) * full);
 		ctx.fillRect(x, mid - h / 2, 2, h);
 	}
@@ -149,7 +148,7 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 		x1: Math.round(msToX(v, input.range.end)),
 	};
 
-	// In/out range band behind the ruler ticks.
+	// In/out range band behind the ruler ticks
 	if (range) {
 		ctx.fillStyle = c.brand;
 		ctx.globalAlpha = 0.28;
@@ -179,13 +178,13 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 		ctx.fillText(label, Math.round(msToX(v, t)) + 4, 2);
 	}
 
-	// Lanes scroll vertically under the fixed ruler.
+	// Lanes scroll vertically under the fixed ruler
 	ctx.save();
 	ctx.beginPath();
 	ctx.rect(0, LANES_TOP, v.width, v.height - LANES_TOP);
 	ctx.clip();
 
-	// Lanes, then the in/out tint over them, then cues and the waveform on top.
+	// Lanes, then the in/out tint over them, then cues and the waveform on top
 	const ay = laneY(tracks.length) - v.scrollY;
 	ctx.fillStyle = c.panel;
 	tracks.forEach((_, i) => ctx.fillRect(0, laneY(i) - v.scrollY, v.width, LANE_H));
@@ -209,11 +208,12 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 			paintCue(ctx, input, track, cue, y + CUE_INSET);
 		}
 	});
-	// Audio lane: the video's waveform, mirrored around the middle.
+
+	// Audio lane - the video's waveform, mirrored around the middle
 	paintWaveform(ctx, input, ay + AUDIO_H / 2);
 	ctx.restore();
 
-	// In/out edges down the lanes, with a grip for each in the ruler.
+	// In/out edges down the lanes, with a grip for each in the ruler
 	if (range) {
 		ctx.fillStyle = c.brand;
 		ctx.globalAlpha = 0.7;
@@ -228,7 +228,7 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 
 	paintMarkers(ctx, input);
 
-	// Snap guide: dashed brand line at what the edge snapped to.
+	// Snap guide
 	if (input.snapAt !== null) {
 		const x = Math.round(msToX(v, input.snapAt)) + 0.5;
 		ctx.strokeStyle = c.brand;
@@ -241,7 +241,7 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 		ctx.setLineDash([]);
 	}
 
-	// Box selection: faint fill, dashed outline.
+	// Box selection
 	if (input.box) {
 		const { x0, y0, x1, y1 } = input.box;
 		const bx = Math.min(x0, x1),
@@ -262,7 +262,7 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 		ctx.globalAlpha = 1;
 	}
 
-	// Playhead: line plus a handle in the ruler
+	// Playhead
 	const px = Math.round(msToX(v, input.playhead));
 
 	if (px >= -6 && px <= v.width + 6) {
@@ -273,7 +273,6 @@ export function paintTimeline(ctx: CanvasRenderingContext2D, input: PaintInput):
 	}
 }
 
-/** Markers: a flag on the ruler and a faint line down the lanes; the selected one brighter. */
 function paintMarkers(ctx: CanvasRenderingContext2D, input: PaintInput): void {
 	const { view: v, palette: c } = input;
 
@@ -286,7 +285,6 @@ function paintMarkers(ctx: CanvasRenderingContext2D, input: PaintInput): void {
 		ctx.globalAlpha = m.selected ? 0.8 : 0.35;
 		ctx.fillRect(x, RULER_H, 1, v.height - RULER_H);
 		ctx.globalAlpha = 1;
-		// 11 × 13 flag pointing down at the time, its tip on the ruler's bottom edge.
 		ctx.beginPath();
 		ctx.moveTo(x - 5, 11);
 		ctx.lineTo(x + 6, 11);
@@ -324,7 +322,7 @@ function paintCue(
 	const tapping = input.tapping?.cueId === cue.id ? input.tapping : null;
 
 	if (tapping?.tappedUntil != null) {
-		// Tap to time: the part already tapped is shaded.
+		// Tap to time
 		ctx.save();
 		roundRect(ctx, x0, y, w, h, 4);
 		ctx.clip();
@@ -364,7 +362,7 @@ function paintCue(
 		ctx.stroke();
 	}
 
-	// Trimming: brand handle on the dragged edge, dashed line where it started.
+	// Trimming
 	const trim = input.trim;
 
 	if (trim?.cueId === cue.id) {
@@ -395,13 +393,11 @@ function roundRect(
 	r: number,
 ): void {
 	ctx.beginPath();
-	// A zero-size box (box select before it moves) would give a negative radius, which throws.
 	ctx.roundRect(x, y, w, h, Math.max(0, Math.min(r, w / 2, h / 2)));
 }
 
 /**
- * The selected cue's words, each in its own slot, with a line between them (the one being
- * dragged drawn solid). While tapping, words not yet tapped are dimmed.
+ * The selected cue's words, each in its own slot, with a line between them
  */
 function paintWords(
 	ctx: CanvasRenderingContext2D,

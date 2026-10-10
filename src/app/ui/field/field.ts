@@ -4,9 +4,7 @@ import { LucideChevronsUpDown } from '@lucide/angular';
 let nextId = 0;
 
 /**
- * Labelled field shell. Project an `<input bcInput>` plus any trailing icon:
- * `<bc-field label="Save to"><input bcInput [value]="path" /><svg lucideFolder></svg></bc-field>`.
- * `error` turns the outline danger and replaces the helper text.
+ * Labelled field shell
  */
 @Component({
 	selector: 'bc-field',
@@ -32,13 +30,11 @@ export class Field {
 	readonly error = input<string | null>();
 	readonly disabled = input(false, { transform: booleanAttribute });
 	readonly mono = input(false, { transform: booleanAttribute });
-	/** Give the projected input `[id]="field.fieldId"` so the label targets it. */
 	readonly fieldId = `bc-field-${nextId++}`;
 }
 
 /**
- * Numeric field with a stepper and optional unit suffix ("%"). Typed values apply on Enter or blur.
- * Out-of-range or non-numeric text shows `rangeError` / "Enter a number."
+ * Numeric field with a stepper and optional unit suffix
  */
 @Component({
 	selector: 'bc-number-field',
@@ -86,7 +82,6 @@ export class NumberField {
 	readonly step$ = input(1, { alias: 'step' });
 	readonly suffix = input<string>();
 	readonly disabled = input(false, { transform: booleanAttribute });
-	/** Error from outside (e.g. "Must be shorter than max duration."); typing errors win. */
 	readonly invalid = input<string | null>(null, { alias: 'error' });
 
 	private readonly draft = signal<string | null>(null);
@@ -110,7 +105,6 @@ export class NumberField {
 		this.draft.set(text);
 	}
 
-	/** Typed values apply on Enter or blur, so typing "82" is one edit, not "8" then "82". */
 	protected commit(): void {
 		const d = this.draft();
 

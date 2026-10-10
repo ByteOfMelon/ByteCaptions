@@ -2,8 +2,7 @@ import { Component, input } from '@angular/core';
 import { LucideCircleAlert, LucideInfo } from '@lucide/angular';
 
 /**
- * Outlined inline message: icon, bold title, faded detail, optional trailing action
- * (`<button noticeAction>`).
+ * An inline message to the user
  */
 @Component({
 	selector: 'bc-notice',

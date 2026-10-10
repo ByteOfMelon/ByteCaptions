@@ -1,7 +1,6 @@
 import { Injectable, computed, effect, signal } from '@angular/core';
 
 export type Theme = 'dark' | 'light';
-/** What the user picked: a fixed theme, or follow the system's. */
 export type ThemePreference = Theme | 'system';
 
 const KEY = 'bc.theme';
@@ -16,13 +15,11 @@ function loadPreference(): ThemePreference {
 	}
 }
 
-// matchMedia is missing in some environments (e.g. the test DOM); fall back to dark.
 const systemQuery = globalThis.matchMedia?.('(prefers-color-scheme: light)');
 const systemTheme = (): Theme => (systemQuery?.matches ? 'light' : 'dark');
 
 /**
- * Owns the active color theme; reflected as data-theme on <html>. Defaults to following the
- * system theme (live); the user can pin light or dark, or go back to the system's.
+ * Owns the active color theme
  */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
@@ -43,11 +40,10 @@ export class ThemeService {
 		this.preference.set(p);
 
 		try {
-			// Nothing stored means "system", which the pre-boot script in index.html also reads.
 			if (p === 'system') localStorage.removeItem(KEY);
 			else localStorage.setItem(KEY, p);
 		} catch {
-			// Storage can be unavailable; the choice just won't persist.
+			console.log('[Themes] Failed to set theme preference in localStorage');
 		}
 	}
 

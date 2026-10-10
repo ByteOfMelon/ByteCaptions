@@ -26,13 +26,12 @@ export interface MenuItem {
 	id: string;
 	label: string;
 	icon?: LucideIconData;
-	/** Trailing faded value, e.g. the current preset name. */
+	/** Trailing faded value, e.g. the current preset name */
 	value?: string;
 	keys?: string;
 	checked?: boolean;
 	danger?: boolean;
 	disabled?: boolean;
-	/** Small color square in place of an icon (Track color). */
 	swatch?: string;
 	submenu?: MenuEntry[];
 }
@@ -43,7 +42,7 @@ function isItem(e: MenuEntry): e is MenuItem {
 	return e.kind === undefined || e.kind === 'item';
 }
 
-/** Composable menu panel. Emits the chosen item's id (including items inside submenus). */
+/** Composable menu panel */
 @Component({
 	selector: 'bc-menu',
 	imports: [Kbd, LucideCheck, LucideChevronRight, LucideDynamicIcon],
@@ -59,7 +58,6 @@ export class Menu {
 	readonly items = input.required<MenuEntry[]>();
 	readonly nested = input(false, { transform: booleanAttribute });
 	readonly select = output<string>();
-	/** Left arrow / Escape: close this menu (submenu returns focus to its parent). */
 	readonly back = output<void>();
 
 	private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -103,7 +101,7 @@ export class Menu {
 	}
 
 	protected onKey(e: KeyboardEvent): void {
-		// Keys inside an open submenu belong to the submenu.
+		// Keys inside an open submenu belong to the submenu
 		if (e.target !== this.host.nativeElement) return;
 
 		const f = this.focusable();
@@ -149,7 +147,7 @@ export class Menu {
 	}
 }
 
-/** Opens a `bc-menu` at a screen point (right-click). Resolves with the chosen id, or null if dismissed. */
+/** Opens a context menu at a certain screen point when right-clicked */
 @Injectable({ providedIn: 'root' })
 export class ContextMenu {
 	private readonly appRef = inject(ApplicationRef);
@@ -175,7 +173,7 @@ export class ContextMenu {
 			this.appRef.attachView(ref.hostView);
 			ref.changeDetectorRef.detectChanges();
 
-			// Keep the menu on screen.
+			// Keep the menu on screen
 			const r = el.getBoundingClientRect();
 
 			if (r.right > innerWidth) el.style.left = `${Math.max(4, x - r.width)}px`;

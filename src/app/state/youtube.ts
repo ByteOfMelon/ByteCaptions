@@ -9,7 +9,7 @@ export interface YtAccount {
 	id: string;
 	title: string;
 	thumbnail: string;
-	/** Playlist of the channel's uploads. */
+	/** A playlist of the channel's uploads */
 	uploads: string;
 }
 
@@ -30,7 +30,7 @@ export interface YtCaption {
 	isDraft: boolean;
 }
 
-/** Errors from src-tauri/src/youtube.rs; `kind` picks the message and actions. */
+/** Errors from src-tauri/src/youtube.rs */
 export interface YtError {
 	kind:
 		| 'not-configured'
@@ -57,16 +57,16 @@ export interface UploadStep {
 export interface UploadOptions {
 	video: YtVideo;
 	trackIds: TrackId[];
-	/** YouTube language code, e.g. "en". */
+	/** YouTube language code, e.g. "en" */
 	language: string;
-	/** Track name shown on YouTube; empty shows just the language. */
+	/** Track name shown on YouTube - empty shows just the language */
 	name: string;
 	draft: boolean;
-	/** The video's existing track in this language, replaced by the upload. */
+	/** The video's existing track in this language, replaced by the upload */
 	replace: YtCaption | null;
 }
 
-/** Caption languages offered for upload, with YouTube's codes. */
+/** Caption languages offered for upload, using YouTube's language codes */
 export const CAPTION_LANGUAGES: { code: string; name: string }[] = [
 	['en', 'English'],
 	['es', 'Spanish'],
@@ -88,19 +88,19 @@ export const CAPTION_LANGUAGES: { code: string; name: string }[] = [
 	['zh', 'Chinese'],
 ].map(([code, name]) => ({ code, name }));
 
+/** Videos this close to the project's length count as the same video */
+const SAME_LENGTH_MS = 1500;
+
 export function languageName(code: string): string {
 	return CAPTION_LANGUAGES.find((l) => l.code === code)?.name ?? code;
 }
-
-/** Videos this close to the project's length count as the same video. */
-const SAME_LENGTH_MS = 1500;
 
 const asError = (e: unknown): YtError =>
 	typeof e === 'object' && e && 'kind' in e
 		? (e as YtError)
 		: { kind: 'failed', message: String(e) };
 
-/** The selected tracks combined into one, regardless of preview mute/solo (as in Export). */
+/** The selected tracks combined into one, regardless of preview mute/solo (as in Export) */
 export function combineTracks(p: Project, ids: ReadonlySet<TrackId>): Project {
 	return {
 		...p,
@@ -111,22 +111,20 @@ export function combineTracks(p: Project, ids: ReadonlySet<TrackId>): Project {
 }
 
 /**
- * YouTube sign-in and caption upload (PLAN §5.12), desktop only: the backend
- * (src-tauri/src/youtube.rs) holds the sign-in and talks to the YouTube API. The upload job
- * lives here so it keeps going when the dialog closes.
+ * YouTube sign-in and caption upload
  */
 @Injectable({ providedIn: 'root' })
 export class YouTube {
 	private readonly store = inject(ProjectStore);
 
-	/** This build has a Google OAuth client (false in the browser). */
+	/** Whether this build has a Google OAuth client */
 	readonly available = signal(false);
-	/** The signed-in channel; null when signed out, undefined while checking. */
+	/** The signed-in channel */
 	readonly account = signal<YtAccount | null | undefined>(undefined);
 	readonly accountError = signal<YtError | null>(null);
 	readonly signingIn = signal(false);
 
-	/** The channel's uploads loaded so far, newest first. */
+	/** The channel's uploads loaded so far, newest first */
 	readonly videos = signal<YtVideo[]>([]);
 	readonly totalVideos = signal(0);
 	readonly loadingVideos = signal(false);
@@ -144,11 +142,11 @@ export class YouTube {
 		warnings: number;
 		took: string;
 	} | null>(null);
-	/** What the running or finished job is uploading. */
+	/** What the running or finished job is uploading */
 	readonly job = signal<UploadOptions | null>(null);
 	readonly running = computed(() => this.phase() === 'running');
 
-	/** Run at start-up, so menus know whether to offer YouTube before they're built. */
+	/** Run at start-up, so menus know whether to offer YouTube before they're built */
 	async init(): Promise<void> {
 		if (!isDesktop) return;
 
@@ -179,7 +177,7 @@ export class YouTube {
 		this.account.set(a);
 	}
 
-	/** Sign in in the browser. Resolves once signed in, or quietly if it was cancelled. */
+	/** Sign in via Google in the user's default browser */
 	async signIn(): Promise<boolean> {
 		this.signingIn.set(true);
 		this.accountError.set(null);
@@ -208,7 +206,7 @@ export class YouTube {
 		this.setAccount(null);
 	}
 
-	/** Load the next page of uploads (the first page on the first call). */
+	/** Load the next page of uploads */
 	async loadVideos(): Promise<void> {
 		const account = this.account();
 
@@ -234,7 +232,6 @@ export class YouTube {
 		}
 	}
 
-	/** A video by ID, e.g. pasted into the search box. */
 	async findVideo(id: string): Promise<YtVideo | null> {
 		try {
 			return await invoke<YtVideo | null>('youtube_video', { id });
@@ -247,7 +244,7 @@ export class YouTube {
 		return invoke<YtCaption[]>('youtube_captions', { videoId });
 	}
 
-	/** The loaded video closest to `ms` long, if one is within a second and a half. */
+	/** The loaded video closest to `ms` long */
 	matchByLength(ms: Ms): YtVideo | null {
 		let best: YtVideo | null = null;
 

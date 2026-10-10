@@ -4,7 +4,7 @@ import { ProjectStore } from '../../state/project-store';
 import { Button } from '../../ui/button/button';
 import { Notice } from '../../ui/notice/notice';
 
-/** Warns about errors and warnings in the tracks about to be exported or uploaded. */
+/** Warns about errors and warnings in the tracks about to be exported or uploaded */
 @Component({
 	selector: 'bc-track-problems',
 	imports: [Button, Notice],
@@ -21,7 +21,6 @@ import { Notice } from '../../ui/notice/notice';
 			</bc-notice>
 		}
 	`,
-	// No box of its own, so an empty notice adds no gap to the dialog.
 	styles: `
 		:host {
 			display: contents;

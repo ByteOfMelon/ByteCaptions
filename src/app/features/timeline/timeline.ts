@@ -60,24 +60,23 @@ import { TimelineMenus } from './timeline-menus';
 
 const EDGE_PX = 6;
 const SNAP_PX = 8;
-/** Zoom range in pixels per second; the slider maps 0–100 logarithmically onto it. */
+/** Zoom range in pixels per second - the slider maps 0–100 logarithmically onto it */
 const MIN_PX_PER_S = 2;
 const MAX_PX_PER_S = 800;
-/** Chrome stops laying out elements wider than ~33M px. */
 const MAX_SCROLL_PX = 10_000_000;
-/** Dragging within this many px of the left/right edge (or past it) scrolls the view. */
+/** Dragging within this many px of the left/right edge (or past it) scrolls the view */
 const AUTOSCROLL_PX = 24;
-/** Auto-scroll speed in px per frame: grows with how far past AUTOSCROLL_PX the pointer is. */
+/** Auto-scroll speed in px per frame: grows with how far past AUTOSCROLL_PX the pointer is */
 const AUTOSCROLL_MIN_SPEED = 2;
 const AUTOSCROLL_MAX_SPEED = 60;
 
 type Hit =
 	| { kind: 'ruler' }
-	/** In/out range in the ruler: an edge, or the whole range on Alt+drag (edge null). */
+	/** In/out range in the ruler */
 	| { kind: 'range'; edge: 'start' | 'end' | null }
 	| { kind: 'marker'; id: MarkerId }
 	| { kind: 'cue'; track: Track; trackIndex: number; cueId: CueId; edge: 'start' | 'end' | null }
-	/** The line before word `index` in the selected cue. */
+	/** The line before word `index` in the selected cue */
 	| { kind: 'word'; track: Track; cueId: CueId; index: number }
 	| { kind: 'lane'; track: Track; trackIndex: number }
 	| { kind: 'none' };
@@ -99,7 +98,7 @@ type Drag =
 	| { mode: 'word'; cueId: CueId; index: number; original: Ms }
 	| { mode: 'range'; edge: 'start' | 'end' | null; downMs: Ms; start: Ms; end: Ms }
 	| { mode: 'marker'; id: MarkerId; downX: number; moved: boolean }
-	/** Alt+drag on empty lane space draws a new cue; it's added once the drag moves. */
+	/** Alt+drag on empty lane space draws a new cue; it's added once the drag moves */
 	| {
 			mode: 'create';
 			trackId: TrackId;
@@ -108,10 +107,10 @@ type Drag =
 			cueId: CueId | null;
 			moved: boolean;
 	  }
-	/** The box's start is kept in time so it stays put while the view auto-scrolls. */
+	/** The box's start is kept in time so it stays put while the view auto-scrolls */
 	| { mode: 'box'; ms0: Ms; y0: number; base: ReadonlySet<CueId>; moved: boolean };
 
-/** Focuses and selects an input when it appears (inline rename). */
+/** Focuses and selects an input when it appears (inline rename) */
 @Directive({ selector: 'input[bcAutoselect]' })
 class AutoSelect {
 	constructor() {
@@ -120,21 +119,17 @@ class AutoSelect {
 	}
 }
 
-/** Floating label over the lanes while dragging (Interactions board). */
+/** Floating label over the lanes while dragging (Interactions board) */
 interface Hud {
 	text: string;
 	x: number;
 	y: number;
-	/** Which side of `x` the label sits on. */
+	/** Which side of `x` the label sits on */
 	align: 'left' | 'right';
 }
 
 /**
- * Canvas timeline (PLAN §5.2): ruler, one lane per track, a waveform lane and the playhead.
- * Drag a cue to move it (vertically to change track), drag its edges to trim, drag empty
- * lane space to box-select, or Alt+drag it to draw a new cue. Wheel scrolls; Shift+wheel
- * (or wheel over the track headers) scrolls tracks vertically; Ctrl+wheel zooms around the
- * pointer.
+ * Canvas timeline
  */
 @Component({
 	selector: 'bc-timeline',
@@ -174,20 +169,20 @@ export class Timeline {
 	private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
 	private readonly hscroll = viewChild.required<ElementRef<HTMLElement>>('hscroll');
 
-	/** Zoom slider position, 0–100. */
+	/** Zoom slider position, 0–100 */
 	protected readonly zoom = signal(56);
 	private readonly viewStart = signal<Ms>(0);
 	private readonly size = signal({ width: 0, height: 0 });
 	private readonly snapAt = signal<Ms | null>(null);
-	/** What the last snap landed on, for the snap label. */
+	/** What the last snap landed on, for the snap label */
 	private snapLabel = '';
 	private readonly trim = signal<{ cueId: CueId; edge: 'start' | 'end'; original: Ms } | null>(
 		null,
 	);
 	protected readonly hud = signal<Hud | null>(null);
-	/** The line between two words being dragged. */
+	/** The line between two words being dragged */
 	private readonly wordEdge = signal<{ cueId: CueId; index: number } | null>(null);
-	/** Tap to time's hint, shown above the cue being tapped. */
+	/** Tap to time's hint, shown above the cue being tapped */
 	protected readonly tapHint = computed(() => {
 		const t = this.tapping.active();
 		const ref = t && this.store.find(t.cueId);
@@ -199,13 +194,13 @@ export class Timeline {
 
 		return { text: t.label, x: Math.max(160, Math.min(v.width - 160, x)) };
 	});
-	/** Note of the marker under the pointer. */
+	/** Note of the marker under the pointer */
 	protected readonly markerTip = signal<Hud | null>(null);
 	private readonly scrollTarget = signal(0);
 	private readonly box = signal<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
 	protected readonly cursor = signal('default');
 	private drag: Drag | null = null;
-	/** Last pointer position during a drag (canvas px), for auto-scroll at the edges. */
+	/** Last pointer position during a drag (canvas px), for auto-scroll at the edges */
 	private pointer: { x: number; y: number } | null = null;
 	private edgeFrame = 0;
 
@@ -214,7 +209,6 @@ export class Timeline {
 			? formatClock(this.store.playhead())
 			: formatTimecode(this.store.playhead(), this.store.project().fps),
 	);
-	/** "In … → Out … • 4.73 s" while an in/out range is set. */
 	protected readonly rangeLabel = computed(() => {
 		const r = this.playback.range();
 
@@ -227,7 +221,7 @@ export class Timeline {
 
 		return `In ${fmt(r.start)} → Out ${fmt(r.end)} • ${((r.end - r.start) / 1000).toFixed(2)} s`;
 	});
-	/** Fully zoomed out shows the whole video, however long it is. */
+	/** Fully zoomed out shows the whole video, however long it is */
 	private readonly minPxPerS = computed(() => {
 		const seconds = this.store.duration() / 1000;
 		const width = this.size().width;
@@ -239,13 +233,12 @@ export class Timeline {
 
 		return (min * Math.pow(MAX_PX_PER_S / min, this.zoom() / 100)) / 1000;
 	});
-	/** Latest view start: scrolling may go half a screen past the end. */
+	/** Latest view start: scrolling may go half a screen past the end */
 	private readonly maxStart = computed(() =>
 		Math.max(0, this.store.duration() - this.size().width / this.pxPerMs() / 2),
 	);
 	/**
-	 * Scrollbar content width, capped below the browser's element size limit (positions map
-	 * proportionally).
+	 * Scrollbar content width, capped below the browser's element size limit
 	 */
 	protected readonly scrollWidth = computed(() =>
 		Math.min(MAX_SCROLL_PX, this.maxStart() * this.pxPerMs() + this.size().width),
@@ -253,7 +246,6 @@ export class Timeline {
 	private readonly maxScrollY = computed(() =>
 		Math.max(0, contentHeight(this.store.project().tracks.length) - this.size().height),
 	);
-	/** Vertical scroll, clamped so removing tracks or growing the panel never strands it. */
 	protected readonly scrollY = computed(() =>
 		Math.max(0, Math.min(this.maxScrollY(), this.scrollTarget())),
 	);
@@ -280,7 +272,6 @@ export class Timeline {
 			onCleanup(() => ro.disconnect());
 		});
 
-		// A different project starts scrolled to its beginning.
 		const projectId = computed(() => this.store.project().id);
 		effect(() => {
 			projectId();
@@ -290,7 +281,7 @@ export class Timeline {
 			});
 		});
 
-		// Keep the playhead in view while playing (page-style follow).
+		// Keep the playhead in view while playing (page-style follow)
 		effect(() => {
 			if (!this.store.playing()) return;
 
@@ -345,7 +336,7 @@ export class Timeline {
 			});
 		});
 
-		// Keep the scrollbar on the view (after render, so its content width is current).
+		// Keep the scrollbar on the view
 		afterRenderEffect(() => {
 			const el = this.hscroll().nativeElement;
 			this.scrollWidth();
@@ -356,7 +347,7 @@ export class Timeline {
 			if (Math.abs(el.scrollLeft - left) > 1) el.scrollLeft = left;
 		});
 
-		// Opening a marker that's off-screen (Markers tab, Shift+M) scrolls it into view.
+		// Opening a marker that's off-screen scrolls it into view
 		effect(() => {
 			const m = this.markers.find(this.markers.editing());
 
@@ -376,11 +367,11 @@ export class Timeline {
 		this.ui.zoomTimeline = (step) => this.zoomStep(step);
 		inject(DestroyRef).onDestroy(() => (this.ui.zoomTimeline = null));
 
-		// Fonts load after first paint; repaint once they are ready.
+		// Fonts load after first paint - repaint once they are ready
 		void document.fonts.ready.then(() => this.size.update((s) => ({ ...s })));
 	}
 
-	// ---- Header controls -------------------------------------------------
+	// Header controls
 
 	protected zoomBy(delta: number, aroundX = this.size().width / 2): void {
 		const v = this.view();
@@ -393,7 +384,6 @@ export class Timeline {
 		this.zoomBy(Number((e.target as HTMLInputElement).value) - this.zoom(), this.playheadX());
 	}
 
-	/** Keyboard zoom: around the playhead when it's in view; fit shows the whole video. */
 	private zoomStep(step: TimelineZoom): void {
 		if (step !== 'fit') return this.zoomBy(step === 'in' ? 10 : -10, this.playheadX());
 
@@ -401,7 +391,6 @@ export class Timeline {
 		this.viewStart.set(0);
 	}
 
-	/** The playhead's x if it's in view, else the middle of the timeline. */
 	private playheadX(): number {
 		const x = msToX(this.view(), this.store.playhead());
 
@@ -419,7 +408,6 @@ export class Timeline {
 
 	protected readonly renameError = signal<string | null>(null);
 
-	/** Enter keeps the field open on an empty name and says why; leaving it reverts. */
 	protected finishRename(track: Track, name: string, keepOpen = false): void {
 		if (this.ui.renamingTrack() !== track.id) return;
 
@@ -438,7 +426,7 @@ export class Timeline {
 		if (name.trim()) this.renameError.set(null);
 	}
 
-	// ---- Context menus ---------------------------------------------------
+	// Context menus
 
 	protected onContextMenu(e: MouseEvent): void {
 		e.preventDefault();
@@ -468,7 +456,7 @@ export class Timeline {
 		}
 	}
 
-	/** Double-clicking a marker opens its popover. */
+	/** Double-clicking a marker opens its popover */
 	protected onDoubleClick(e: MouseEvent): void {
 		const r = this.canvas().nativeElement.getBoundingClientRect();
 		const marker = e.clientY - r.top < RULER_H ? this.markerAt(e.clientX - r.left) : null;
@@ -481,7 +469,7 @@ export class Timeline {
 		void this.menus.header(e, track);
 	}
 
-	// ---- Pointer gestures ------------------------------------------------
+	// Pointer gestures
 
 	private local(e: PointerEvent | WheelEvent): { x: number; y: number } {
 		const r = this.canvas().nativeElement.getBoundingClientRect();
@@ -504,7 +492,7 @@ export class Timeline {
 		const v = this.view();
 		const ms = xToMs(v, x);
 		const inCue = y >= laneY(i) + CUE_INSET && y <= laneY(i) + LANE_H - CUE_INSET;
-		// Prefer edges so short cues stay trimmable; check the selected cue first.
+		// Prefer edges so short cues stay trimmable - check the selected cue first
 		const cues = [...track.cues].sort(
 			(a, b) =>
 				Number(this.store.selection().has(b.id)) - Number(this.store.selection().has(a.id)),
@@ -518,7 +506,8 @@ export class Timeline {
 
 			const edge =
 				Math.abs(x - x0) <= EDGE_PX ? 'start' : Math.abs(x - x1) <= EDGE_PX ? 'end' : null;
-			// The selected cue's word lines can be dragged.
+
+			// The selected cue's word lines can be dragged
 			const words = this.store.selection().has(c.id) && !edge ? c.words : undefined;
 			const word = words?.findIndex((w, k) => k > 0 && Math.abs(x - msToX(v, w.start)) <= 4);
 
@@ -532,7 +521,7 @@ export class Timeline {
 		return { kind: 'lane', track, trackIndex: i };
 	}
 
-	/** The marker whose flag is at x on the ruler (the selected one wins), if any. */
+	/** The marker whose flag is at x on the ruler (the selected one wins), if any */
 	private markerAt(x: number): MarkerId | null {
 		const v = this.view();
 		let best: { id: MarkerId; d: number } | null = null;
@@ -546,11 +535,6 @@ export class Timeline {
 		return best?.id ?? null;
 	}
 
-	/**
-	 * Dragging the ruler scrubs. Markers and the in/out edges are grabbed only away from the
-	 * playhead (which often sits on one after Shift+M or I / O); Alt+drag inside the range
-	 * moves the whole range.
-	 */
 	private rulerHit(x: number, alt: boolean): Hit {
 		const r = this.playback.range();
 		const v = this.view();
@@ -576,10 +560,7 @@ export class Timeline {
 	}
 
 	/**
-	 * Snap whichever of `points` is closest (within SNAP_PX) to the playhead, another cue's
-	 * edge, a word boundary or the edge of a silence; failing that, the first to a frame.
-	 * Returns the snap delta. `exclude` are the cues being dragged; a trimmed cue's own words
-	 * still count (`ownWords`).
+	 * Snap whichever of `points` is closest (within SNAP_PX) to the playhead
 	 */
 	private snapDelta(points: Ms[], exclude: ReadonlySet<CueId>, ownWords = false): number {
 		if (!this.ui.snapping()) return 0;
@@ -646,7 +627,7 @@ export class Timeline {
 		if (h.kind === 'ruler') {
 			this.drag = { mode: 'scrub' };
 
-			// Grabbing the playhead's own handle doesn't nudge it to the pointer.
+			// Grabbing the playhead's own handle doesn't nudge it to the pointer
 			if (Math.abs(x - msToX(this.view(), this.store.playhead())) > 6)
 				this.playback.seek(xToMs(this.view(), x));
 		} else if (h.kind === 'marker') {
@@ -759,8 +740,7 @@ export class Timeline {
 	}
 
 	/**
-	 * Like Premiere and Resolve: while dragging near or past the left/right edge, scroll the
-	 * view each frame and re-apply the drag at the new time under the pointer.
+	 * While dragging near or past the left/right edge, scroll the view each frame
 	 */
 	private edgeScroll(): void {
 		if (this.edgeFrame) return;
@@ -805,7 +785,7 @@ export class Timeline {
 		});
 	}
 
-	/** Applies the current drag with the pointer at canvas (x, y). */
+	/** Applies the current drag with the pointer at canvas (x, y) */
 	private dragTo(x: number, y: number): void {
 		const d = this.drag;
 
@@ -902,7 +882,8 @@ export class Timeline {
 						);
 
 					const now = this.playback.range()![d.edge];
-					// Labels sit inside the range so the In label isn't hidden behind the track headers.
+
+					// Labels sit inside the range so the In label isn't hidden behind the track headers
 					this.showHud(now, RULER_H + 48, d.edge === 'start' ? 'right' : 'left', () =>
 						d.edge === 'start' ? `In ${fmt(now)}` : `Out ${fmt(now)}`,
 					);
@@ -935,7 +916,7 @@ export class Timeline {
 				let delta = Math.max(-minStart, ms - d.downMs);
 				const a = d.orig.get(d.anchor);
 
-				// Pure vertical drags keep their timing; only horizontal movement snaps.
+				// Pure vertical drags keep their timing; only horizontal movement snaps
 				if (Math.abs(x - d.downX) < 3) delta = 0;
 				else if (a)
 					delta = Math.round(
@@ -946,7 +927,8 @@ export class Timeline {
 					for (const [id, o] of d.orig) setTiming(id, o.start + delta, o.end + delta)(p);
 				});
 				this.showHud(null, y, 'right', null);
-				// Vertical drag moves cues to another unlocked track (when they share one).
+
+				// Vertical drag moves cues to another unlocked track (when they share one)
 				const h = this.hit(x, y);
 				const sameTrack = this.store.selectedCues().every((r) => r.track.id === d.trackId);
 
@@ -1050,10 +1032,10 @@ export class Timeline {
 		)
 			this.store.end();
 
-		// Clicking a marker selects it and jumps there.
+		// Clicking a marker selects it and jumps there
 		if (d.mode === 'marker' && !d.moved) this.markers.select(d.id);
 
-		// Alt+click without dragging just moves the playhead, like a plain click.
+		// Alt+click without dragging just moves the playhead, like a plain click
 		if (d.mode === 'create' && !d.moved)
 			this.playback.seek(xToMs(this.view(), this.local(e).x));
 
@@ -1066,7 +1048,7 @@ export class Timeline {
 		}
 	}
 
-	/** Hovering a marker shows its note (or its number) under the flag. */
+	/** Hovering a marker shows its note (or its number) under the flag */
 	private showMarkerTip(id: MarkerId | null): void {
 		const m = this.markers.find(id);
 
@@ -1085,7 +1067,7 @@ export class Timeline {
 		this.markerTip.set(null);
 	}
 
-	/** Where the edit popover sits: under the marker, kept inside the window. */
+	/** Where the edit popover sits: under the marker, kept inside the window */
 	protected readonly popover = computed(() => {
 		const m = this.markers.find(this.markers.editing());
 		const v = this.view();
@@ -1101,8 +1083,7 @@ export class Timeline {
 	});
 
 	/**
-	 * Shows the snap label at the snap point when snapped, otherwise `fallback` (if given)
-	 * beside `ms`. Labels sit just above the pointer.
+	 * Shows the snap label at the snap point when snapped, otherwise `fallback` (if given) beside ms
 	 */
 	private showHud(
 		ms: Ms | null,
@@ -1144,11 +1125,11 @@ export class Timeline {
 
 		const ms = (el.scrollLeft / range) * this.maxStart();
 
-		// Ignore the echo of setting scrollLeft from the view.
+		// Ignore the echo of setting scrollLeft from the view
 		if (Math.abs(ms - this.viewStart()) * this.pxPerMs() >= 1) this.viewStart.set(ms);
 	}
 
-	/** Vertical scroll of the track lanes; headers follow via a transform. */
+	/** Vertical scroll of the track lanes; headers follow via a transform */
 	protected scrollBy(dy: number): void {
 		this.scrollTarget.set(Math.max(0, Math.min(this.maxScrollY(), this.scrollY() + dy)));
 	}

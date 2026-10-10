@@ -25,11 +25,7 @@ type Backdrop = 'frame' | 'bright' | 'dark';
 type PreviewMode = 'desktop' | 'mobile' | 'tv';
 
 /**
- * Style Presets (PLAN §5.7): edit project presets against a live caption sample.
- * Edits are drafted and applied in one undo step on "Save changes".
- *
- * The model keeps positions separate from styles, so "Position" here edits the position
- * used by the tracks whose default is this preset.
+ * Edit project presets against a live caption sample
  */
 @Component({
 	selector: 'bc-style-presets-dialog',
@@ -51,7 +47,7 @@ type PreviewMode = 'desktop' | 'mobile' | 'tv';
 export class StylePresetsDialog implements OnInit {
 	private readonly store = inject(ProjectStore);
 	protected readonly ref = inject(DialogRef);
-	/** Preset to open on; defaults to the selected cue's. */
+	/** Preset to open on; defaults to the selected cue's */
 	readonly initialStyleId = input<StyleId>();
 
 	protected readonly styles = signal<Record<StyleId, CaptionStyle>>(
@@ -65,7 +61,6 @@ export class StylePresetsDialog implements OnInit {
 	protected readonly backdrop = signal<Backdrop>('frame');
 	protected readonly previewMode = signal<PreviewMode>('desktop');
 	protected readonly dirty = signal(false);
-	/** Preset name as typed; an empty one shows an error instead of being applied. */
 	protected readonly nameDraft = signal<string | null>(null);
 	protected readonly nameError = computed(() =>
 		this.nameDraft()?.trim() === '' ? 'Preset name can’t be empty.' : null,
@@ -83,7 +78,7 @@ export class StylePresetsDialog implements OnInit {
 	];
 	protected readonly defaultId = DEFAULT_STYLE_ID;
 
-	/** Cues per preset, honoring per-cue overrides of the track default. */
+	/** Cues per preset, honoring per-cue overrides of the track default */
 	private readonly usage = computed(() => {
 		const byStyle = new Map<StyleId, Map<string, number>>();
 
@@ -136,7 +131,7 @@ export class StylePresetsDialog implements OnInit {
 		});
 	});
 
-	/** Position shown for the preset: the default position of the first track using it. */
+	/** Position shown for the preset */
 	private readonly positionId = computed<PosId>(() => {
 		const track = this.store
 			.project()
@@ -148,7 +143,7 @@ export class StylePresetsDialog implements OnInit {
 
 	protected readonly sampleCss = computed(() => {
 		const s = this.current();
-		// The preview frame is 270px tall; YouTube sizes captions from player height.
+		// The preview frame is 270px tall - YouTube sizes captions from player height
 		const fontPx = 270 * 0.0533 * s.scale;
 
 		return { ...captionTextStyle(s, Math.max(1, fontPx / 18)), 'font-size': `${fontPx}px` };
@@ -166,7 +161,7 @@ export class StylePresetsDialog implements OnInit {
 	protected select(id: StyleId): void {
 		this.selectedId.set(id);
 		this.nameDraft.set(null);
-		// Sample text: a real cue that uses this preset, so the preview is representative.
+		// Default sample text - a real cue that uses the preset
 		const primary = this.store.primary();
 
 		if (primary && (primary.cue.styleId ?? primary.track.defaultStyleId) === id)
@@ -219,7 +214,7 @@ export class StylePresetsDialog implements OnInit {
 		this.select(id);
 	}
 
-	/** Cues and tracks on a deleted preset fall back to the default preset when saved. */
+	/** Cues and tracks on a deleted preset fall back to the default preset when saved */
 	protected remove(): void {
 		const id = this.selectedId();
 

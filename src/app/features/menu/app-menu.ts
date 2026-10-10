@@ -24,7 +24,7 @@ import { EditorCommands } from '../editor/editor-commands';
 import { CommandPalette } from '../palette/command-palette';
 import { SettingsDialog, confirmResetLayout } from '../settings/settings-dialog';
 
-/** A menu entry for the meny bar. */
+/** A menu entry for the menu bar */
 type Entry =
 	| {
 			text: string;
@@ -39,8 +39,7 @@ type Entry =
 const SHOW_KEYS = navigator.userAgent.includes('Windows');
 
 /**
- * The desktop window's menu bar (File, Edit, Project, View, Help). Shortcut keys are shown
- * but handled by the app, not the menu itself.
+ * The desktop window's menu bar
  */
 @Injectable({ providedIn: 'root' })
 export class AppMenu {
@@ -73,7 +72,7 @@ export class AppMenu {
 		effect(() => {
 			if (!this.ready()) return;
 
-			// Only changes go to the native menu. Most edits change just undo/redo.
+			// Only changes go to the native menu. Most edits change just undo/redo
 			for (const l of this.live) {
 				const now = { text: l.text(), enabled: l.enabled() };
 
@@ -99,9 +98,9 @@ export class AppMenu {
 				...(IS_MAC
 					? [
 							await this.submenu('ByteCaptions', [
-								{ text: 'About ByteCaptions…', run: () => void this.about() },
+								{ text: 'About ByteCaptions...', run: () => void this.about() },
 								'separator',
-								{ text: 'Settings…', keys: 'Ctrl+,', run: () => this.settings() },
+								{ text: 'Settings...', keys: 'Ctrl+,', run: () => this.settings() },
 								'separator',
 								await predefined('Services'),
 								'separator',
@@ -115,23 +114,23 @@ export class AppMenu {
 					: []),
 				await this.submenu('&File', [
 					{
-						text: 'New project from video…',
+						text: 'New project from video...',
 						keys: 'Ctrl+N',
 						run: () => void this.newProject(),
 					},
-					{ text: 'Open project…', keys: 'Ctrl+O', run: () => void this.open() },
+					{ text: 'Open project...', keys: 'Ctrl+O', run: () => void this.open() },
 					'separator',
 					{ command: 'save' },
 					{ command: 'save-as' },
 					'separator',
-					{ text: 'Import captions…', keys: 'Ctrl+I', run: () => void this.import() },
+					{ text: 'Import captions...', keys: 'Ctrl+I', run: () => void this.import() },
 					{ command: 'export' },
 					...(this.registry.get('youtube') ? [{ command: 'youtube' }] : []),
 					...(IS_MAC
 						? []
 						: ([
 								'separator',
-								{ text: 'Settings…', keys: 'Ctrl+,', run: () => this.settings() },
+								{ text: 'Settings...', keys: 'Ctrl+,', run: () => this.settings() },
 								'separator',
 								{
 									text: 'Exit',
@@ -180,13 +179,13 @@ export class AppMenu {
 					'separator',
 					{ command: 'replace' },
 					{
-						text: 'Go to timecode…',
+						text: 'Go to timecode...',
 						keys: 'Ctrl+G',
 						editor: true,
 						run: () => this.palette('timecode'),
 					},
 					{
-						text: 'Command palette…',
+						text: 'Command palette...',
 						keys: 'Ctrl+K',
 						editor: true,
 						run: () => this.palette('search'),
@@ -217,7 +216,7 @@ export class AppMenu {
 					{ command: 'time-units' },
 					'separator',
 					await this.themeMenu(),
-					{ text: 'Reset layout…', run: () => void this.resetLayout() },
+					{ text: 'Reset layout...', run: () => void this.resetLayout() },
 				]),
 				await this.submenu('Pla&yback', [
 					{ command: 'play' },
@@ -247,17 +246,16 @@ export class AppMenu {
 				await this.submenu('&Help', [
 					{ command: 'shortcuts' },
 					'separator',
-					{ text: 'ByteCaptions GitHub page', run: () => openExternal(WEBSITE) },
+					{ text: 'ByteCaptions GitHub page...', run: () => openExternal(WEBSITE) },
 					...(IS_MAC
 						? []
 						: ([
-								{ text: 'About ByteCaptions…', run: () => void this.about() },
+								{ text: 'About ByteCaptions...', run: () => void this.about() },
 							] as Entry[])),
 				]),
 			],
 		});
 
-		// The Mac has one menu bar for the whole app; Windows and Linux put it on the window.
 		if (IS_MAC) await menu.setAsAppMenu();
 		else await menu.setAsWindowMenu();
 
@@ -332,7 +330,7 @@ export class AppMenu {
 		return Submenu.new({ text: 'Theme', items });
 	}
 
-	/** Open the editor after File actions taken on the Start screen. */
+	/** Open the editor after File actions taken on the Start screen */
 	private go(ok: boolean): void {
 		if (ok && !this.inEditor()) void this.router.navigateByUrl('/editor');
 	}
@@ -345,13 +343,13 @@ export class AppMenu {
 		this.go(await this.files.open());
 	}
 
-	/** In the editor, captions become a new track; on the Start screen, a new project. */
+	/** In the editor, captions become a new track - on the Start screen, a new project.*/
 	private async import(): Promise<void> {
 		if (this.inEditor()) await this.files.importCaptions();
 		else this.go(await this.files.importAsNewProject());
 	}
 
-	/** Works on the Start screen too, so not via the editor's dialogs. */
+	/** Works on the Start screen too, so not via the editor's dialogs */
 	private settings(): void {
 		if (!this.dialogs.isOpen) this.dialogs.open(SettingsDialog);
 	}
@@ -361,7 +359,7 @@ export class AppMenu {
 			this.dialogs.open(CommandPalette, { placement: 'top', inputs: { startMode } });
 	}
 
-	/** Text in a field or caption editor uses the system clipboard; otherwise cues do. */
+	/** Text in a field or caption editor uses the system clipboard; otherwise cues do */
 	private clipboard(action: 'cut' | 'copy' | 'paste'): void {
 		const el = document.activeElement as HTMLElement | null;
 		const editing =
@@ -382,7 +380,6 @@ export class AppMenu {
 		else if (this.commands.canPaste) this.commands.paste();
 	}
 
-	/** Version and credits in a plain system dialog. */
 	private async about(): Promise<void> {
 		const webview = /Edg\/([\d.]+)/.exec(navigator.userAgent)?.[1];
 		const runtime = [

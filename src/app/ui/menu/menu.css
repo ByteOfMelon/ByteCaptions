@@ -20,7 +20,6 @@
 	flex-direction: column;
 }
 
-/* Submenu opens to the right, top-aligned with its item (offset by the menu padding). */
 .submenu {
 	position: absolute;
 	top: calc(-1 * var(--spacing-xs));

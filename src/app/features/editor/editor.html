@@ -55,7 +55,7 @@
 						bcTooltip="Show progress"
 						(click)="editorDialogs.transcribe()"
 					>
-						{{ transcription.download() ? 'Downloading model…' : 'Transcribing…' }}
+						{{ transcription.download() ? 'Downloading model...' : 'Transcribing...' }}
 						{{ Math.round(transcription.progress() * 100) }}%
 					</button>
 				}

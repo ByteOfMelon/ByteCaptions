@@ -20,8 +20,7 @@ import { SpeakerRows } from './speaker-rows';
 type Phase = 'setup' | 'running' | 'done' | 'error';
 
 /**
- * Separate speakers on a track that's already transcribed: replaces it with one track per
- * speaker, as one undoable edit. Shows the same result as Auto-transcribe's speaker option.
+ * Separate speakers on a track that's already transcribed
  */
 @Component({
 	selector: 'bc-separate-speakers-dialog',
@@ -56,7 +55,7 @@ type Phase = 'setup' | 'running' | 'done' | 'error';
 					<span class="text-small text-faded">{{
 						download()
 							? 'Downloading the speaker models. This only happens once.'
-							: 'Working out who speaks when…'
+							: 'Working out who speaks when...'
 					}}</span>
 				}
 				@case ('done') {
@@ -98,7 +97,7 @@ type Phase = 'setup' | 'running' | 'done' | 'error';
 					}
 					@case ('running') {
 						<button bcButton [disabled]="stopping()" (click)="stop()">
-							{{ stopping() ? 'Stopping…' : 'Stop' }}
+							{{ stopping() ? 'Stopping...' : 'Stop' }}
 						</button>
 					}
 					@case ('done') {
@@ -162,7 +161,6 @@ type Phase = 'setup' | 'running' | 'done' | 'error';
 			background: var(--color-brand);
 			transition: width 0.3s;
 		}
-		/* No progress to show while the model runs: a slow pulse instead. */
 		.bar.busy span {
 			animation: pulse 1.6s ease-in-out infinite;
 		}
@@ -221,7 +219,6 @@ export class SeparateSpeakersDialog {
 	protected readonly result = signal<SpeakerResult | null>(null);
 	protected readonly error = signal({ title: '', detail: '' });
 	protected readonly took = signal('');
-	/** The track's name when the dialog opened (it's gone once split). */
 	protected readonly trackName = signal('');
 	private abort: AbortController | null = null;
 
@@ -254,7 +251,6 @@ export class SeparateSpeakersDialog {
 	constructor() {
 		void this.separation.refresh();
 		queueMicrotask(() => this.trackName.set(this.store.track(this.trackId())?.name ?? 'track'));
-		// Closing mid-run stops it: nothing would be left to show the result.
 		void this.ref.closed.then(() => this.abort?.abort());
 	}
 
@@ -275,7 +271,6 @@ export class SeparateSpeakersDialog {
 					this.download.set({ received: e.received, total: e.total });
 				else this.download.set(null);
 			});
-			// The track may have been edited meanwhile; split what it holds now.
 			const track = this.store.track(this.trackId());
 
 			if (!track)

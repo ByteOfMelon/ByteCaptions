@@ -5,7 +5,7 @@ import { ProjectFiles } from './state/project-files';
 import { ProjectStore } from './state/project-store';
 import { Transcription } from './state/transcription';
 
-/** Leaving the editor with unsaved changes asks to save first, as closing the window does. */
+/** Leaving the editor with unsaved changes asks to save first */
 const leaveEditor: CanDeactivateFn<unknown> = async () => {
 	const store = inject(ProjectStore);
 	const files = inject(ProjectFiles);
@@ -23,7 +23,7 @@ const leaveEditor: CanDeactivateFn<unknown> = async () => {
 
 	if (choice === 'save') return files.save();
 
-	// Close the project (its recovery copy goes with it), so a transcription can't add to it.
+	// Ensure any ongoing transcription job is properly stopped
 	transcription.stop();
 	files.newEmpty();
 
@@ -36,10 +36,6 @@ export const routes: Routes = [
 		path: 'editor',
 		loadComponent: () => import('./features/editor/editor').then((m) => m.Editor),
 		canDeactivate: [leaveEditor],
-	},
-	{
-		path: 'gallery',
-		loadComponent: () => import('./features/gallery/gallery').then((m) => m.Gallery),
 	},
 	{ path: '**', redirectTo: '' },
 ];

@@ -1,6 +1,4 @@
-//! Cancellation for long jobs (model downloads, transcription and speaker separation). The
-//! app runs one at a time, so a single flag is enough: starting a job clears it, `job_cancel`
-//! sets it.
+//! Cancellation for long jobs. Only one runs at a time, so a single flag is enough
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -13,14 +11,14 @@ pub struct Jobs {
 }
 
 impl Jobs {
-	/// Start a job: returns the flag it should poll.
+	/// Start a job: returns the flag it should poll
 	pub fn start(&self) -> Arc<AtomicBool> {
 		self.cancel.store(false, Ordering::SeqCst);
 		self.cancel.clone()
 	}
 }
 
-/// Error message for a job stopped by the user; the frontend maps it to an AbortError.
+/// Error message for a job stopped by the user; the frontend maps it to an AbortError
 pub const CANCELLED: &str = "Cancelled";
 
 #[tauri::command]

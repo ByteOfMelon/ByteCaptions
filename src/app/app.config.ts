@@ -17,8 +17,6 @@ export const appConfig: ApplicationConfig = {
 	providers: [
 		provideBrowserGlobalErrorListeners(),
 		{ provide: ErrorHandler, useClass: ErrorReporter },
-		// After a reload, reopen the project before anything shows the sample one. Media URLs
-		// come first: the reopened project's video needs them.
 		provideAppInitializer(() => {
 			const recovery = inject(Recovery);
 			const youtube = inject(YouTube);

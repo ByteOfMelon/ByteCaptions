@@ -3,7 +3,7 @@ import { Anchor, Position } from '../../core/model/types';
 import { NumberField } from '../../ui/field/field';
 import { ANCHOR_LABEL } from '../player/caption-render';
 
-/** Default x/y (%) for each anchor of the 3×3 grid, inset from the frame edges. */
+/** Default x/y (%) for each anchor of the 3×3 grid, inset from the frame edges */
 const ANCHOR_XY: [number, number][] = [
 	[10, 10],
 	[50, 10],
@@ -16,7 +16,7 @@ const ANCHOR_XY: [number, number][] = [
 	[90, 90],
 ];
 
-/** The changes to apply to a Position when an anchor is picked. */
+/** The changes to apply to a Position when an anchor is picked */
 export function positionForAnchor(anchor: Anchor): Partial<Position> {
 	const [x, y] = ANCHOR_XY[anchor];
 
@@ -29,7 +29,7 @@ export function positionForAnchor(anchor: Anchor): Partial<Position> {
 	};
 }
 
-/** "Position" block: 3×3 anchor grid plus typed x/y, which make the position "Custom". */
+/** "Position" block - 3×3 anchor grid plus typed x/y, which make the position "Custom" */
 @Component({
 	selector: 'bc-anchor-picker',
 	imports: [NumberField],
@@ -114,7 +114,6 @@ export function positionForAnchor(anchor: Anchor): Partial<Position> {
 			flex: 1;
 			min-width: 0;
 		}
-		/* Narrow fields: tighter padding so "100 %" fits beside the grid. */
 		.xy ::ng-deep .box {
 			padding-inline: var(--spacing-sm);
 		}

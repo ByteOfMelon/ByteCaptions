@@ -1,9 +1,7 @@
 import { Directive, ElementRef, afterEveryRender, inject } from '@angular/core';
 
 /**
- * Keeps the end of a long value (a path's file name) in view while the input isn't being
- * edited. Scrolls rather than using `direction: rtl`, which moves a leading "/" to the end.
- * No ellipsis: Chromium paints a scrolled, unfocused input with one as blank.
+ * Keeps the end of a long value (a path's file name) in view while the input isn't being edited
  */
 @Directive({
 	selector: 'input[bcShowEnd]',

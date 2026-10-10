@@ -1,10 +1,3 @@
-/*
- * Design tokens, mirrored from the Penpot "ByteCaptions App" token sets
- * (Core, Palette, Mode/Dark, Mode/Light). Components must use these vars, never raw hex.
- * Dark is the default; set data-theme="light" on <html> for light mode.
- */
-
-/* Core */
 :root {
 	--color-brand: #809d6d;
 	--color-brand-dark: #5f7a4e;
@@ -29,7 +22,6 @@
 	--line-height: 1.25;
 }
 
-/* Mode/Dark (default) */
 :root,
 [data-theme='dark'] {
 	color-scheme: dark;
@@ -56,12 +48,9 @@
 	--color-track-2: #7e60a6;
 	--color-track-3: #9a6a3e;
 	--color-track-4: #3b7c6f;
-	/* Not a Penpot token: labels on track-colored cue blocks. Light text in both modes,
-	   since the track colors don't change (≥ 5:1 on all four). */
 	--color-on-track: #fcfcfc;
 }
 
-/* Mode/Light */
 [data-theme='light'] {
 	color-scheme: light;
 	--color-bg: #f8f8ff;
@@ -90,7 +79,6 @@
 	--color-on-track: #fcfcfc;
 }
 
-/* Focus ring as drawn in Penpot: 2px bg-colored gap, then a 4px focus-colored ring. */
 :root {
 	--focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 6px var(--color-focus);
 }

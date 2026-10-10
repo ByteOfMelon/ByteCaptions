@@ -14,10 +14,6 @@ import { keyCaps } from '../../ui/kbd/keys';
 import { Notice } from '../../ui/notice/notice';
 import { SettingsDialog } from '../settings/settings-dialog';
 
-/**
- * Start screen (PLAN §5.1): new project from a video, open a project, import captions,
- * and recent projects. Dropping a file anywhere on the window starts from it.
- */
 @Component({
 	selector: 'bc-start',
 	imports: [Button, Notice, LucideCaptions, LucideFilm, LucideFolderOpen, LucideUpload],
@@ -26,7 +22,7 @@ import { SettingsDialog } from '../settings/settings-dialog';
 	host: { '(window:keydown)': 'onKey($event)' },
 })
 export class Start implements OnDestroy {
-	/** Shortcut text for this computer (⌘ on the Mac). */
+	/** Shortcut text for this computer */
 	protected readonly keys = (k: string) => keyCaps(k, ' ').join(' ');
 	private readonly files = inject(ProjectFiles);
 	private readonly router = inject(Router);
@@ -38,7 +34,6 @@ export class Start implements OnDestroy {
 	protected readonly website = WEBSITE;
 	protected readonly error = this.files.error;
 
-	/** "17:42 • 2.1 GB" for a video being dragged in (desktop knows the file before the drop). */
 	private readonly dragDetail = signal<string | null>(null);
 	protected readonly dragging = computed(() => {
 		const h = this.drop.hover();
@@ -62,7 +57,7 @@ export class Start implements OnDestroy {
 		})),
 	);
 
-	/** Unsaved work left over from a session that closed unexpectedly. */
+	/** Recover unsaved work left over from a session that closed unexpectedly */
 	protected readonly recovered = computed(() =>
 		this.recovery.entries().map((entry) => ({
 			entry,
@@ -129,7 +124,7 @@ export class Start implements OnDestroy {
 		this.go(await this.files.openRecent(r));
 	}
 
-	/** New project with the captions as its first track. */
+	/** New project with the captions as its first track */
 	protected async importCaptions(file?: PickedFile | null): Promise<void> {
 		this.go(await this.files.importAsNewProject(file));
 	}
