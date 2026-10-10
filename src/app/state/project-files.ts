@@ -26,8 +26,8 @@ import { ProjectStore } from './project-store';
 import { RecentProject, RecentProjects } from './recent-projects';
 
 /**
- * Track colors from the design tokens (--color-track-1..4), assigned round-robin. Read as
- * their hex values, since projects save them and the timeline canvas can't use CSS variables.
+ * The --color-track-1..4 tokens as hex: projects save track colors, and the timeline canvas
+ * can't read CSS variables.
  */
 export function trackColors(): string[] {
 	const css = getComputedStyle(document.documentElement);

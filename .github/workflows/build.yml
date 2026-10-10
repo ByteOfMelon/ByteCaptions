@@ -24,7 +24,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Picks the platforms to build: all of them, or the one chosen when running it by hand.
+  # All platforms, or the one picked for a manual run.
   plan:
     runs-on: ubuntu-24.04
     outputs:
@@ -48,10 +48,8 @@ jobs:
           JSON
           echo "matrix=$(jq -c --arg t "$TARGET" '{include: map(select($t == "all" or .target == $t))}' all.json)" >> "$GITHUB_OUTPUT"
 
-  # Notes on the platforms above:
-  # - macOS (Intel): ort has no prebuilt ONNX Runtime for Intel Macs, so it's built from source
-  #   (see "Build ONNX Runtime"), and that build needs macOS 14.
-  # - Linux: ubuntu-24.04 because ONNX Runtime (speaker separation) needs glibc 2.38+.
+  # Intel Mac: ONNX Runtime is built from source below and needs macOS 14.
+  # Linux: ubuntu-24.04 for glibc 2.38+, which ONNX Runtime needs.
   build:
     needs: plan
     strategy:
@@ -81,10 +79,8 @@ jobs:
           cache: true
           stripdown: true
 
-      # Speaker separation links ONNX Runtime statically. ort downloads it for the other targets;
-      # for Intel Macs, build the version ort expects (1.28.0, CPU only: macOS doesn't use a GPU
-      # provider) and cache it, so only the first run pays for the build (about 30 minutes). Its
-      # macOS minimum is 14.0, the same as Microsoft's own macOS builds of 1.28.
+      # ort has no prebuilt ONNX Runtime for Intel Macs, so build the version it expects (CPU
+      # only) and cache it. The build takes about 30 minutes.
       - name: ONNX Runtime cache
         if: matrix.ort-from-source
         id: ort-cache
@@ -93,12 +89,6 @@ jobs:
           path: ~/onnxruntime-lib
           key: onnxruntime-1.28.0-${{ matrix.target }}-macos14-v2
 
-      # ort's static linking looks for each of ONNX Runtime's dependencies at a fixed path, which
-      # doesn't match 1.28's build folder. A single libonnxruntime.a is linked as is, so merge
-      # every library the build made into one (not tests, or the protobuf compiler and full
-      # protobuf: ONNX Runtime uses protobuf-lite). re2 is only built on request: nothing in a
-      # static build links against it. --apple_deploy_target only applies to iOS and framework
-      # builds, so the macOS minimum goes to CMake directly.
       - name: Build ONNX Runtime
         if: matrix.ort-from-source && steps.ort-cache.outputs.cache-hit != 'true'
         env:
@@ -107,22 +97,26 @@ jobs:
           git clone --depth 1 --branch v1.28.0 --recurse-submodules --shallow-submodules https://github.com/microsoft/onnxruntime.git "$RUNNER_TEMP/onnxruntime"
           cd "$RUNNER_TEMP/onnxruntime"
           build="$RUNNER_TEMP/onnxruntime-build"
+          # --apple_deploy_target is ignored for plain macOS builds; tell CMake instead.
           ./build.sh --config Release --build_dir "$build" --parallel --skip_tests \
             --compile_no_warning_as_error \
             --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF CMAKE_OSX_DEPLOYMENT_TARGET=14.0
+          # re2 isn't built by default: nothing in a static build links against it.
           cmake --build "$build/Release" --target re2 --parallel
+          # ort can't find the libraries in 1.28's build layout, but links a single
+          # libonnxruntime.a as is. Tests, protoc and full protobuf aren't needed.
           find "$build/Release" -name '*.a' ! -name '*test*' ! -name '*gmock*' \
             ! -name '*benchmark*' ! -name 'libprotoc.a' ! -name 'libprotobuf.a' | sort > libs.txt
           cat libs.txt
           mkdir -p ~/onnxruntime-lib
           libtool -static -no_warning_for_no_symbols -o ~/onnxruntime-lib/libonnxruntime.a $(cat libs.txt)
-          # Check it links on its own (no missing dependencies) and targets macOS 14.
+          # Fail now, not in the app build, if anything is missing.
           echo 'const void *OrtGetApiBase(void); int main(void) { return OrtGetApiBase() == 0; }' > check.c
           clang check.c ~/onnxruntime-lib/libonnxruntime.a -lc++ -framework Foundation -o check
           ./check
           otool -l check | grep -A4 LC_BUILD_VERSION
 
-      # Saved now rather than at the end of the job, so a later failure doesn't lose the build.
+      # Saved here, not at the end, so a failed app build still keeps it.
       - name: Save ONNX Runtime
         if: matrix.ort-from-source && steps.ort-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4

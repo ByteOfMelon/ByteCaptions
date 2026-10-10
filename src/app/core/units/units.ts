@@ -1,4 +1,4 @@
-/** Sizes and durations as people read them. Decimal units, as file managers show them. */
+/** Human-readable sizes and durations. Sizes use decimal units (1 KB = 1000 bytes). */
 import { Ms } from '../model/types';
 
 /** "350 KB", "42 MB", "1.5 GB". */

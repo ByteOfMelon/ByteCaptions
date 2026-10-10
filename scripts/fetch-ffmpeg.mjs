@@ -3,9 +3,8 @@
 // right binary is already in place. Run with: npm run fetch:ffmpeg
 //
 // The Windows and Linux builds are LGPL (src-tauri/licenses/FFMPEG-LICENSE.txt), the macOS
-// ones GPLv3 (FFMPEG-MACOS.txt). Old builds get deleted after a while, so for releases
-// consider re-hosting the zips as assets on ByteCaptions' own GitHub release and pointing
-// `url` there (the checksums stay the same).
+// ones GPLv3 (FFMPEG-MACOS.txt). Old builds get deleted, so for releases, re-host the zips
+// on our own GitHub release and point `url` there (the checksums don't change).
 
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';

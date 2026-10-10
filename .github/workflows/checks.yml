@@ -1,4 +1,4 @@
-# Fast checks on every push and pull request: formatting (Prettier, see .prettierignore).
+# Formatting check (Prettier; see .prettierignore).
 name: Checks
 
 on:
