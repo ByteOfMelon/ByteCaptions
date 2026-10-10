@@ -24,25 +24,23 @@ import { EditorCommands } from '../editor/editor-commands';
 import { CommandPalette } from '../palette/command-palette';
 import { SettingsDialog, confirmResetLayout } from '../settings/settings-dialog';
 
-/** A menu entry: its own action, or a palette command (label, keys and enabled come from it). */
+/** A menu entry for the meny bar. */
 type Entry =
 	| {
 			text: string;
 			keys?: string;
 			run: () => void;
-			/** Only in the editor (needs an open project). */
 			editor?: boolean;
 			enabled?: () => boolean;
 	  }
 	| { command: string }
 	| 'separator';
 
-/** Windows draws text after a tab right-aligned, like an accelerator. */
 const SHOW_KEYS = navigator.userAgent.includes('Windows');
 
 /**
  * The desktop window's menu bar (File, Edit, Project, View, Help). Shortcut keys are shown
- * but handled by the app (Editor.onKey), not registered with the menu, so they don't fire twice.
+ * but handled by the app, not the menu itself.
  */
 @Injectable({ providedIn: 'root' })
 export class AppMenu {
@@ -56,7 +54,8 @@ export class AppMenu {
 	private readonly theme = inject(ThemeService);
 
 	private readonly inEditor = signal(false);
-	/** Menu items whose text or enabled state follow the app; synced by one effect. */
+
+	/** Menu items whose text or enabled state follow the app */
 	private readonly live: {
 		item: MenuItem;
 		text: () => string;
@@ -73,7 +72,8 @@ export class AppMenu {
 		});
 		effect(() => {
 			if (!this.ready()) return;
-			// Only changes go to the native menu: most edits change just undo / redo.
+
+			// Only changes go to the native menu. Most edits change just undo/redo.
 			for (const l of this.live) {
 				const now = { text: l.text(), enabled: l.enabled() };
 				if (now.text !== l.shown?.text) void l.item.setText(now.text);
@@ -91,7 +91,6 @@ export class AppMenu {
 			PredefinedMenuItem.new({ item });
 		const menu = await Menu.new({
 			items: [
-				// The Mac's first menu is the app's own, named after it.
 				...(IS_MAC
 					? [
 							await this.submenu('ByteCaptions', [
@@ -123,7 +122,6 @@ export class AppMenu {
 					{ text: 'Import captions…', keys: 'Ctrl+I', run: () => void this.import() },
 					{ command: 'export' },
 					...(this.registry.get('youtube') ? [{ command: 'youtube' }] : []),
-					// On the Mac, Settings and Quit are in the app menu.
 					...(IS_MAC
 						? []
 						: ([
@@ -141,8 +139,6 @@ export class AppMenu {
 					{ command: 'undo' },
 					{ command: 'redo' },
 					'separator',
-					// The Mac's text fields only get ⌘X / ⌘C / ⌘V / ⌘A through its own Edit items;
-					// with no text selected they pass the keys on, so cue copy and paste still work.
 					...(IS_MAC
 						? [
 								await predefined('Cut'),
