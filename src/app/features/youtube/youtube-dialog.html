@@ -2,8 +2,8 @@
 	<bc-dialog heading="Upload to YouTube" [subtitle]="subtitle()">
 		<bc-notice
 			tone="info"
-			heading="This build of ByteCaptions can't upload to YouTube"
-			detail="It was built without a Google sign-in client."
+			heading="You can't upload to YouTube with this build of ByteCaptions"
+			detail="It was built without a Google sign-in client. Please check the GitHub repository for more information."
 		/>
 		<div dialogFooter>
 			<button bcButton (click)="ref.close()">Close</button>
@@ -117,7 +117,7 @@
 	</bc-dialog>
 } @else if (yt.account() === undefined) {
 	<bc-dialog heading="Upload to YouTube" [subtitle]="subtitle()">
-		<p class="text-small text-faded loading">Checking your YouTube sign-in...</p>
+		<p class="text-small text-faded loading">Checking your YouTube credentials...</p>
 		<div dialogFooter>
 			<button bcButton (click)="ref.close()">Cancel</button>
 		</div>
@@ -127,13 +127,13 @@
 		<div class="intro">
 			<span>Sign in to upload captions straight to your videos</span>
 			<span class="text-small text-faded"
-				>Google opens in your browser to sign in. ByteCaptions only lists your videos and
-				uploads captions to them.</span
+				>The Google sign-in page will open in your browser. ByteCaptions only lists your
+				videos and uploads captions to them.</span
 			>
 		</div>
 		<p class="text-small text-faded note">
-			Your sign-in stays on this computer, in your system's secure storage. Sign out any time
-			from Settings.
+			Your information stays on this computer inside of your system's secure storage. You can
+			also sign out at any time from the Settings menu.
 		</p>
 		@if (yt.accountError(); as e) {
 			<bc-notice tone="danger" [heading]="errorText(e).title" [detail]="e.message" />
@@ -170,11 +170,13 @@
 						tone="warning"
 						heading="That video is on another channel"
 						[detail]="
-							'Sign in as the channel that owns “' + v.title + '” to upload to it.'
+							'Sign in as the channel that owns “' +
+							v.title +
+							'” in order to upload to it.'
 						"
 					/>
 				} @else if (found() === 'none') {
-					<p class="text-small text-faded empty">No video with that ID.</p>
+					<p class="text-small text-faded empty">No videos found with that ID.</p>
 				} @else if (findError(); as e) {
 					<bc-notice tone="danger" [heading]="errorText(e).title" [detail]="e.message" />
 				}

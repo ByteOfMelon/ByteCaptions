@@ -36,8 +36,7 @@ type Phase = 'setup' | 'running' | 'done' | 'error';
 						(valueChange)="speakers.set(+$any($event) || null)"
 					/>
 					<span class="text-small text-faded">
-						Replaces {{ trackName() }} with a track for each person. Undo brings it
-						back.
+						Replaces {{ trackName() }} with an individual track for each person.
 						{{ modelNote() }}
 					</span>
 				}

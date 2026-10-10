@@ -11,7 +11,7 @@
 
 <div class="meta text-small text-faded">
 	<span>{{ markers.list().length | count: 'marker' }}</span>
-	<span>Shift+M adds one at the playhead</span>
+	<span>Press Shift+M to add a new marker at the current playhead position</span>
 </div>
 
 <div class="rows" role="listbox" aria-label="Markers">
@@ -40,7 +40,7 @@
 			@if (query()) {
 				No markers match “{{ query() }}”.
 			} @else {
-				No markers yet. Press Shift+M to add one at the playhead, then type a note for it.
+				No markers yet. Press Shift+M to add one at the current playhead position.
 			}
 		</p>
 	}

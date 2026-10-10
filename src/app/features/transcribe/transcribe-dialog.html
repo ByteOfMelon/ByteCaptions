@@ -76,7 +76,8 @@
 				<span class="option-text">
 					<span>Word-level timings</span>
 					<span class="text-small text-faded"
-						>Needed for the word highlight in the Transcript tab.</span
+						>Needed to highlight words in the Transcript tab, and for karaoke
+						text.</span
 					>
 				</span>
 			</bc-toggle>
@@ -92,7 +93,7 @@
 					>
 				</span>
 			</bc-toggle>
-			<!-- A range run redoes part of one track, so it can't split by speaker. -->
+			<!-- A range run redoes part of one track, so it can't split by speaker -->
 			@if (!job.options().range) {
 				<div class="speakers-option">
 					<bc-toggle

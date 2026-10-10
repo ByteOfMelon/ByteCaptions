@@ -9,7 +9,7 @@
 			<video #video [src]="url" preload="auto"></video>
 			@if (playback.videoError(); as problem) {
 				<div class="empty missing failed" role="alert">
-					<span class="text-body-bold">Video can't play</span>
+					<span class="text-body-bold">This video cannot be played</span>
 					<span class="text-small">{{ problem }}</span>
 					<button bcButton (click)="$event.stopPropagation(); locateVideo()">
 						<svg lucideFolder></svg>Choose another video
@@ -23,9 +23,7 @@
 					<span class="text-small">{{ video.path }} was moved or renamed</span>
 				} @else {
 					<span class="text-body-bold">Video not loaded</span>
-					<span class="text-small"
-						>Choose {{ video.name }} to play it with the captions</span
-					>
+					<span class="text-small">Choose {{ video.name }} to play it with captions</span>
 				}
 				<button bcButton (click)="$event.stopPropagation(); locateVideo()">
 					<svg lucideFolder></svg>{{ isDesktop ? 'Locate video' : 'Choose video' }}
@@ -33,7 +31,8 @@
 			</div>
 		} @else {
 			<div class="empty text-small">
-				Drop a video here to preview it • captions play without one
+				Drop a video here to preview it with captions. Your captions can still be previewed
+				without a video.
 			</div>
 		}
 		@if (showCaptions()) {

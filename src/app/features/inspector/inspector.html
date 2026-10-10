@@ -1,7 +1,7 @@
 <header class="panel-header">
 	<h2 class="text-heading-3">Inspector</h2>
 	@if (text(); as t) {
-		<span class="text-small text-faded">Selected text • “{{ t.text }}”</span>
+		<span class="text-small text-faded">Selected text: “{{ t.text }}”</span>
 	} @else if (subject(); as s) {
 		<span class="text-small text-faded">{{ s.title }}</span>
 	}
@@ -25,7 +25,7 @@
 					Karaoke
 				</bc-toggle>
 				<p class="text-small text-faded">
-					Highlights each word as it’s spoken. Uses word timings.
+					Highlights each word as it’s spoken using your specified word timings.
 				</p>
 			</div>
 			@if (s.karaoke) {
