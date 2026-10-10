@@ -10,6 +10,8 @@
 		"tauri": "tauri",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
 		"fetch:ffmpeg": "node scripts/fetch-ffmpeg.mjs",
 		"fetch:vulkan": "node scripts/fetch-vulkan-runtime.mjs"
 	},
