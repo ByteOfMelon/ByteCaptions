@@ -19,8 +19,7 @@ export const KARAOKE_COLORS: { label: string; value: string }[] = [
 ];
 
 /**
- * Where each word ends in the cue's text (a character offset), found in order. Null when
- * the words aren't all in the text.
+ * Where each word ends in the cue's text (a character offset), found in order. Null when the words aren't all in the text
  */
 export function wordEnds(text: string, words: readonly { text: string }[]): number[] | null {
 	const ends: number[] = [];
@@ -35,16 +34,14 @@ export function wordEnds(text: string, words: readonly { text: string }[]): numb
 }
 
 /**
- * Karaoke steps: from when each word starts (the first from the cue's start) to when the
- * next one does, with how much of the text is sung by then.
+ * Karaoke steps - from when each word starts (the first from the cue's start) to when the next one does, with how much of the text is sung by then
  */
 export function karaokeSteps(cue: Cue): { start: Ms; end: Ms; sung: number }[] | null {
 	const words = cue.words;
 	if (!cue.karaoke || !words?.length) return null;
 	const ends = wordEnds(cueText(cue), words);
 	if (!ends) return null;
-	// When each word starts, kept inside the cue and in order (a trimmed cue can leave word
-	// times outside it), so the steps cover the whole cue with no gaps.
+	// When each word starts, kept inside the cue and in order (a trimmed cue can leave word times outside it), so the steps cover the whole cue with no gaps.
 	const starts: Ms[] = [];
 	for (let i = 0; i < words.length; i++)
 		starts.push(i ? Math.max(starts[i - 1], Math.min(cue.end, words[i].start)) : cue.start);
@@ -53,7 +50,7 @@ export function karaokeSteps(cue: Cue): { start: Ms; end: Ms; sung: number }[] |
 		.filter((s) => s.end > s.start);
 }
 
-/** How much of the cue's text is sung at `ms` (0 before the first word). */
+/** How much of the cue's text is sung at ms (0 before the first word) */
 export function sungAt(cue: Cue, ms: Ms): number {
 	const steps = karaokeSteps(cue);
 	let sung = 0;
@@ -61,7 +58,7 @@ export function sungAt(cue: Cue, ms: Ms): number {
 	return sung;
 }
 
-/** The cue's runs with the first `sung` characters in the karaoke colour. */
+/** The cue's runs with the first sung characters in the karaoke colour. */
 export function karaokeRuns(cue: Cue, sung: number): TextRun[] {
 	const color = cue.karaokeColor ?? DEFAULT_KARAOKE_COLOR;
 	const length = cue.runs.reduce((n, r) => n + r.text.length, 0);

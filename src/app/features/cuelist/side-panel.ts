@@ -6,7 +6,7 @@ import { ProblemsView } from './problems-view';
 import { TranscriptView } from './transcript-view';
 import { MarkersView } from '../markers/markers-view';
 
-/** Left panel: Cues / Transcript / Problems / Markers. */
+/** Left panel - for Cues / Transcript / Problems / Markers */
 @Component({
 	selector: 'bc-side-panel',
 	imports: [Tabs, CueList, TranscriptView, ProblemsView, MarkersView],

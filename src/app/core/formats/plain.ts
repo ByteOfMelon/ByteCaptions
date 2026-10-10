@@ -5,7 +5,7 @@ import { formatClock, formatSbv, parseTime } from '../time/timecode';
 import { FlatCue, ImportResult, flatten, normalizeNewlines } from './flatten';
 
 export interface PlainExportOptions {
-	/** Keep bold/italic/underline as <b>/<i>/<u> tags (SRT/VTT). Default true. */
+	/** Whether to keep bold/italic/underline as <b>/<i>/<u> tags (SRT/VTT) */
 	basicTags?: boolean;
 }
 
@@ -35,9 +35,9 @@ export function exportSbv(project: Project): string {
 }
 
 const TAG_RE = /<\/?(?:b|i|u|c|v|lang|ruby|rt)(?:[.\s][^>]*)?>/gi;
-/** Ruby text, dropped with its tags so it doesn't run into the base text. */
+/** Ruby text */
 const RUBY_TEXT_RE = /<rt(?:[.\s][^>]*)?>[\s\S]*?<\/rt>/gi;
-/** WebVTT timestamp tags (karaoke). */
+/** Timestamp tags for karaoke on WebVTT */
 const TIMESTAMP_RE = /<(?:\d+:)?\d{2}:\d{2}\.\d{3}>/g;
 
 function stripTags(t: string): string {
@@ -45,7 +45,7 @@ function stripTags(t: string): string {
 		.replace(RUBY_TEXT_RE, '')
 		.replace(TIMESTAMP_RE, '')
 		.replace(TAG_RE, '')
-		.replace(/\{\\[^}]*\}/g, '') // stray ASS overrides sometimes found in SRT
+		.replace(/\{\\[^}]*\}/g, '') // removes stray ASS overrides sometimes found in SRT
 		.replace(/&lt;/g, '<')
 		.replace(/&gt;/g, '>')
 		.replace(/&nbsp;/g, ' ')

@@ -14,19 +14,19 @@ function split(ms: Ms) {
 	};
 }
 
-/** `HH:MM:SS,mmm` (SRT) or `HH:MM:SS.mmm` (VTT) depending on separator. */
+/** `HH:MM:SS,mmm` (SRT) or `HH:MM:SS.mmm` (VTT) depending on separator */
 export function formatClock(ms: Ms, sep: ',' | '.' = '.'): string {
 	const p = split(ms);
 	return `${pad(p.h)}:${pad(p.m)}:${pad(p.s)}${sep}${pad(p.ms, 3)}`;
 }
 
-/** SBV style: `H:MM:SS.mmm`. */
+/** SBV style: `H:MM:SS.mmm` */
 export function formatSbv(ms: Ms): string {
 	const p = split(ms);
 	return `${p.h}:${pad(p.m)}:${pad(p.s)}.${pad(p.ms, 3)}`;
 }
 
-/** NLE timecode `HH:MM:SS:FF`. */
+/** NLE timecode `HH:MM:SS:FF` */
 export function formatTimecode(ms: Ms, fps: number): string {
 	const p = split(ms);
 	const frame = Math.floor((p.ms / 1000) * fps);
@@ -34,8 +34,8 @@ export function formatTimecode(ms: Ms, fps: number): string {
 }
 
 /**
- * Parses `[HH:]MM:SS[.,]mmm`, `H:MM:SS.mmm`, or `HH:MM:SS:FF` (when fps given).
- * Returns null on invalid input.
+ * Parses `[HH:]MM:SS[.,]mmm`, `H:MM:SS.mmm`, or `HH:MM:SS:FF` (when fps given)
+ * Returns null on invalid input
  */
 export function parseTime(input: string, fps?: number): Ms | null {
 	const s = input.trim();
@@ -53,7 +53,7 @@ export function parseTime(input: string, fps?: number): Ms | null {
 	return null;
 }
 
-/** Snap a time to the nearest frame boundary. */
+/** Snap a time to the nearest frame boundary */
 export function snapToFrame(ms: Ms, fps: number): Ms {
 	const frameMs = 1000 / fps;
 	return Math.round(Math.round(ms / frameMs) * frameMs);

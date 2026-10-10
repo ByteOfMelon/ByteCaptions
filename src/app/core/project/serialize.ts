@@ -9,8 +9,7 @@ export class ProjectFileError extends Error {}
 type Migration = (raw: Record<string, unknown>) => Record<string, unknown>;
 
 /**
- * migrations[n] upgrades a file from schema n to n + 1.
- * Add an entry whenever SCHEMA_VERSION is bumped; never edit old ones.
+ * migrations[n] upgrades a file from schema n to n + 1. Add an entry whenever SCHEMA_VERSION is bumped
  */
 const migrations: Record<number, Migration> = {};
 
@@ -51,7 +50,7 @@ export function parseProject(json: string): Project {
 	) {
 		throw new ProjectFileError('Project file is missing tracks, styles or positions');
 	}
-	// Fill settings and markers added later without needing a migration.
+	// Fill settings and markers added later without needing a migration
 	p.settings = { ...defaultSettings(), ...(p.settings ?? {}) };
 	p.markers = Array.isArray(p.markers) ? p.markers.sort((a, b) => a.at - b.at) : [];
 	for (const t of p.tracks) {

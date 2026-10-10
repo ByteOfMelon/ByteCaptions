@@ -64,9 +64,9 @@ export interface Command {
 	label: string;
 	icon: LucideIconData;
 	keys?: string;
-	/** Commands about the selected cue are listed under "For cue N". */
+	/** Commands about the selected cue are listed under "For cue N" */
 	scope?: 'cue';
-	/** Opens the timecode prompt in the palette instead of running. */
+	/** Opens the timecode prompt in the palette instead of running */
 	prompt?: 'timecode';
 	enabled?: () => boolean;
 	run: () => void;
@@ -79,8 +79,7 @@ const THEMES: { id: ThemePreference; label: string; icon: LucideIconData }[] = [
 ];
 
 /**
- * Every command the palette and menu bar can run. `keys` is only the shortcut shown;
- * Editor.onKey handles the keys themselves.
+ * Every command the palette and menu bar can run
  */
 @Injectable({ providedIn: 'root' })
 export class CommandRegistry {
@@ -489,7 +488,7 @@ export class CommandRegistry {
 				icon: LucideTriangleAlert.icon,
 				run: () => this.ui.sideTab.set('problems'),
 			},
-			// The theme options other than the current one ("Theme: Match system" etc.).
+			// The theme options other than the currently chosen one
 			...THEMES.filter((t) => t.id !== this.theme.preference()).map((t) => ({
 				id: `theme-${t.id}`,
 				label: `Theme: ${t.label}`,

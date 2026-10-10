@@ -22,13 +22,13 @@ import { CueRef, ProjectStore } from '../../state/project-store';
 import { WordTapping } from '../../state/word-tapping';
 import { Playback } from '../player/playback';
 
-/** Edit actions shared by the toolbar, timeline, menus and keyboard shortcuts. */
+/** Edit actions shared by the toolbar, timeline, menus and keyboard shortcuts */
 @Injectable({ providedIn: 'root' })
 export class EditorCommands {
 	private readonly store = inject(ProjectStore);
 	private readonly playback = inject(Playback);
 	private readonly tapping = inject(WordTapping);
-	/** Copied cues, with times relative to the earliest one. */
+	/** Copied cues, with times relative to the earliest one */
 	private clipboard: Cue[] = [];
 
 	undo(): void {
@@ -39,7 +39,7 @@ export class EditorCommands {
 		this.store.redo();
 	}
 
-	/** Split the selected cue under the playhead, or any unlocked cue under it if none is selected. */
+	/** Split the selected cue under the playhead, or any unlocked cue under it if none is selected */
 	splitAtPlayhead(): void {
 		const t = this.store.playhead();
 		const under = (r: { cue: { start: number; end: number } }) =>
@@ -47,25 +47,27 @@ export class EditorCommands {
 		const target =
 			this.store.selectedCues().find(under) ??
 			this.store.allCues().find((r) => under(r) && !r.track.locked);
+
 		if (!target || target.track.locked) return;
+
 		const out: { rightId?: string } = {};
 		this.store.apply('Split cue', splitCue(target.cue.id, t, out));
+
 		if (out.rightId) this.store.select(out.rightId);
 	}
 
-	/** The single selected cue, if it's on an unlocked track (for word timing). */
+	/** The single selected cue, if it's on an unlocked track (for word timing) */
 	private editableCue(): CueRef | null {
 		const sel = this.store.selectedCues();
 		return sel.length === 1 && !sel[0].track.locked ? sel[0] : null;
 	}
 
-	/** Word timing • Spread evenly: share the cue's time out to its words by length. */
+	/** Spread words out evenly */
 	spreadWords(): void {
 		const r = this.editableCue();
 		if (r) this.store.apply('Spread words evenly', spreadCueWords(r.cue.id));
 	}
 
-	/** Word timing • Tap to time. */
 	tapToTime(): void {
 		const r = this.editableCue();
 		if (r) this.tapping.start(r.cue.id);
@@ -76,7 +78,7 @@ export class EditorCommands {
 		if (r?.cue.words) this.store.apply('Clear word timings', clearWords(r.cue.id));
 	}
 
-	/** Merge the selection, or the single selected cue with the next one on its track. */
+	/** Merge the selection, or the single selected cue with the next one on its track */
 	merge(): void {
 		const sel = this.store.selectedCues();
 		let ids = sel.map((r) => r.cue.id);
@@ -104,7 +106,7 @@ export class EditorCommands {
 		this.store.clearSelection();
 	}
 
-	/** Delete the selection and close the gap it leaves on each track. */
+	/** Delete the selection and close the gap it leaves on each track */
 	rippleDeleteSelected(): void {
 		const ids = this.store
 			.selectedCues()

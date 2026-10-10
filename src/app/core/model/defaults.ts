@@ -13,7 +13,7 @@ import {
 
 let counter = 0;
 
-/** Short unique id. Uses crypto.randomUUID when available. */
+/** Short unique id for use in the app */
 export function newId(prefix: string): string {
 	const rand =
 		typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -25,7 +25,7 @@ export function newId(prefix: string): string {
 export const DEFAULT_STYLE_ID = 'style_default';
 export const DEFAULT_POSITION_ID = 'pos_bottom';
 
-/** Matches YouTube's own default caption look. */
+/** Made to match YouTube's own default caption look */
 export function defaultStyle(): CaptionStyle {
 	return {
 		name: 'Default',
@@ -84,7 +84,7 @@ export function createCue(start: number, end: number, text: string): Cue {
 	return { id: newId('cue'), start, end, runs: [{ text }] };
 }
 
-/** Marker flag colors; fixed across themes, like track colors. */
+/** Marker flag color options */
 export const MARKER_COLORS: Record<MarkerColor, string> = {
 	yellow: '#c89a08',
 	red: '#f06464',

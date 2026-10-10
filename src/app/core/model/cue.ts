@@ -5,19 +5,18 @@ export function cueText(cue: Cue): string {
 }
 
 /**
- * Characters of scripts written without spaces between words: Chinese, Japanese kana and
- * CJK / full-width punctuation. (Korean separates words with spaces.)
+ * Characters of scripts written without spaces between words: Chinese, Japanese kana and CJK / full-width punctuation (Korean separates words with spaces)
  */
 const UNSPACED = /[　-ヿ㐀-䶿一-鿿豈-﫿＀-￯]/;
-/** Full-width characters: the above plus Korean Hangul. */
+/** Full-width characters - the above plus Korean Hangul */
 const WIDE = /[ᄀ-ᇿ　-ヿ㄰-㆏㐀-䶿一-鿿가-힯豈-﫿＀-｠￠-￦]/;
 
-/** What goes between two words: a space, or nothing next to Chinese or Japanese. */
+/** Determine what goes between two words depending on language */
 export function wordGap(before: string, after: string): string {
 	return UNSPACED.test(before.at(-1) ?? '') || UNSPACED.test(after[0] ?? '') ? '' : ' ';
 }
 
-/** Words joined into text, with spaces only where the language uses them. */
+/** Words joined into text, with spaces only when the language uses them */
 export function joinWords(words: readonly { text: string }[]): string {
 	return words.reduce(
 		(s, w, i) => (i ? s + wordGap(words[i - 1].text, w.text) : '') + w.text,
@@ -25,7 +24,7 @@ export function joinWords(words: readonly { text: string }[]): string {
 	);
 }
 
-/** Width in half-width columns, for line lengths: full-width characters count as two. */
+/** Width in half-width columns, for line lengths: full-width characters count as two */
 export function textWidth(text: string): number {
 	let width = 0;
 	for (const c of text) width += WIDE.test(c) ? 2 : 1;
@@ -36,7 +35,6 @@ export function sortCues(cues: Cue[]): void {
 	cues.sort((a, b) => a.start - b.start || a.end - b.end);
 }
 
-/** Tracks that should appear in preview/export, honoring solo and mute. */
 export function visibleTracks(project: Project): Track[] {
 	const soloed = project.tracks.filter((t) => t.solo);
 	return (soloed.length ? soloed : project.tracks).filter((t) => !t.muted);

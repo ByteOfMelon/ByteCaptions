@@ -20,9 +20,7 @@ import { Field } from '../../ui/field/field';
 import { MARKER_COLOR_NAMES, Markers } from './markers';
 
 /**
- * Edits a marker's note and color (Markers board). The timeline positions it under the
- * marker. The note saves on Enter or when the popover closes any other way except Esc,
- * which throws the typed note away.
+ * Edits a marker's note and color (Markers board)
  */
 @Component({
 	selector: 'bc-marker-popover',

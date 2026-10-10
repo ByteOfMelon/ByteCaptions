@@ -5,7 +5,7 @@ import { layoutLines, segmentWords } from './segment';
 
 const limits = defaultSettings();
 
-/** Words spoken back to back at `ms` each, starting at `from`. "|" marks a 1 s pause. */
+/** Words spoken back to back at `ms` each, starting at `from`. "|" marks a 1 s pause */
 function speak(text: string, from = 0, ms = 300): WordTiming[] {
 	const out: WordTiming[] = [];
 	let t = from;

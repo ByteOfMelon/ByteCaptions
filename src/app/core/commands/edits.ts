@@ -1,6 +1,5 @@
 /**
- * Editing operations. Each is an Immer recipe factory: `edits.x(...)` returns
- * a function that mutates a Project draft. Run them through `History.apply()`.
+ * Editing operations. Each is an Immer recipe factory
  */
 import { Draft } from 'immer';
 import { createCue, newId } from '../model/defaults';
@@ -60,8 +59,7 @@ export function deleteCues(ids: CueId[]) {
 }
 
 /**
- * Delete cues and close the time they took up: later cues on the same track move earlier by
- * however much deleted time came before them. Other tracks are left alone.
+ * Delete cues and close the time they took up
  */
 export function rippleDeleteCues(ids: CueId[]) {
 	return (p: P) => {
@@ -102,9 +100,10 @@ export function setText(cueId: CueId, text: string) {
 	return (p: P) => {
 		const { track, cue } = findCue(p, cueId);
 		assertUnlocked(track);
-		// Formatting stays on the text that didn't change.
+
 		cue.runs = replaceText(cue.runs, text);
-		// Word timings follow the edit: unchanged words keep theirs.
+
+		// Word timings follow the edit
 		if (cue.words) {
 			const words = retimeWords(cue.words, text, cue.start, cue.end);
 			if (words) cue.words = words;
@@ -117,8 +116,7 @@ export function setText(cueId: CueId, text: string) {
 }
 
 /**
- * Format characters [from, to) of a cue: merge `change` into their style overrides (undefined
- * removes one), or 'clear' to remove all formatting there.
+ * Format characters [from, to) of a cue
  */
 export function styleText(
 	cueId: CueId,
@@ -133,7 +131,7 @@ export function styleText(
 	};
 }
 
-/** Replace a cue's word timings (dragging a word edge, tapping). */
+/** Replace a cue's word timings */
 export function setWords(cueId: CueId, words: WordTiming[]) {
 	return (p: P) => {
 		const { track, cue } = findCue(p, cueId);
@@ -142,7 +140,7 @@ export function setWords(cueId: CueId, words: WordTiming[]) {
 	};
 }
 
-/** Give a cue's words timings by sharing its time out by word length. */
+/** Give a cue's words timings by sharing its time out by word length */
 export function spreadCueWords(cueId: CueId) {
 	return (p: P) => {
 		const { track, cue } = findCue(p, cueId);
@@ -153,8 +151,7 @@ export function spreadCueWords(cueId: CueId) {
 }
 
 /**
- * Karaoke on or off, and the colour of sung words. Turning it on for a cue without word
- * timings spreads its words evenly first.
+ * Karaoke on or off, and the colour of sung words
  */
 export function setKaraoke(ids: CueId[], changes: { on?: boolean; color?: string }) {
 	return (p: P) => {
@@ -182,7 +179,7 @@ export function clearWords(cueId: CueId) {
 	};
 }
 
-/** Set start/end. Clamps to >= 0 and keeps at least 1ms duration. */
+/** Set start/end */
 export function setTiming(cueId: CueId, start: Ms, end: Ms) {
 	return (p: P) => {
 		const { track, cue } = findCue(p, cueId);
@@ -193,7 +190,7 @@ export function setTiming(cueId: CueId, start: Ms, end: Ms) {
 		const sameDuration = e - s === cue.end - cue.start;
 		cue.start = s;
 		cue.end = e;
-		// A pure move carries word timings along; trims leave them in place.
+		// A pure move carries word timings along
 		if (cue.words && ds !== 0 && sameDuration) {
 			for (const w of cue.words) {
 				w.start += ds;
@@ -204,7 +201,7 @@ export function setTiming(cueId: CueId, start: Ms, end: Ms) {
 	};
 }
 
-/** Move cues by an offset, optionally to another track. */
+/** Move cues by an offset, optionally to another track */
 export function moveCues(ids: CueId[], deltaMs: Ms, toTrackId?: TrackId) {
 	return (p: P) => {
 		const target = toTrackId ? findTrack(p, toTrackId) : undefined;
@@ -223,7 +220,7 @@ export function moveCues(ids: CueId[], deltaMs: Ms, toTrackId?: TrackId) {
 			if (target && target !== track) {
 				track.cues.splice(index, 1);
 				target.cues.push(cue);
-				// Moving a line to another speaker's track settles whose it is.
+				// Moving a line to another speaker's track settles whose it is
 				delete cue.speakerUnsure;
 			}
 			touched.add(track);
@@ -233,7 +230,7 @@ export function moveCues(ids: CueId[], deltaMs: Ms, toTrackId?: TrackId) {
 	};
 }
 
-/** Clear the unsure-speaker flag: the cues are on the right speaker's track. */
+/** Clear the unsure-speaker flag */
 export function confirmSpeaker(ids: CueId[]) {
 	return (p: P) => {
 		for (const id of ids) {
@@ -244,7 +241,7 @@ export function confirmSpeaker(ids: CueId[]) {
 	};
 }
 
-/** Shift every cue starting at or after `fromMs` on all unlocked tracks. */
+/** Shift every cue starting at or after fromMs on all unlocked tracks */
 export function shiftAfter(fromMs: Ms, deltaMs: Ms) {
 	return (p: P) => {
 		for (const t of p.tracks) {
@@ -264,9 +261,9 @@ export function shiftAfter(fromMs: Ms, deltaMs: Ms) {
 }
 
 /**
- * Split a cue at `atMs`. With word timings, words go to the side their
+ * Split a cue at atMs. With word timings, words go to the side their
  * midpoint falls on; otherwise text is split by time ratio at a word boundary.
- * Returns the new right-hand cue's id via `out`.
+ * Returns the new right-hand cue's id via out.
  */
 export function splitCue(cueId: CueId, atMs: Ms, out?: { rightId?: CueId }) {
 	return (p: P) => {
@@ -281,7 +278,7 @@ export function splitCue(cueId: CueId, atMs: Ms, out?: { rightId?: CueId }) {
 			leftWords = cue.words.filter((w) => (w.start + w.end) / 2 < atMs);
 			rightWords = cue.words.filter((w) => (w.start + w.end) / 2 >= atMs);
 			const leftText = joinWords(leftWords);
-			// Keep formatting while the text is still exactly what the words say.
+			// Keep formatting while the text is still exactly what the words say
 			if (text === joinWords(cue.words))
 				[leftRuns, rightRuns] = splitRuns(cue.runs, leftText.length);
 			else [leftRuns, rightRuns] = [[{ text: leftText }], [{ text: joinWords(rightWords) }]];
@@ -307,7 +304,7 @@ export function splitCue(cueId: CueId, atMs: Ms, out?: { rightId?: CueId }) {
 	};
 }
 
-/** Where to split text near `idx`: the closest whitespace, else `idx` itself. */
+/** Where to split text near `idx`: the closest whitespace, else `idx` itself */
 function splitIndex(text: string, idx: number): number {
 	let best = -1;
 	for (let i = 0; i < text.length; i++) {
@@ -316,7 +313,7 @@ function splitIndex(text: string, idx: number): number {
 	return best < 0 ? idx : best;
 }
 
-/** Merge cues (must be on the same track) into the earliest one. */
+/** Merge cues (must be on the same track) into the earliest one */
 export function mergeCues(ids: CueId[]) {
 	return (p: P) => {
 		if (ids.length < 2) return;
@@ -328,6 +325,7 @@ export function mergeCues(ids: CueId[]) {
 		const cues = found.map((f) => f.cue).sort((a, b) => a.start - b.start);
 		const [first, ...rest] = cues;
 		first.end = Math.max(...cues.map((c) => c.end));
+
 		// Join with formatting kept: a space between cues (none for Chinese or Japanese), and
 		// line breaks and runs of spaces become single spaces.
 		const parts = cues.map((c) => trimRuns(c.runs));
@@ -373,7 +371,7 @@ export function reorderTrack(trackId: TrackId, toIndex: number) {
 	};
 }
 
-// ---- Markers (anchored to video time, so cue edits never move them) ----
+// Marker edits
 
 function sortMarkers(p: P): void {
 	p.markers.sort((a, b) => a.at - b.at);

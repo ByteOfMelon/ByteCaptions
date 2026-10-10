@@ -29,7 +29,7 @@ export class ProblemsView {
 	protected readonly dialogs = inject(EditorDialogs);
 
 	protected readonly filter = signal<string>(ALL);
-	/** Ignored for this session only; not saved in the project. */
+	/** Ignored for this session only, not saved into the project file */
 	private readonly ignored = signal<ReadonlySet<string>>(new Set());
 
 	protected readonly filterOptions = computed(() => [
@@ -62,7 +62,7 @@ export class ProblemsView {
 			});
 	});
 
-	/** "42 chars • 2 lines • 20 cps • 0.7–7 s": the rules the checks use. */
+	/** The rules these checks use */
 	protected readonly rules = computed(() => {
 		const r = this.store.project().settings;
 		return `${r.maxCharsPerLine} chars • ${r.maxLines} ${r.maxLines === 1 ? 'line' : 'lines'} • ${r.maxCps} cps • ${r.minDurationMs / 1000}–${r.maxDurationMs / 1000} s`;
@@ -98,15 +98,18 @@ export class ProblemsView {
 
 	private fixLabel(p: Problem, index: number): string | null {
 		const fix = p.fix;
+
 		if (!fix) return null;
 		if (fix.kind === 'split') return `Split cue ${index}`;
 		if (fix.kind === 'confirmSpeaker') return fix.label;
 		if (p.kind === 'overlap') return `Trim cue ${index}`;
+
 		return `Extend to ${((fix.end - fix.start) / 1000).toFixed(1)} s`;
 	}
 
 	protected open(p: Problem): void {
 		this.store.select(p.cueId);
+
 		const cue = this.store.find(p.cueId)?.cue;
 		if (cue) this.playback.seek(cue.start);
 	}
@@ -114,7 +117,9 @@ export class ProblemsView {
 	protected applyFix(p: Problem): void {
 		const fix = p.fix;
 		const cue = this.store.find(p.cueId)?.cue;
+
 		if (!fix || !cue) return;
+
 		if (fix.kind === 'setTiming')
 			this.store.apply(fix.label, edits.setTiming(p.cueId, fix.start, fix.end));
 		else if (fix.kind === 'confirmSpeaker')

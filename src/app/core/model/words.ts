@@ -1,15 +1,11 @@
-/**
- * Word timings: making them from a cue's text, keeping them through text edits, and moving
- * the line between two words.
- */
 import { Ms, WordTiming } from './types';
 
-/** The words of some text (split at whitespace). */
+/** The words of some text (split at whitespace) */
 export function splitWords(text: string): string[] {
 	return text.split(/\s+/).filter(Boolean);
 }
 
-/** Spread words over [start, end), each getting a share by its length. No gaps between them. */
+/** Spread words over [start, end), each getting a share by its length */
 export function spreadWords(words: readonly string[], start: Ms, end: Ms): WordTiming[] {
 	const weight = (w: string) => w.length + 1;
 	const total = words.reduce((n, w) => n + weight(w), 0);
@@ -25,7 +21,7 @@ export function spreadWords(words: readonly string[], start: Ms, end: Ms): WordT
 	});
 }
 
-/** Which old and new words are the same, in order (longest common subsequence). */
+/** Which old and new words are the same, in order by longest common subsequence */
 function matchWords(a: readonly string[], b: readonly string[]): [number, number][] {
 	const n = a.length;
 	const m = b.length;
@@ -43,10 +39,7 @@ function matchWords(a: readonly string[], b: readonly string[]): [number, number
 }
 
 /**
- * Word timings for edited text, keeping what didn't change: unchanged words keep their
- * times, a replaced word takes the slot of the one it replaced, an added word shares the
- * slot of the word before it (after it, at the start), and a deleted word's time goes to the
- * word before it. Null when there's nothing to time.
+ * Word timings for edited text, keeping what didn't change: unchanged words keep their times, a replaced word takes the slot of the one it replaced, an added word shares the slot of the word before it (after it, at the start), and a deleted word's time goes to the word before it. Null when there's nothing to time
  */
 export function retimeWords(
 	words: readonly WordTiming[],
@@ -60,11 +53,11 @@ export function retimeWords(
 	const out: WordTiming[] = [];
 	let pendingStart: Ms | null = null;
 	let pendingInsert: string[] | null = null;
-	// Old words [i0, i1) became new words [j0, j1).
+	// Old words [i0, i1) became new words [j0, j1)
 	const gap = (i0: number, i1: number, j0: number, j1: number) => {
 		const added = next.slice(j0, j1);
 		if (i1 > i0) {
-			// Replaced (or deleted) words: the new ones share their time.
+			// Replaced (or deleted) words: the new ones share their time
 			const s = words[i0].start;
 			const e = words[i1 - 1].end;
 			if (added.length) out.push(...spreadWords(added, s, e));
@@ -73,7 +66,7 @@ export function retimeWords(
 			return;
 		}
 		if (!added.length) return;
-		// Inserted: split the word before (or, at the start, the word after) with them.
+		// Split the word before (or, at the start, the word after) with them
 		const prev = out.at(-1);
 		if (prev) {
 			const shared = spreadWords([prev.text, ...added], prev.start, prev.end);
@@ -105,14 +98,14 @@ export function retimeWords(
 		j = mj + 1;
 	}
 	gap(i, words.length, j, next.length);
-	// Nothing matched and the old words were all deleted before any new ones: start over.
+	
 	if (out.length !== next.length) return spreadWords(next, start, end);
 	return out;
 }
 
 /**
  * Move the line before word `index` to `at`: that word now starts there and, if the two
- * words touched, the word before ends there too. Each word keeps at least `minMs`.
+ * words touched, the word before ends there too. Each word keeps at least `minMs` as configed
  */
 export function moveWordEdge(
 	words: readonly WordTiming[],
@@ -135,8 +128,7 @@ export function moveWordEdge(
 }
 
 /**
- * Times for tapped words: each tap starts a word and ends the one before; the last tapped
- * word runs to the next tap, else the untapped words share what's left of the cue.
+ * Times for tapped words - each tap starts a word and ends the one before; the last tapped word runs to the next tap, else the untapped words share what's left of the cue
  */
 export function tappedWords(
 	words: readonly string[],
@@ -155,7 +147,7 @@ export function tappedWords(
 		});
 	const rest = words.slice(n);
 	if (rest.length) {
-		// The last tapped word gets an average share; the rest split the remainder.
+		// The last tapped word gets an average share; the rest split the remainder
 		const last = out[n - 1];
 		const share = (end - last.start) / (rest.length + 1);
 		last.end = Math.round(last.start + share);

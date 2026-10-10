@@ -1,7 +1,7 @@
 import { createCue, createProject, createTrack } from '../model/defaults';
 import { Project } from '../model/types';
 
-/** Small two-track project exercising styles, positions, runs and karaoke. */
+/** Small two-track project exercising styles, positions, runs and karaoke */
 export function sampleProject(): Project {
 	const p = createProject('Sample');
 	p.styles['style_yellow'] = {

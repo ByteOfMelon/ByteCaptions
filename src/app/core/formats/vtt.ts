@@ -14,9 +14,9 @@ import { FlatCue, flatten } from './flatten';
 import { PlainExportOptions } from './plain';
 
 export interface VttExportOptions extends PlainExportOptions {
-	/** Colours, fonts, size, backgrounds and edges in a STYLE block. Default true. */
+	/** Whether to have colors, fonts, size, backgrounds and edges in a STYLE block */
 	styles?: boolean;
-	/** Voice tags naming each cue's track, when more than one track has cues. Default true. */
+	/** Whether to have voice tags naming each cue's track, when more than one track has cues */
 	voices?: boolean;
 }
 
@@ -56,7 +56,7 @@ function shadow(edge: EdgeType, color: string): string | null {
 	}
 }
 
-/** The CSS for how a run looks, apart from bold/italic/underline (those are tags). */
+/** The CSS for how a run looks, apart from bold/italic/underline */
 function lookCss(s: CaptionStyle): string {
 	const rules = [
 		`color: ${rgba(s.textColor, s.textOpacity)}`,
@@ -85,7 +85,7 @@ export function exportVtt(project: Project, opts: VttExportOptions = {}): string
 	const voiced = opts.voices !== false && new Set(flat.map((fc) => fc.trackId)).size > 1;
 	const names = new Map(project.tracks.map((t) => [t.id, t.name]));
 
-	// One class per distinct look, numbered in order of first use.
+	// One class per distinct look, numbered in order of first use
 	const classes = new Map<string, string>();
 	const classFor = (s: CaptionStyle): string => {
 		const css = lookCss(s);
@@ -100,8 +100,7 @@ export function exportVtt(project: Project, opts: VttExportOptions = {}): string
 		const runs = fc.cue.runs.filter((r) => r.text);
 		const length = runs.reduce((n, r) => n + r.text.length, 0);
 
-		// Karaoke: a timestamp where each word after the first starts, so that word turns
-		// from :future to :past as it's sung.
+		// For karaoke - a timestamp where each word after the first starts, so that word turns from :future to :past as it's sung
 		const steps = basic ? karaokeSteps(fc.cue) : null;
 		const marks = new Map<number, number>();
 		if (steps) {
@@ -112,8 +111,7 @@ export function exportVtt(project: Project, opts: VttExportOptions = {}): string
 			.filter((n) => n >= 0 && n <= length)
 			.sort((a, b) => a - b);
 
-		// When every run looks the same, one class wraps the whole cue. Not for karaoke: players
-		// colour sung text by element, so each word needs its own element after its timestamp.
+		// When every run looks the same, one class wraps the whole cue. Not for karaoke: players color sung text by element, so each word needs its own element after its timestamp.
 		const cueClass =
 			styled && !steps && new Set(runs.map((r) => lookCss(look(r)))).size <= 1
 				? classFor(look(runs[0] ?? { text: '' }))
@@ -122,7 +120,7 @@ export function exportVtt(project: Project, opts: VttExportOptions = {}): string
 		let out = '';
 		for (let i = 0; i < cuts.length - 1; i++) {
 			if (i && marks.has(cuts[i])) out += `<${formatClock(marks.get(cuts[i])!)}>`;
-			// Neighbouring runs that come out the same are written as one.
+			// Neighboring runs that come out the same are written as one
 			const pieces: { text: string; style: CaptionStyle; ruby?: string; key: string }[] = [];
 			for (const r of sliceRuns(runs, cuts[i], cuts[i + 1])) {
 				const s = look(r);
@@ -134,7 +132,7 @@ export function exportVtt(project: Project, opts: VttExportOptions = {}): string
 			for (const p of pieces) {
 				let t = tags(p.text, p.style, basic);
 				if (basic && p.ruby) t = `<ruby>${t}<rt>${escape(p.ruby)}</rt></ruby>`;
-				// Karaoke words get the k class, so only they take the sung colour.
+				// Karaoke words get the k class, so only they can take the sung colour
 				const cls = [
 					styled && !cueClass ? classFor(p.style) : '',
 					steps && styled ? 'k' : '',
@@ -154,7 +152,7 @@ export function exportVtt(project: Project, opts: VttExportOptions = {}): string
 	const body = flat.map((fc) => {
 		const p = fc.position;
 		const settings: string[] = [];
-		// Only emit positioning when it differs from the default bottom-center.
+		// Only emit positioning when it differs from the default bottom-center
 		if (!(p.anchor === 7 && p.x === 50 && p.y === 100)) {
 			settings.push(`line:${Math.round(p.y)}%`, `position:${Math.round(p.x)}%`);
 			if (p.align !== 'center')
@@ -167,8 +165,7 @@ export function exportVtt(project: Project, opts: VttExportOptions = {}): string
 	const css: string[] = [];
 	for (const [rules, c] of classes) css.push(`::cue(.${c}) { ${rules}; }`);
 	if (styled && karaokeColors.size) {
-		// Words still to be sung keep their own colour; sung ones take the karaoke colour.
-		// One colour per file: WebVTT can't scope :past to a cue, so the first cue's wins.
+		// For WebVTT - one color per file as it can't scope :past to a cue, so the first cue color wins out
 		const color = [...karaokeColors][0] || '#FFFF00';
 		css.push(`::cue(.k:past) { color: ${rgba(color, 1)}; }`);
 	}

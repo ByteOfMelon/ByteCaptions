@@ -3,17 +3,11 @@ import { createCue } from '../model/defaults';
 import { Cue, Ms, ProjectSettings, WordTiming } from '../model/types';
 
 /**
- * Words → cues (PLAN §5.2). Turns timed words from transcription into cues that respect the
- * project's limits: characters per line, lines per cue, min/max duration, gap between cues
- * and reading speed. Breaks prefer sentence ends, then clause punctuation, then pauses.
- *
- * Word text is expected trimmed (punctuation attached, e.g. "Hello,") and is joined with
- * single spaces, or none in Chinese and Japanese. Line lengths count full-width characters
- * as two.
+ * Words to cues conversion for auto transcription
  */
 
 export interface SegmentOptions {
-	/** A silence at least this long always starts a new cue. */
+	/** A silence at least this long always starts a new cue */
 	pauseMs: Ms;
 }
 
@@ -26,7 +20,7 @@ type Limits = Pick<
 
 const SENTENCE_END = /[.?!…。！？]["'”’)\]」』）]*$/;
 const CLAUSE_END = /[,;:—–\-、，；：]["'”’)\]」』）]*$/;
-/** Words a line or cue shouldn't end on, since they bind to what follows (English). */
+/** Words a line or cue shouldn't end on, since they bind to what follows (English) */
 const WEAK_END =
 	/^(a|an|the|and|or|but|nor|of|to|in|on|at|for|with|from|by|as|into|than|that|if|my|your|his|her|its|our|their|this|these|those)$/i;
 
@@ -51,13 +45,13 @@ export function segmentWords(
 		const prev = current.at(-1);
 		if (prev) {
 			const pause = word.start - prev.end >= options.pauseMs;
-			// Sentence ends start a new cue, unless the cue would be too short to read.
+			// Sentence ends start a new cue, unless the cue would be too short to read
 			const sentence =
 				SENTENCE_END.test(prev.text) && prev.end - current[0].start >= limits.minDurationMs;
 			if (pause || sentence) flush();
 		}
 		current.push(word);
-		// Over a limit: break at the best point and carry the rest into the next cue.
+		// Over a limit - break at the best point and carry the rest into the next cue
 		while (current.length > 1 && !fits(current, limits)) {
 			const at = bestBreak(current, limits);
 			groups.push(current.slice(0, at));
@@ -80,7 +74,7 @@ function fits(words: WordTiming[], limits: Limits): boolean {
 	return wrap(words, limits.maxCharsPerLine).length <= limits.maxLines;
 }
 
-/** Greedy wrap into lines at most `max` wide (a wider single word gets its own line). */
+/** Greedy wrap into lines at most `max` wide (a wider single word gets its own line) */
 function wrap(words: WordTiming[], max: number): string[] {
 	const lines: string[] = [];
 	let line = '';
@@ -96,8 +90,7 @@ function wrap(words: WordTiming[], max: number): string[] {
 }
 
 /**
- * Where to end the first cue (index of the first word of the next one) when `words` is over
- * the limits. Scores each break that leaves a fitting left side.
+ * Where to end the first cue (index of the first word of the next one) when `words` is over the limits
  */
 function bestBreak(words: WordTiming[], limits: Limits): number {
 	const capacity = limits.maxCharsPerLine * limits.maxLines;
@@ -113,9 +106,9 @@ function bestBreak(words: WordTiming[], limits: Limits): number {
 			(SENTENCE_END.test(before.text) ? 6 : CLAUSE_END.test(before.text) ? 3 : 0) +
 			Math.min(gap / 150, 3) -
 			(WEAK_END.test(before.text) ? 3 : 0) +
-			// Prefer using the space: full cues read better than many short ones.
+			// Prefer using the space - full cues read better than many short ones
 			fill * 4 -
-			// Avoid leaving a single dangling word for the next cue.
+			// Avoid leaving a single dangling word for the next cue
 			(at === words.length - 1 ? 2 : 0);
 		if (score >= bestScore) {
 			bestScore = score;
@@ -126,8 +119,7 @@ function bestBreak(words: WordTiming[], limits: Limits): number {
 }
 
 /**
- * Lines for a cue: one line if it fits, otherwise the most balanced split (preferring breaks
- * after punctuation), falling back to greedy wrapping beyond two lines.
+ * Lines for a cue - one line if it fits, otherwise the most balanced split (preferring breaks after punctuation), falling back to greedy wrapping beyond two lines.
  */
 export function layoutLines(words: WordTiming[], limits: Limits): string[] {
 	const max = limits.maxCharsPerLine;
@@ -146,7 +138,7 @@ export function layoutLines(words: WordTiming[], limits: Limits): string[] {
 			Math.abs(aw - bw) -
 			(SENTENCE_END.test(prev) ? 12 : CLAUSE_END.test(prev) ? 8 : 0) +
 			(WEAK_END.test(prev) ? 10 : 0) +
-			// Slightly prefer a shorter top line (bottom-heavy pyramid reads better).
+			// Slightly prefer a shorter top line (bottom-heavy pyramid reads better)
 			(aw > bw ? 2 : 0);
 		if (score < bestScore) {
 			bestScore = score;
@@ -157,8 +149,7 @@ export function layoutLines(words: WordTiming[], limits: Limits): string[] {
 }
 
 /**
- * Timing clean-up between consecutive cues: keep the minimum gap, then let short or fast
- * cues linger into the following silence (up to the max duration) so they can be read.
+ * Timing clean-up between consecutive cues - keep the minimum gap, then let short or fast cues linger into the following silence (up to the max duration) so they can be read.
  */
 function adjustTiming(cues: Cue[], limits: Limits): void {
 	cues.forEach((cue, i) => {

@@ -41,11 +41,10 @@ export class CueList {
 	protected readonly query = signal('');
 	protected readonly replacement = signal('');
 	protected readonly editing = signal<string | null>(null);
-	/** The start or end time being typed into. */
+	/** The start or end time being typed into */
 	protected readonly editingTime = signal<{ id: CueId; edge: 'start' | 'end' } | null>(null);
 	protected readonly timeError = signal<string | null>(null);
 
-	/** Rows don't depend on the playhead or selection, so playback doesn't rebuild them. */
 	protected readonly rows = computed(() => {
 		const q = this.query().trim().toLowerCase();
 		const fps = this.store.project().fps;
@@ -71,7 +70,7 @@ export class CueList {
 			});
 	});
 
-	/** "3 matches in 2 cues" while searching. */
+	/** Provide summary of search results to user */
 	protected readonly matchSummary = computed(() => {
 		const rows = this.rows();
 		if (!this.query().trim()) return null;
@@ -79,7 +78,7 @@ export class CueList {
 		return `${n} ${n === 1 ? 'match' : 'matches'} in ${rows.length} ${rows.length === 1 ? 'cue' : 'cues'}`;
 	});
 
-	/** First listed cue under the playhead; only changes when playback reaches another cue. */
+	/** Listed cue under the playhead */
 	protected readonly playingId = computed(() => {
 		const t = this.store.playhead();
 		return this.rows().find((r) => r.ref.cue.start <= t && t < r.ref.cue.end)?.id ?? null;
@@ -89,14 +88,14 @@ export class CueList {
 	protected readonly trackCount = computed(() => this.store.project().tracks.length);
 
 	constructor() {
-		// Keep the playing cue in view during playback.
+		// Keep the playing cue in view during playback
 		effect(() => {
 			if (!this.store.playing()) return;
 			const playing = this.playingId();
 			if (!playing) return;
 			untracked(() => this.scrollTo(playing));
 		});
-		// And the selected cue when selection changes elsewhere (timeline, problems).
+		// And the selected cue when selection changes elsewhere (timeline, problems)
 		effect(() => {
 			const id = this.store.primary()?.cue.id;
 			if (id) untracked(() => this.scrollTo(id));
@@ -127,14 +126,13 @@ export class CueList {
 		if (e.key === 'Escape') {
 			this.editing.set(null);
 		} else if (e.key === 'Enter' && !e.shiftKey) {
-			// Enter commits; Shift+Enter inserts a line break.
 			e.preventDefault();
 			this.commit(id, el.value);
 		}
 	}
 
 	protected editTime(e: MouseEvent, r: CueRef, edge: 'start' | 'end'): void {
-		// The first click selects the cue; clicking a time of the selected cue edits it.
+		// The first click selects the cue, clicking a time of the selected cue edits it
 		if (
 			r.track.locked ||
 			!this.store.selection().has(r.cue.id) ||
@@ -147,37 +145,42 @@ export class CueList {
 		this.editingTime.set({ id: r.cue.id, edge });
 	}
 
-	/** Why `text` can't be the edited time, or null if it can. */
+	/** Explain to the user why their entered time is invalid (if necessary) */
 	private timeProblem(text: string): string | null {
 		const t = this.editingTime();
 		const cue = t && this.store.find(t.id)?.cue;
+
 		if (!cue) return null;
 		const ms = parseTime(text, this.store.project().fps);
 		if (ms === null) return 'Not a valid time.';
+
 		if (t.edge === 'start' && ms >= cue.end) return 'Start must be before end.';
 		if (t.edge === 'end' && ms <= cue.start) return 'End must be after start.';
 		return null;
 	}
 
-	/** Enter keeps the editor open on a bad time and says why; leaving it reverts. */
 	protected commitTime(text: string, keepOpen = false): void {
 		const t = this.editingTime();
 		if (!t) return;
+
 		const error = this.timeProblem(text);
 		if (error && keepOpen) return this.timeError.set(error);
 		this.closeTime();
+
 		const cue = this.store.find(t.id)?.cue;
 		const ms = parseTime(text, this.store.project().fps);
 		if (error || !cue || ms === null) return;
+
 		const [start, end] = t.edge === 'start' ? [ms, cue.end] : [cue.start, ms];
 		if (start === cue.start && end === cue.end) return;
+
 		this.store.apply(
 			t.edge === 'start' ? 'Set start' : 'Set end',
 			edits.setTiming(t.id, start, end),
 		);
 	}
 
-	/** Once shown, the error follows the typing. */
+	/** Once shown, the error follows the typing */
 	protected onTimeInput(text: string): void {
 		if (this.timeError()) this.timeError.set(this.timeProblem(text));
 	}
@@ -199,7 +202,7 @@ export class CueList {
 		return text.replace(matcher(this.query().trim()), () => this.replacement());
 	}
 
-	/** Replace in the selected matching cue (or the first one), then select the next match. */
+	/** Replace in the selected matching cue (or the first one), then select the next match */
 	protected replaceOne(): void {
 		const rows = this.rows().filter((r) => !r.ref.track.locked);
 		if (!rows.length) return;
@@ -228,12 +231,12 @@ export class CueList {
 	}
 }
 
-/** Case-insensitive, literal match of `query`. */
+/** Case-insensitive match of the query */
 function matcher(query: string): RegExp {
 	return new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
 }
 
-/** `text` split into runs, marking the ones that match the search. */
+/** text split into runs, marking the ones that match the search */
 function splitMatches(text: string, query: string): { text: string; hit: boolean }[] {
 	const parts: { text: string; hit: boolean }[] = [];
 	let last = 0;

@@ -8,20 +8,20 @@ import { CountPipe } from '../../ui/count/count';
 import { Select } from '../../ui/select/select';
 import { Playback } from '../player/playback';
 
-/** Pause between cues that starts a new paragraph. */
+/** Pause between cues that starts a new paragraph */
 const PARAGRAPH_GAP_MS = 1500;
 const LOW_CONFIDENCE = 0.6;
 
 interface Word {
 	text: string;
 	unsure: boolean;
-	/** Space after the word (none in Chinese and Japanese). */
+	/** Space after the word (none in Chinese and Japanese) */
 	gap: string;
 }
 
 interface Segment {
 	cue: Cue;
-	/** Word spans when timings exist; otherwise null and the plain text is shown. */
+	/** Word spans when timings exist - otherwise null and the plain text is shown */
 	words: Word[] | null;
 	text: string;
 }
@@ -32,8 +32,7 @@ interface Paragraph {
 }
 
 /**
- * Descript-style document view of one track. Click a word or segment to seek;
- * double-click a segment to edit its text.
+ * Descript-style document view of one track
  */
 @Component({
 	selector: 'bc-transcript-view',
@@ -49,7 +48,7 @@ export class TranscriptView {
 		this.store.project().tracks.map((t) => ({ value: t.id, label: t.name })),
 	);
 	private readonly chosenTrack = signal<string | null>(null);
-	/** The chosen track, or the first one if none was chosen or it was deleted. */
+	/** The chosen track, or the first one if none was chosen or it was deleted */
 	protected readonly trackId = computed(() => {
 		const tracks = this.store.project().tracks;
 		const chosen = this.chosenTrack();
@@ -72,7 +71,6 @@ export class TranscriptView {
 		return `${m}:${String(s).padStart(2, '0')}`;
 	});
 
-	/** Built without the playhead or selection, so playback doesn't rebuild the document. */
 	protected readonly paragraphs = computed<Paragraph[]>(() => {
 		const track = this.track();
 		if (!track) return [];
@@ -90,7 +88,7 @@ export class TranscriptView {
 					})) ?? null,
 			};
 			if (!out.length || cue.start - prevEnd > PARAGRAPH_GAP_MS) {
-				// Paragraph timestamps are shown to the second, like the design.
+				// Paragraph timestamps are shown to the second
 				out.push({ start: formatTimecode(cue.start, 1).slice(0, 8), segments: [] });
 			}
 			out[out.length - 1].segments.push(seg);
@@ -99,7 +97,7 @@ export class TranscriptView {
 		return out;
 	});
 
-	/** Paragraph, cue and word under the playhead; changes a few times a second at most. */
+	/** Paragraph, cue and word under the playhead */
 	protected readonly now = computed(
 		() => {
 			const t = this.store.playhead();
@@ -128,6 +126,7 @@ export class TranscriptView {
 			cue.id,
 			e.shiftKey ? 'range' : e.ctrlKey || e.metaKey ? 'toggle' : 'replace',
 		);
+
 		const w = wordIndex !== undefined ? cue.words?.[wordIndex] : undefined;
 		this.playback.seek(w ? w.start : cue.start);
 	}
@@ -141,6 +140,7 @@ export class TranscriptView {
 
 	protected onEditKey(e: KeyboardEvent, cue: Cue): void {
 		const el = e.target as HTMLElement;
+
 		if (e.key === 'Escape') {
 			el.textContent = cueText(cue);
 			this.editing.set(null);

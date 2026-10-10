@@ -1,12 +1,10 @@
 /**
- * Speaker separation: puts transcribed cues on one track per speaker, from the speaker turns
- * the backend works out (src-tauri/src/speakers.rs). Pure functions; the app runs them as
- * undoable edits.
+ * Speaker separation. Puts transcribed cues on one track per speaker
  */
 import { newId } from '../model/defaults';
 import { Cue, CueId, Ms, Track } from '../model/types';
 
-/** One stretch of one speaker. Speakers are numbered from 0, most talkative first. */
+/** One stretch of one speaker. Speakers are numbered from 0, most talkative first */
 export interface SpeakerTurn {
 	start: Ms;
 	end: Ms;
@@ -15,28 +13,25 @@ export interface SpeakerTurn {
 
 export interface SpeakerGuess {
 	speaker: number;
-	/** Share of the cue's speech that's this speaker's, 0–1. */
+	/** Share of the cue's speech that's this speaker's, 0–1 */
 	purity: number;
 }
 
-/** Below this share of one speaker, a cue is flagged as unsure. */
+/** Below this share of one speaker, a cue is flagged as unsure */
 export const UNSURE_BELOW = 0.6;
 
 /**
- * With the speaker count detected, a "speaker" with fewer cues than this share of them (and
- * at least 3) is folded into the others: it's nearly always a real speaker heard over music or
- * noise, not another person.
+ * Avoid categorizing minor speakers as separate entities (as they're likely just interpreted as different by the speaker detection system when they actually aren't)
  */
 const MINOR_SHARE = 0.02;
 
-/** Cues this short (in words) may follow the speaker around them; see `smooth`. */
+/** Cues this short (in words) may follow the speaker around them */
 const FRAGMENT_WORDS = 3;
-/** …when the neighbours are this close. */
+/** ...when the neighbours are this close */
 const FRAGMENT_GAP: Ms = 1500;
 
 /**
- * Whose cue is each one: the speaker whose turns overlap its words the most (or the cue
- * itself without word timings), else the nearest turn.
+ * Assign each cue to a speaker based on the speaker turns and word timings
  */
 export function assignSpeakers(
 	cues: readonly Cue[],
@@ -93,9 +88,7 @@ function wordCount(c: Cue): number {
 }
 
 /**
- * A short, uncertain fragment between two cues of the same other speaker is usually theirs
- * ("…and then • yeah • we went"): the turns are too coarse to place a word or two. It stays
- * flagged as unsure.
+ * A short, uncertain fragment between two cues of the same other speaker is usually theirs, still flag as unsure
  */
 function smooth(cues: readonly Cue[], guesses: SpeakerGuess[]): void {
 	for (let i = 1; i < cues.length - 1; i++) {
@@ -117,15 +110,14 @@ function smooth(cues: readonly Cue[], guesses: SpeakerGuess[]): void {
 
 export interface SpeakerSplit {
 	tracks: Track[];
-	/** Per track: the cue that's most clearly that speaker, to play as a sample. */
+	/** Per track - the cue that's most clearly that speaker, to play as a sample */
 	samples: CueId[];
-	/** Cues flagged as unsure. */
+	/** Number of cues flagged as unsure */
 	unsure: number;
 }
 
 /**
- * New tracks, one per speaker with cues, copying the source track's settings. Speakers are
- * ordered by how long they talk in the cues, so "Speaker 1" talks the most.
+ * New tracks, one per speaker with cues, copying the source track's settings, speakers are ordered by how long they talk in the cues
  */
 export function splitBySpeaker(
 	source: Track,
@@ -159,7 +151,7 @@ export function splitBySpeaker(
 	return { tracks, samples, unsure };
 }
 
-/** The most single-speaker cue, preferring ones long enough to recognise a voice. */
+/** The most single-speaker cue, preferring ones long enough to recognise a voice */
 function clearest(group: { cue: Cue; purity: number }[]): Cue {
 	const score = ({ cue, purity }: { cue: Cue; purity: number }) =>
 		purity * Math.min(1, (cue.end - cue.start) / 2500);

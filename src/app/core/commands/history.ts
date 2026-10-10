@@ -11,10 +11,10 @@ interface Entry {
 }
 
 /**
- * Undo/redo history built on Immer patches.
+ * Undo/redo history
  *
  * Every mutation goes through `apply()`. Continuous gestures (dragging a block,
- * typing) should be wrapped in `begin()`/`end()` so they undo as one step.
+ * typing) should be wrapped in `begin()`/`end()` so they undo as one step
  */
 export class History<T> {
 	private past: Entry[] = [];
@@ -60,7 +60,7 @@ export class History<T> {
 		return this.state;
 	}
 
-	/** Start grouping subsequent `apply()` calls into one undo step. */
+	/** Start grouping subsequent apply() calls into one undo step */
 	begin(label: string): void {
 		if (!this.group) this.group = { label, patches: [], inverse: [] };
 	}
@@ -88,7 +88,7 @@ export class History<T> {
 		return this.state;
 	}
 
-	/** Replace state without history (e.g. opening a project). */
+	/** Replace state without history */
 	reset(state: T): void {
 		this.state = state;
 		this.past = [];

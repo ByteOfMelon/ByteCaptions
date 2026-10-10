@@ -34,14 +34,13 @@ const FONTS: YtFont[] = [
 ];
 const EDGES: EdgeType[] = ['none', 'hardShadow', 'bevel', 'glow', 'softShadow'];
 const OFFSETS: TextOffset[] = ['subscript', 'regular', 'superscript'];
-/** Color YouTube uses for edges when `ec` is omitted. */
+/** Color YouTube uses for edges when ec is omitted */
 const DEFAULT_EDGE_COLOR = '#222222';
 
-// ---- YouTube coordinate / scale corrections --------------------------------
+// YouTube coordinate / scale corrections
 
 /**
- * YouTube squeezes positions toward the center: displayed = 2 + value * 0.96.
- * We store displayed percentages and invert that on export.
+ * YouTube squeezes positions toward the center: displayed = 2 + value * 0.96
  */
 export function toYtCoord(displayPct: number): number {
 	return Math.round(Math.min(100, Math.max(0, (displayPct - 2) / 0.96)));
@@ -51,7 +50,7 @@ export function fromYtCoord(yt: number): number {
 	return Math.round((2 + yt * 0.96) * 100) / 100;
 }
 
-/** YouTube renders size as 1 + (sz/100 - 1) / 4. We store the rendered scale. */
+/** YouTube renders size as 1 + (sz/100 - 1) / 4 */
 export function toYtSize(scale: number): number {
 	return Math.round(Math.max(1 + (scale - 1) * 4, 0) * 100);
 }
@@ -76,7 +75,7 @@ function esc(s: string): string {
 		.replace(/"/g, '&quot;');
 }
 
-// ---- Export ------------------------------------------------------------------
+// Export
 
 type Attrs = [string, string | number][];
 
@@ -95,8 +94,8 @@ function penAttrs(s: CaptionStyle): Attrs {
 	a.push(['bo', opacityToByte(s.bgOpacity)]);
 	if (s.edge !== 'none') {
 		a.push(['et', EDGES.indexOf(s.edge)]);
-		// Omitting `ec` lets the edge follow text opacity; writing it forces the
-		// edge opaque. Only write it when a non-default color is needed.
+
+		// Only write ec when a non-default color is needed
 		if (s.edgeColor.toUpperCase() !== DEFAULT_EDGE_COLOR)
 			a.push(['ec', s.edgeColor.toUpperCase()]);
 	}
@@ -122,7 +121,7 @@ function wsAttrs(p: Position): Attrs {
 	];
 }
 
-/** Dedupes attribute sets into numbered definitions. */
+/** Deduplicates attribute sets into numbered definitions */
 class Table {
 	private ids = new Map<string, number>();
 	readonly rows: Attrs[] = [];
@@ -159,11 +158,10 @@ export interface Srv3Stats {
 	lines: number;
 	sections: number;
 	bytes: number;
-	/** 0–1+, rough "weight" relative to a conservative safe budget. */
 	weight: number;
 }
 
-/** Conservative budget; tune once real-world limits are measured. See PLAN §4.1. */
+/** May need to be tuned later as we do more real-world testing, is currently a conservative estimate */
 export const SRV3_ELEMENT_BUDGET = 20_000;
 
 export function exportSrv3(project: Project): { xml: string; stats: Srv3Stats } {
@@ -179,7 +177,7 @@ export function exportSrv3(project: Project): { xml: string; stats: Srv3Stats } 
 		const runPen = (override?: Partial<CaptionStyle>) =>
 			pens.id(penAttrs({ ...style, ...override }));
 
-		// Karaoke: one line per word, with the words sung so far in the karaoke colour.
+		// Karaoke steps. One line per word, with the words sung so far in the karaoke color
 		const steps = karaokeSteps(cue);
 		if (steps) {
 			for (const step of steps) {
@@ -250,7 +248,7 @@ function writeLine(line: Line): string | null {
 	if (line.sections.length === 0) return null;
 	let t = Math.round(line.start);
 	let d = Math.round(line.end - line.start);
-	// The Android app ignores positioning (or hides the line) at t=0.
+	// The Android app ignores positioning (or hides the line) at t=0
 	if (t <= 0) {
 		d -= -t + 1;
 		t = 1;
@@ -261,16 +259,15 @@ function writeLine(line: Line): string | null {
 	if (line.sections.length === 1) {
 		return `${head} p="${line.sections[0].pen}"${pos}>${esc(line.sections[0].text)}</p>`;
 	}
-	// YouTube's server drops the first section's pen unless the line has text
-	// outside any section, so insert a zero-width space after the first one.
+
+	// YouTube's server drops the first section's pen unless the line has text outside any section
 	const body = line.sections
 		.map((s, i) => `<s p="${s.pen}">${esc(s.text)}</s>${i === 0 ? ZWSP : ''}`)
 		.join('');
 	return `${head}${pos}>${body}</p>`;
 }
 
-// ---- Import ------------------------------------------------------------------
-
+// Import
 function int(el: Element, name: string): number | undefined {
 	const v = el.getAttribute(name);
 	if (v == null || v === '') return undefined;
@@ -441,7 +438,7 @@ export function importSrv3(src: string): ImportResult {
 				),
 			),
 		};
-		// Merge adjacent runs with identical overrides.
+		// Merge adjacent runs with identical overrides
 		cue.runs = cue.runs.reduce<Cue['runs']>((acc, r) => {
 			const last = acc.at(-1);
 			if (last && JSON.stringify(last.styleOverride) === JSON.stringify(r.styleOverride)) {

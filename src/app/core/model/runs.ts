@@ -1,7 +1,5 @@
 /**
- * Formatting inside a cue: its text is a list of runs, each with optional style overrides on
- * top of the cue's preset. These keep runs tidy through edits: style a character range, keep
- * formatting when the text changes, split and join.
+ * Formatting inside a cue: its text is a list of runs, each with optional style overrides on top of the cue's preset. These keep runs tidy through edits: style a character range, keep formatting when the text changes, split and join.
  */
 import { CaptionStyle, TextRun } from './types';
 
@@ -20,7 +18,7 @@ function run(text: string, styleOverride?: Override): TextRun {
 	return styleOverride && Object.keys(styleOverride).length ? { text, styleOverride } : { text };
 }
 
-/** Drop empty runs and join neighbours with the same formatting. Always at least one run. */
+/** Drop empty runs and join neighbors with the same formatting */
 export function normalizeRuns(runs: readonly TextRun[]): TextRun[] {
 	const out: TextRun[] = [];
 	for (const r of runs) {
@@ -33,7 +31,6 @@ export function normalizeRuns(runs: readonly TextRun[]): TextRun[] {
 	return out.length ? out : [{ text: '' }];
 }
 
-/** The runs covering characters [from, to). */
 export function sliceRuns(runs: readonly TextRun[], from: number, to: number): TextRun[] {
 	const out: TextRun[] = [];
 	let at = 0;
@@ -48,8 +45,7 @@ export function sliceRuns(runs: readonly TextRun[], from: number, to: number): T
 }
 
 /**
- * Change the formatting of characters [from, to): merge `change` into their overrides
- * (a value of undefined removes that override), or 'clear' to remove all of it.
+ * Change the formatting of characters [from, to): merge change into their overrides (a value of undefined removes that override), or 'clear' to remove all
  */
 export function styleRange(
 	runs: readonly TextRun[],
@@ -76,8 +72,7 @@ export function styleRange(
 }
 
 /**
- * Change the text, keeping the formatting of what didn't change. Typed text takes the
- * formatting of the character before it (or after it, at the very start).
+ * Change the text, keeping the formatting of what didn't change. Typed text takes the formatting of the character before it (or after it, at the very start)
  */
 export function replaceText(runs: readonly TextRun[], text: string): TextRun[] {
 	const old = runs.map((r) => r.text).join('');
@@ -100,7 +95,7 @@ export function replaceText(runs: readonly TextRun[], text: string): TextRun[] {
 	]);
 }
 
-/** Trim whitespace from both ends of the runs' text, keeping formatting. */
+/** Trim whitespace from both ends of the runs' text, keeping formatting */
 export function trimRuns(runs: readonly TextRun[]): TextRun[] {
 	const text = runs.map((r) => r.text).join('');
 	const start = text.length - text.trimStart().length;
@@ -108,13 +103,13 @@ export function trimRuns(runs: readonly TextRun[]): TextRun[] {
 	return normalizeRuns(sliceRuns(runs, start, Math.max(start, end)));
 }
 
-/** Split the runs at character `at`, trimming each side. */
+/** Split the runs at character `at`, trimming each side */
 export function splitRuns(runs: readonly TextRun[], at: number): [TextRun[], TextRun[]] {
 	const length = runs.reduce((n, r) => n + r.text.length, 0);
 	return [trimRuns(sliceRuns(runs, 0, at)), trimRuns(sliceRuns(runs, at, length))];
 }
 
-/** The formatting of characters [from, to): each property that's the same across all of them. */
+/** The formatting of characters [from, to) - each property that's the same across all of them */
 export function rangeOverride(runs: readonly TextRun[], from: number, to: number): Override {
 	const parts = sliceRuns(runs, from, Math.max(to, from + 1));
 	if (!parts.length) return {};

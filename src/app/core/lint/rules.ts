@@ -1,6 +1,5 @@
 /**
- * Live, non-blocking quality checks. Pure functions over the project; the UI
- * shows results as badges on cues and in the Problems tab.
+ * Live, non-blocking quality checks. Pure functions over the project; the app shows results as badges on cues and in the Problems tab.
  */
 import { cueText, textWidth } from '../model/cue';
 import { Cue, CueId, Ms, Project, Track, TrackId } from '../model/types';
@@ -10,7 +9,7 @@ export type Severity = 'error' | 'warning';
 export type ProblemKind =
 	'overlap' | 'cps' | 'tooShort' | 'tooLong' | 'lineLength' | 'tooManyLines' | 'gap' | 'speaker';
 
-/** A quick fix the UI can offer. Applied by the editor through undoable edits. */
+/** Any quick fix the app can offer */
 export type ProblemFix =
 	| { kind: 'setTiming'; label: string; start: Ms; end: Ms }
 	| { kind: 'split'; label: string }
@@ -23,11 +22,11 @@ export interface Problem {
 	cueId: CueId;
 	message: string;
 	fix?: ProblemFix;
-	/** For an overlap: the cue it overlaps (the next one on the same track). */
+	/** For an overlap: the cue it overlaps (on the same track) */
 	otherCueId?: CueId;
 }
 
-/** Characters per second, ignoring line breaks. */
+/** Characters per second, ignoring line breaks */
 export function readingSpeed(cue: Cue): number {
 	const seconds = (cue.end - cue.start) / 1000;
 	if (seconds <= 0) return Infinity;
@@ -117,7 +116,7 @@ export function lintTrack(project: Project, track: Track): Problem[] {
 		if (lines.length > s.maxLines) {
 			add(cue, 'tooManyLines', 'warning', `${lines.length} lines (max ${s.maxLines})`);
 		}
-		// Full-width characters (Chinese, Japanese, Korean) count as two.
+		// Full-width characters (Chinese, Japanese, Korean) count as two
 		const longest = Math.max(...lines.map((l) => textWidth(l)));
 		if (longest > s.maxCharsPerLine) {
 			add(

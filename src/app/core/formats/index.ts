@@ -10,7 +10,7 @@ export interface FormatInfo {
 	id: FormatId;
 	label: string;
 	extensions: string[];
-	/** What this format drops compared to SRV3, for the export dialog. */
+	/** What this format drops compared to SRV3 (used for export dialog) */
 	loses: string[];
 	export(project: Project): string;
 	import(src: string): ImportResult;
@@ -60,7 +60,7 @@ export function formatForFilename(name: string): FormatInfo | undefined {
 	return Object.values(FORMATS).find((f) => f.extensions.includes(ext));
 }
 
-/** Guess format from content when the extension is missing or wrong. */
+/** Guess format from content when the extension is missing or incorrect */
 export function sniffFormat(src: string): FormatInfo | undefined {
 	const head = src
 		.replace(/^\uFEFF/, '')
