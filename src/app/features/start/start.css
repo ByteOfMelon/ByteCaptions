@@ -84,7 +84,7 @@ button.card:hover {
 }
 .card.new {
 	box-shadow: none;
-	outline: 1.5px dashed var(--color-brand);
+	outline: 1.5px solid var(--color-brand);
 	outline-offset: -1.5px;
 }
 .card.new:focus-visible {
@@ -146,12 +146,15 @@ button.card:hover {
 	background: var(--color-panel);
 	box-shadow: inset 0 0 0 var(--outline-width) var(--color-outline);
 }
+.recent .empty {
+	padding: var(--spacing-sm);
+	padding-top: 0px;
+}
 .recent-head {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	height: 36px;
-	padding: 0 var(--spacing-sm);
+	padding: var(--spacing-sm);
 }
 .project {
 	display: flex;

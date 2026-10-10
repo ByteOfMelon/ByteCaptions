@@ -11,7 +11,6 @@
 	align-items: center;
 	justify-content: space-between;
 	gap: var(--spacing-sm);
-	height: 36px;
 }
 h2 {
 	margin: 0;

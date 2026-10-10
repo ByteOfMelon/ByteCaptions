@@ -119,6 +119,7 @@ export class AppMenu {
 						run: () => void this.newProject(),
 					},
 					{ text: 'Open project...', keys: 'Ctrl+O', run: () => void this.open() },
+					{ command: 'close-project' },
 					'separator',
 					{ command: 'save' },
 					{ command: 'save-as' },

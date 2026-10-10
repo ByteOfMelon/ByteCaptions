@@ -1,4 +1,5 @@
 import { Injectable, computed, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import {
 	LucideArrowDown,
 	LucideArrowLeftToLine,
@@ -17,6 +18,7 @@ import {
 	LucideDelete,
 	LucideFileInput,
 	LucideFolderOpen,
+	LucideFolderX,
 	LucideFoldHorizontal,
 	LucideMagnet,
 	LucideMerge,
@@ -93,6 +95,7 @@ export class CommandRegistry {
 	private readonly playback = inject(Playback);
 	private readonly markers = inject(Markers);
 	private readonly youtube = inject(YouTube);
+	private readonly router = inject(Router);
 
 	readonly all = computed<Command[]>(() => {
 		const hasCue = () => !!this.store.primary();
@@ -475,6 +478,12 @@ export class CommandRegistry {
 				icon: LucideFolderOpen.icon,
 				keys: 'Ctrl+O',
 				run: () => void this.files.open(),
+			},
+			{
+				id: 'close-project',
+				label: 'Close project',
+				icon: LucideFolderX.icon,
+				run: () => void this.router.navigateByUrl('/'),
 			},
 			{
 				id: 'import',
