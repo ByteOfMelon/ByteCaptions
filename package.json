@@ -15,8 +15,6 @@
 		"fetch:ffmpeg": "node scripts/fetch-ffmpeg.mjs",
 		"fetch:vulkan": "node scripts/fetch-vulkan-runtime.mjs"
 	},
-	"private": true,
-	"packageManager": "npm@11.19.0",
 	"dependencies": {
 		"@angular/common": "^22.2.0",
 		"@angular/compiler": "^22.2.0",

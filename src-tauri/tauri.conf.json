@@ -2,7 +2,7 @@
 	"$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
 	"productName": "ByteCaptions",
 	"version": "0.9.0",
-	"identifier": "cc.daydreamstudio.bytecaptions",
+	"identifier": "com.byteofmelon.bytecaptions",
 	"build": {
 		"frontendDist": "../dist/bytecaptions/browser",
 		"devUrl": "http://localhost:4200",
