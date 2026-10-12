@@ -394,7 +394,7 @@ export class AppMenu {
 		const choice = await message(
 			[
 				`ByteCaptions ${APP_VERSION}`,
-				'The open-source video editing-style subtitle editor',
+				'The open-source video-editing-style subtitle editor',
 				'',
 				'Copyright © 2026 Michael Webb/Byte of Melon',
 				WEBSITE.replace('https://', ''),

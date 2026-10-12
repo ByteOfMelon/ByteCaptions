@@ -83,7 +83,18 @@
 
 <div class="body">
 	<div class="headers" (wheel)="onHeadersWheel($event)">
-		<div class="ruler-spacer"></div>
+		<div class="ruler-spacer">
+			<button
+				bcIconButton
+				variant="ghost"
+				class="add-track"
+				aria-label="New track"
+				bcTooltip="New track"
+				(click)="addTrack()"
+			>
+				<svg lucidePlus></svg>
+			</button>
+		</div>
 		<div class="header-scroll">
 			<div class="header-list" [style.transform]="'translateY(' + -scrollY() + 'px)'">
 				@for (h of headers(); track h.track.id) {

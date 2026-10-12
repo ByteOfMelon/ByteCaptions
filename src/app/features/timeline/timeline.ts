@@ -20,6 +20,7 @@ import {
 	LucideLock,
 	LucideLockOpen,
 	LucideMagnet,
+	LucidePlus,
 	LucideRepeat,
 	LucideScissors,
 	LucideZoomIn,
@@ -142,6 +143,7 @@ interface Hud {
 		StyleChip,
 		LucideScissors,
 		LucideMagnet,
+		LucidePlus,
 		LucideRepeat,
 		LucideZoomIn,
 		LucideZoomOut,
@@ -1132,6 +1134,11 @@ export class Timeline {
 	/** Vertical scroll of the track lanes; headers follow via a transform */
 	protected scrollBy(dy: number): void {
 		this.scrollTarget.set(Math.max(0, Math.min(this.maxScrollY(), this.scrollY() + dy)));
+	}
+
+	/** Adds a track below the selected cue's track and starts renaming it */
+	protected addTrack(): void {
+		this.ui.renamingTrack.set(this.commands.newTrack(this.store.primary()?.track.id));
 	}
 
 	protected onHeadersWheel(e: WheelEvent): void {

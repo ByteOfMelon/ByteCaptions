@@ -84,8 +84,15 @@ h2 {
 	width: 240px;
 }
 .ruler-spacer {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
 	height: 24px;
 	flex-shrink: 0;
+}
+.add-track {
+	width: 24px;
+	height: 24px;
 }
 .header-scroll {
 	flex: 1;
