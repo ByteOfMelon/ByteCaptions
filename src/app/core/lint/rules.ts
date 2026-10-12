@@ -35,6 +35,13 @@ export function readingSpeed(cue: Cue): number {
 	return cueText(cue).replace(/\n/g, '').length / seconds;
 }
 
+/**
+ * Reading speed for display
+ */
+export function formatCps(cps: number): string {
+	return String(Math.ceil(cps * 10 - 1e-9) / 10);
+}
+
 export function lintTrack(project: Project, track: Track): Problem[] {
 	const s = project.settings;
 	const out: Problem[] = [];

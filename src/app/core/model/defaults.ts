@@ -62,7 +62,7 @@ export function defaultSettings(): ProjectSettings {
 		maxLines: 2,
 		minDurationMs: 700,
 		maxDurationMs: 7000,
-		minGapMs: 80,
+		minGapMs: 0,
 		maxCps: 20,
 	};
 }

@@ -1,5 +1,5 @@
 import { createCue, createProject } from '../model/defaults';
-import { lintProject, readingSpeed } from './rules';
+import { formatCps, lintProject, readingSpeed } from './rules';
 
 function project(...cues: ReturnType<typeof createCue>[]) {
 	const p = createProject();
@@ -48,5 +48,14 @@ describe('lint', () => {
 		const kinds = lintProject(project(createCue(0, 6000, text))).map((p) => p.kind);
 		expect(kinds).toContain('lineLength');
 		expect(kinds).toContain('tooManyLines');
+	});
+});
+
+describe('formatCps', () => {
+	it('rounds up to one decimal, so a cue over the limit never reads as the limit', () => {
+		expect(formatCps(20.03)).toBe('20.1');
+		expect(formatCps(20.25)).toBe('20.3');
+		expect(formatCps(20.3)).toBe('20.3');
+		expect(formatCps(25)).toBe('25');
 	});
 });

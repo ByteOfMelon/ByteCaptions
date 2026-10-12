@@ -98,8 +98,8 @@ describe('segmentWords', () => {
 			{ text: 'End.', start: 0, end: 1000 },
 			{ text: 'Next', start: 1020, end: 1500 },
 		];
-		const [a, b] = segmentWords(words, { ...limits, minDurationMs: 500 });
-		expect(b.start - a.end).toBe(limits.minGapMs);
+		const [a, b] = segmentWords(words, { ...limits, minDurationMs: 500, minGapMs: 80 });
+		expect(b.start - a.end).toBe(80);
 	});
 
 	it('ignores empty words and sorts by time', () => {

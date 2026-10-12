@@ -562,6 +562,25 @@ export class Timeline {
 	}
 
 	/**
+	 * How far a cue spanning [start, end] can extend or move on its track without overlapping
+	 * the cues around it
+	 */
+	private room(cueId: CueId, start: Ms, end: Ms, exclude: ReadonlySet<CueId>) {
+		const track = this.store.find(cueId)?.track;
+		let min = 0;
+		let max = Infinity;
+
+		for (const c of track?.cues ?? []) {
+			if (exclude.has(c.id)) continue;
+
+			if (c.end <= start) min = Math.max(min, c.end);
+			else if (c.start >= end) max = Math.min(max, c.start);
+		}
+
+		return { min, max };
+	}
+
+	/**
 	 * Snap whichever of `points` is closest (within SNAP_PX) to the playhead
 	 */
 	private snapDelta(points: Ms[], exclude: ReadonlySet<CueId>, ownWords = false): number {
@@ -711,6 +730,9 @@ export class Timeline {
 	}
 
 	protected onPointerMove(e: PointerEvent): void {
+		// The button was released without a pointerup reaching us: end the drag anyway
+		if (this.drag && e.pointerType === 'mouse' && !(e.buttons & 1)) return this.onPointerUp(e);
+
 		const { x, y } = this.local(e);
 
 		if (!this.drag) {
@@ -807,9 +829,15 @@ export class Timeline {
 					d.edge === 'start'
 						? [Math.min(t, d.end - minLen), d.end]
 						: [d.start, Math.max(t, d.start + minLen)];
-				const start = Math.max(0, s);
-				this.store.apply('Trim cue', setTiming(d.cueId, start, en));
-				const now = d.edge === 'start' ? start : en;
+				const room = this.room(d.cueId, d.start, d.end, new Set([d.cueId]));
+				const start = Math.max(room.min, s);
+				const end = Math.min(room.max, en);
+
+				// Blocked by a neighbour: the snap it found isn't where the edge ended up
+				if (start !== Math.max(0, s) || end !== en) this.snapAt.set(null);
+
+				this.store.apply('Trim cue', setTiming(d.cueId, start, end));
+				const now = d.edge === 'start' ? start : end;
 				this.showHud(now, y, d.edge === 'start' ? 'left' : 'right', () => {
 					const tc = (ms: Ms) => formatTimecode(ms, this.store.project().fps);
 					const diff = (now - d.original) / 1000;
@@ -924,6 +952,17 @@ export class Timeline {
 					delta = Math.round(
 						delta + this.snapDelta([a.start + delta, a.end + delta], ids),
 					);
+
+				// Stop at the neighbouring cues instead of overlapping them
+				const wanted = delta;
+
+				for (const [id, o] of d.orig) {
+					const room = this.room(id, o.start, o.end, ids);
+					delta = Math.max(delta, room.min - o.start);
+					delta = Math.min(delta, room.max - o.end);
+				}
+
+				if (delta !== wanted) this.snapAt.set(null);
 
 				this.store.apply('Move cue', (p) => {
 					for (const [id, o] of d.orig) setTiming(id, o.start + delta, o.end + delta)(p);

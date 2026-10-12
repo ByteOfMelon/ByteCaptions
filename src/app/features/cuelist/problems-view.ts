@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { LucideCircleX, LucideTriangleAlert } from '@lucide/angular';
 import * as edits from '../../core/commands/edits';
 import { cueText } from '../../core/model/cue';
-import { Problem, readingSpeed } from '../../core/lint/rules';
+import { Problem, formatCps, readingSpeed } from '../../core/lint/rules';
 import { formatTimecode } from '../../core/time/timecode';
 import { ProjectStore } from '../../state/project-store';
 import { Button } from '../../ui/button/button';
@@ -84,7 +84,7 @@ export class ProblemsView {
 			case 'overlap':
 				return `Overlap on ${ref.track.name}`;
 			case 'cps':
-				return `Reading speed ${Math.round(readingSpeed(ref.cue))} cps`;
+				return `Reading speed ${formatCps(readingSpeed(ref.cue))} cps`;
 			case 'tooShort':
 				return `Too short (${dur} s)`;
 			case 'tooLong':

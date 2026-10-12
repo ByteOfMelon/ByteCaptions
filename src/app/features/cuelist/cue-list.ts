@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { LucideSearch, LucideX } from '@lucide/angular';
 import * as edits from '../../core/commands/edits';
-import { readingSpeed } from '../../core/lint/rules';
+import { formatCps, readingSpeed } from '../../core/lint/rules';
 import { cueText } from '../../core/model/cue';
 import { CueId } from '../../core/model/types';
 import { formatTimecode, parseTime } from '../../core/time/timecode';
@@ -66,7 +66,7 @@ export class CueList {
 					start: formatTimecode(r.cue.start, fps),
 					end: formatTimecode(r.cue.end, fps),
 					duration: `${((r.cue.end - r.cue.start) / 1000).toFixed(1)}s`,
-					cps: cps > maxCps ? Math.round(cps) : null,
+					cps: cps > maxCps ? formatCps(cps) : null,
 					problem: problems.get(r.cue.id)?.[0]?.severity ?? null,
 				};
 			});
