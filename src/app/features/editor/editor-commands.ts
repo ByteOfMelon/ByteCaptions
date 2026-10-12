@@ -1,3 +1,4 @@
+import { planPaste } from '../../core/commands/paste';
 import { Injectable, inject } from '@angular/core';
 import {
 	addCue,
@@ -28,8 +29,8 @@ export class EditorCommands {
 	private readonly store = inject(ProjectStore);
 	private readonly playback = inject(Playback);
 	private readonly tapping = inject(WordTapping);
-	/** Copied cues, with times relative to the earliest one */
-	private clipboard: Cue[] = [];
+	/** Copied cues and the tracks they came from, with times relative to the earliest one */
+	private clipboard: { track: TrackId; cue: Cue }[] = [];
 
 	undo(): void {
 		this.store.undo();
@@ -200,6 +201,17 @@ export class EditorCommands {
 		return this.store.project().tracks.find((t) => !t.locked)?.id;
 	}
 
+	/** A copy at [start, end]; when it's been shortened, its word timings shrink to match */
+	private placedCopy(c: Cue, start: Ms, end: Ms): Cue {
+		const copy = this.freshCopy(c, start - c.start);
+		const scale = (end - start) / (copy.end - copy.start || 1);
+		const at = (t: Ms) => Math.round(start + (t - start) * scale);
+		copy.end = end;
+		copy.words = copy.words?.map((w) => ({ ...w, start: at(w.start), end: at(w.end) }));
+
+		return copy;
+	}
+
 	private freshCopy(c: Cue, offset: Ms): Cue {
 		const copy = { ...structuredClone(c), id: newId('cue') };
 		copy.start += offset;
@@ -226,7 +238,7 @@ export class EditorCommands {
 		if (!sel.length) return;
 
 		const t0 = Math.min(...sel.map((r) => r.cue.start));
-		this.clipboard = sel.map((r) => this.freshCopy(r.cue, -t0));
+		this.clipboard = sel.map((r) => ({ track: r.track.id, cue: this.freshCopy(r.cue, -t0) }));
 	}
 
 	/** Copy the selection, then delete it (cues on locked tracks are copied but kept) */
@@ -247,16 +259,48 @@ export class EditorCommands {
 		return this.clipboard.length > 0;
 	}
 
+	/**
+	 * Paste at the playhead (or `atMs`), on the tracks the cues were copied from. When they
+	 * all came from one track, a track given here, or a selected cue on another track, takes
+	 * the paste instead; cues from several tracks always keep their own. A gap that's too short trims the paste to fit; pasting on top of a cue
+	 * moves it later, to the first gap that fits.
+	 */
 	paste(atMs: Ms = this.store.playhead(), trackId?: TrackId): void {
-		const id = this.targetTrack(trackId);
+		if (!this.clipboard.length) return;
 
-		if (!id || !this.clipboard.length || this.store.track(id)?.locked) return;
+		const sources = new Set(this.clipboard.map((c) => c.track));
+		const selected = this.store.primary()?.track.id;
+		const override =
+			sources.size > 1
+				? undefined
+				: (trackId ?? (selected && !sources.has(selected) ? selected : undefined));
+		const usable = (id: TrackId) => {
+			const t = this.store.track(id);
 
-		const cues = this.clipboard.map((c) => this.freshCopy(c, Math.round(atMs)));
-		this.store.apply(cues.length > 1 ? `Paste ${cues.length} cues` : 'Paste cue', (p) => {
-			for (const c of cues) addCue(id, c)(p);
+			return !!t && !t.locked;
+		};
+		const fallback = this.targetTrack(override);
+		const items = this.clipboard.map((c) => {
+			const track = override ?? (usable(c.track) ? c.track : fallback);
+
+			return { track, cue: c.cue };
 		});
-		this.store.selection.set(new Set(cues.map((c) => c.id)));
+
+		if (items.some((i) => !i.track || !usable(i.track))) return;
+
+		const spans = planPaste(
+			items.map((i) => ({ track: i.track!, start: i.cue.start, end: i.cue.end })),
+			this.store.project().tracks,
+			Math.round(atMs),
+		);
+		const pasted = items.map((i, n) => ({
+			track: i.track!,
+			cue: this.placedCopy(i.cue, spans[n].start, spans[n].end),
+		}));
+		this.store.apply(pasted.length > 1 ? `Paste ${pasted.length} cues` : 'Paste cue', (p) => {
+			for (const c of pasted) addCue(c.track, c.cue)(p);
+		});
+		this.store.selection.set(new Set(pasted.map((c) => c.cue.id)));
 	}
 
 	/** Copies of the selection placed right after it, on the same tracks */
