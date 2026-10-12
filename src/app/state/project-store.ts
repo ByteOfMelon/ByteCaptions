@@ -19,6 +19,8 @@ export interface CueRef {
 export class ProjectStore {
 	private readonly history = new History<Project>(demoProject());
 	private readonly version = signal(0);
+	/** Counts projects opened (not edits), for things that reset when one is opened */
+	readonly loads = signal(0);
 
 	readonly project = computed(() => {
 		this.version();
@@ -114,6 +116,7 @@ export class ProjectStore {
 		this.selection.set(new Set());
 		this.playhead.set(0);
 		this.version.update((v) => v + 1);
+		this.loads.update((n) => n + 1);
 		this.markSaved();
 	}
 

@@ -30,6 +30,7 @@ import { Transcription } from '../../state/transcription';
 import { CommandPalette } from '../palette/command-palette';
 import { EditorCommands } from './editor-commands';
 import { EditorDialogs } from './editor-dialogs';
+import { isTextEntry } from '../../ui/kbd/keys';
 
 /** Keys handled while focus is in a text field are limited to these */
 const FIELD_SAFE = new Set([
@@ -185,6 +186,9 @@ export class Editor implements OnDestroy {
 		const inField = t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName);
 
 		if (inField && !FIELD_SAFE.has(key)) return;
+
+		// Undo and redo in a text box or the caption editor undo the typing, not the project
+		if (isTextEntry(t) && ['ctrl+z', 'ctrl+shift+z', 'ctrl+y'].includes(key)) return;
 
 		// Let menus, listboxes and sliders keep their own arrow/space handling
 		const inWidget = !!t.closest(

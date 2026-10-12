@@ -39,6 +39,7 @@ import { ThemeService } from '../../theme/theme.service';
 import { IconButton } from '../../ui/button/button';
 import { ErrorTip, Tooltip } from '../../ui/tooltip/tooltip';
 import { EditorCommands } from '../editor/editor-commands';
+import { ViewMemory } from '../../state/view-memory';
 import { MarkerPopover } from '../markers/marker-popover';
 import { Markers } from '../markers/markers';
 import { Playback } from '../player/playback';
@@ -166,6 +167,7 @@ export class Timeline {
 	private readonly menus = inject(TimelineMenus);
 	private readonly tapping = inject(WordTapping);
 	protected readonly markers = inject(Markers);
+	private readonly viewMemory = inject(ViewMemory);
 	protected readonly ui = inject(EditorUi);
 	private readonly host = inject(ElementRef<HTMLElement>);
 	private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
@@ -274,13 +276,22 @@ export class Timeline {
 			onCleanup(() => ro.disconnect());
 		});
 
-		const projectId = computed(() => this.store.project().id);
+		// Each project opens the playhead to the last known position
 		effect(() => {
-			projectId();
+			this.store.loads();
 			untracked(() => {
-				this.viewStart.set(0);
-				this.scrollTarget.set(0);
+				const v = this.viewMemory.get(this.store.project().id);
+
+				if (v?.zoom !== undefined) this.zoom.set(v.zoom);
+
+				this.viewStart.set(v?.viewStart ?? 0);
+				this.scrollTarget.set(v?.viewStart ?? 0);
 			});
+		});
+		effect(() => {
+			const zoom = this.zoom();
+			const start = this.viewStart();
+			untracked(() => this.viewMemory.timeline(zoom, start));
 		});
 
 		// Keep the playhead in view while playing (page-style follow)

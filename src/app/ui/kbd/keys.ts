@@ -11,3 +11,11 @@ export function keyCaps(keys: string, separator = '+'): string[] {
 		.filter(Boolean)
 		.map((k) => (IS_MAC ? (MAC[k] ?? k) : k));
 }
+
+export function isTextEntry(el: Element | null): boolean {
+	if (!(el instanceof HTMLElement)) return false;
+
+	if (el.isContentEditable || el.tagName === 'TEXTAREA') return true;
+
+	return el instanceof HTMLInputElement && ['text', 'search', ''].includes(el.type);
+}

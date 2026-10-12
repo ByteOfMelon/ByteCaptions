@@ -8,6 +8,7 @@ import { askSaveChanges, isDesktop } from './state/file-io';
 import { ProjectFiles } from './state/project-files';
 import { ProjectStore } from './state/project-store';
 import { Recovery } from './state/recovery';
+import { ViewMemory } from './state/view-memory';
 import { ThemeService } from './theme/theme.service';
 
 @Component({
@@ -16,7 +17,7 @@ import { ThemeService } from './theme/theme.service';
 	template: '<router-outlet />',
 })
 export class App {
-	// Instantiated here so the theme attribute is applied before any route renders
+	// Instantiated here so that these attributes are applied before any route renders
 	protected readonly theme = inject(ThemeService);
 	private readonly recovery = inject(Recovery);
 	private readonly store = inject(ProjectStore);
@@ -24,6 +25,9 @@ export class App {
 	private readonly router = inject(Router);
 
 	constructor() {
+		// Created up front so it sees every project load
+		inject(ViewMemory);
+
 		if (isDesktop) {
 			inject(AppMenu);
 			void getCurrentWindow().onCloseRequested((e) => this.onClose(e));

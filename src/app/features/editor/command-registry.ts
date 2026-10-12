@@ -1,3 +1,4 @@
+import { isTextEntry } from '../../ui/kbd/keys';
 import { Injectable, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import {
@@ -386,7 +387,11 @@ export class CommandRegistry {
 				icon: LucideUndo2.icon,
 				keys: 'Ctrl+Z',
 				enabled: () => this.store.canUndo(),
-				run: () => this.cmd.undo(),
+				// From the menu while typing, undo the typing like Ctrl+Z does
+				run: () =>
+					isTextEntry(document.activeElement)
+						? document.execCommand('undo')
+						: this.cmd.undo(),
 			},
 			{
 				id: 'redo',
@@ -394,9 +399,12 @@ export class CommandRegistry {
 				icon: LucideRedo2.icon,
 				keys: 'Ctrl+Shift+Z',
 				enabled: () => this.store.canRedo(),
-				run: () => this.cmd.redo(),
+				run: () =>
+					isTextEntry(document.activeElement)
+						? document.execCommand('redo')
+						: this.cmd.redo(),
 			},
-			// Desktop only: transcription runs Whisper locally.
+			// Desktop only: transcription runs Whisper locally
 			...(isDesktop
 				? [
 						{
@@ -415,7 +423,7 @@ export class CommandRegistry {
 				keys: 'Ctrl+E',
 				run: () => this.dialogs.export(),
 			},
-			// Only in builds with a Google sign-in client (see BUILDING.md); never in the browser.
+			// Only in builds with a Google sign-in client
 			...(this.youtube.available()
 				? [
 						{
