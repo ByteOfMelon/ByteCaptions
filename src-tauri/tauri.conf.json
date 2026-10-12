@@ -33,6 +33,21 @@
 	"bundle": {
 		"active": true,
 		"targets": "all",
+		"publisher": "Michael Webb",
+		"copyright": "Copyright © 2026 Michael Webb/Byte of Melon. Licensed under the GNU GPL, version 3 or later.",
+		"homepage": "https://github.com/ByteOfMelon/ByteCaptions",
+		"category": "Video",
+		"shortDescription": "Subtitle editor",
+		"longDescription": "The open-source video-editing-style subtitle editor",
+		"fileAssociations": [
+			{
+				"ext": ["bcproj"],
+				"name": "ByteCaptions project",
+				"description": "ByteCaptions project",
+				"role": "Editor",
+				"mimeType": "application/x-bytecaptions-project"
+			}
+		],
 		"icon": [
 			"icons/32x32.png",
 			"icons/128x128.png",
@@ -45,6 +60,7 @@
 		},
 		"externalBin": ["binaries/ffmpeg"],
 		"resources": {
+			"../LICENSE": "licenses/BYTECAPTIONS-LICENSE.txt",
 			"licenses/FFMPEG-LICENSE.txt": "licenses/FFMPEG-LICENSE.txt",
 			"licenses/SPEAKER-MODELS.txt": "licenses/SPEAKER-MODELS.txt"
 		}

@@ -1,5 +1,7 @@
 import { Component, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { AppMenu } from './features/menu/app-menu';
 import { askSaveChanges, isDesktop } from './state/file-io';
@@ -19,15 +21,25 @@ export class App {
 	private readonly recovery = inject(Recovery);
 	private readonly store = inject(ProjectStore);
 	private readonly files = inject(ProjectFiles);
+	private readonly router = inject(Router);
 
 	constructor() {
 		if (isDesktop) {
 			inject(AppMenu);
 			void getCurrentWindow().onCloseRequested((e) => this.onClose(e));
+			void this.openLaunchFile();
+			void listen('launch-file', () => this.openLaunchFile());
 		} else
 			window.addEventListener('beforeunload', (e) => {
 				if (this.store.dirty()) e.preventDefault();
 			});
+	}
+
+	/** Opens the project file the app was started with */
+	private async openLaunchFile(): Promise<void> {
+		const path = await invoke<string | null>('launch_file');
+
+		if (path && (await this.files.open(path))) await this.router.navigateByUrl('/editor');
 	}
 
 	/** Closing the window with unsaved changes asks to save first */

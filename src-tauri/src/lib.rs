@@ -1,6 +1,7 @@
 mod asr;
 mod gpu;
 mod jobs;
+mod launch;
 mod media;
 mod media_server;
 mod models;
@@ -9,7 +10,9 @@ mod youtube;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-	tauri::Builder::default()
+	launch::from_args();
+
+	let app = tauri::Builder::default()
 		.plugin(tauri_plugin_dialog::init())
 		.plugin(tauri_plugin_fs::init())
 		.plugin(tauri_plugin_opener::init())
@@ -27,6 +30,7 @@ pub fn run() {
 			models::model_delete,
 			asr::transcribe,
 			jobs::job_cancel,
+			launch::launch_file,
 			youtube::youtube_available,
 			youtube::youtube_account,
 			youtube::youtube_sign_in,
@@ -47,6 +51,17 @@ pub fn run() {
 			}
 			Ok(())
 		})
-		.run(tauri::generate_context!())
+		.build(tauri::generate_context!())
 		.expect("error while building tauri application");
+
+	app.run(|_app, _event| {
+		#[cfg(target_os = "macos")]
+		if let tauri::RunEvent::Opened { urls } = _event {
+			for url in urls {
+				if let Ok(path) = url.to_file_path() {
+					launch::opened(_app, path.to_string_lossy().into_owned());
+				}
+			}
+		}
+	});
 }

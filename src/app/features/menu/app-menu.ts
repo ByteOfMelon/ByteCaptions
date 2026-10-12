@@ -9,8 +9,10 @@ import {
 	Submenu,
 } from '@tauri-apps/api/menu';
 import { getTauriVersion } from '@tauri-apps/api/app';
+import { resolveResource } from '@tauri-apps/api/path';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { message } from '@tauri-apps/plugin-dialog';
+import { openPath } from '@tauri-apps/plugin-opener';
 import { APP_VERSION } from '../../version';
 import { EditorUi } from '../../state/editor-ui';
 import { WEBSITE, openExternal } from '../../state/file-io';
@@ -23,6 +25,8 @@ import { CommandRegistry } from '../editor/command-registry';
 import { EditorCommands } from '../editor/editor-commands';
 import { CommandPalette } from '../palette/command-palette';
 import { SettingsDialog, confirmResetLayout } from '../settings/settings-dialog';
+
+const LICENSE_FILE = 'licenses/BYTECAPTIONS-LICENSE.txt';
 
 /** A menu entry for the menu bar */
 type Entry =
@@ -387,19 +391,26 @@ export class AppMenu {
 			`Tauri ${await getTauriVersion()}`,
 			webview ? `WebView2 ${webview}` : null,
 		].filter(Boolean);
-		await message(
+		const choice = await message(
 			[
 				`ByteCaptions ${APP_VERSION}`,
 				'The open-source video editing-style subtitle editor',
 				'',
-				'Made by Michael Webb/Byte of Melon',
+				'Copyright © 2026 Michael Webb/Byte of Melon',
 				WEBSITE.replace('https://', ''),
-				'Licensed under the GNU GPL, version 3 or later',
+				'',
+				'This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under the GNU GPL, version 3 or later, and you are welcome to redistribute it under certain conditions. Click "View license" or read the LICENSE file on GitHub for more information.',
 				'',
 				runtime.join(' • '),
 			].join('\n'),
-			{ title: 'About ByteCaptions', kind: 'info' },
+			{
+				title: 'About ByteCaptions',
+				kind: 'info',
+				buttons: { ok: 'OK', cancel: 'View license' },
+			},
 		);
+
+		if (choice === 'View license') await openPath(await resolveResource(LICENSE_FILE));
 	}
 
 	private async resetLayout(): Promise<void> {
