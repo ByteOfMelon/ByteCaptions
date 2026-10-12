@@ -26,7 +26,6 @@ h2 {
 	overflow: hidden;
 	border-radius: var(--radius-control);
 	background: var(--color-bg);
-	cursor: pointer;
 }
 .frame {
 	display: grid;

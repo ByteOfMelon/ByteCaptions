@@ -3,7 +3,7 @@
 	<bc-select class="mode" [options]="modes" [(value)]="mode" />
 </header>
 
-<div class="frame" [class.dragging]="dragging()" (click)="playback.toggle()">
+<div class="frame" [class.dragging]="dragging()">
 	<div #frame class="stage">
 		@if (playback.mediaUrl(); as url) {
 			<video #video [src]="url" preload="auto"></video>
