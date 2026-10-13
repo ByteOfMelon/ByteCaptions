@@ -179,7 +179,7 @@ pub async fn download_verified(
 		}
 		file.flush().map_err(|e| e.to_string())?;
 		let _ = on_progress.send(DownloadProgress { received, total });
-		if format!("{:x}", hash.finalize()) != sha256 {
+		if hex(&hash.finalize()) != sha256 {
 			return Err("The downloaded model is damaged. Try again.".to_string());
 		}
 		Ok(())
@@ -193,4 +193,9 @@ pub async fn download_verified(
 			Err(e)
 		}
 	}
+}
+
+/// Lowercase hex, as Hugging Face gives checksums
+fn hex(bytes: &[u8]) -> String {
+	bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
