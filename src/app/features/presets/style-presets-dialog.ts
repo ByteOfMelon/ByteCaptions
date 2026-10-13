@@ -19,7 +19,7 @@ import { Tabs } from '../../ui/tabs/tabs';
 import { Tooltip } from '../../ui/tooltip/tooltip';
 import { AnchorPicker } from '../inspector/anchor-picker';
 import { StyleChange, StyleFields } from '../inspector/style-fields';
-import { captionTextStyle, captionWindowStyle } from '../player/caption-render';
+import { captionTextStyle, captionWindowStyle, offsetScale } from '../player/caption-render';
 import { StyleChip } from '../player/style-chip';
 
 type Backdrop = 'frame' | 'bright' | 'dark';
@@ -144,7 +144,7 @@ export class StylePresetsDialog implements OnInit {
 	protected readonly sampleCss = computed(() => {
 		const s = this.previewMode() === 'mobile' ? mobileStyle(this.current()) : this.current();
 		// The preview frame is 270px tall - YouTube sizes captions from player height
-		const fontPx = 270 * 0.0533 * s.scale;
+		const fontPx = 270 * 0.0533 * s.scale * offsetScale(s.offset);
 
 		return { ...captionTextStyle(s, Math.max(1, fontPx / 18)), 'font-size': `${fontPx}px` };
 	});

@@ -37,7 +37,12 @@ import { Autofocus } from '../../ui/autofocus/autofocus';
 import { Button, IconButton } from '../../ui/button/button';
 import { Select } from '../../ui/select/select';
 import { Tooltip } from '../../ui/tooltip/tooltip';
-import { captionTextStyle, captionWindowStyle } from './caption-render';
+import {
+	captionTextStyle,
+	captionWindowStyle,
+	offsetScale,
+	runOffsetStyle,
+} from './caption-render';
 import { PLAYBACK_RATES, Playback } from './playback';
 
 type PreviewMode = 'desktop' | 'mobile' | 'plain';
@@ -173,7 +178,10 @@ export class PreviewPanel {
 				window: plain
 					? captionWindowStyle({ ...pos, anchor: 7, x: 50, y: 90, align: 'center' })
 					: captionWindowStyle(pos),
-				text: { ...textStyle, 'font-size': `${fontPx * style.scale}px` },
+				text: {
+					...textStyle,
+					'font-size': `${fontPx * style.scale * offsetScale(style.offset)}px`,
+				},
 			};
 		});
 	});
@@ -487,7 +495,10 @@ function runStyle(
 	override: Partial<CaptionStyle>,
 	unit: number,
 ): Record<string, string> {
-	const out = captionTextStyle({ ...base, ...override }, unit);
+	const out = {
+		...captionTextStyle({ ...base, ...override }, unit),
+		...runOffsetStyle(base.offset, override.offset ?? base.offset),
+	};
 
 	if (override.bgColor === undefined && override.bgOpacity === undefined)
 		out['background-color'] = 'transparent';

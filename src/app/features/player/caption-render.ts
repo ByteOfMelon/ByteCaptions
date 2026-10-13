@@ -1,4 +1,4 @@
-import { CaptionStyle, EdgeType, Position, YtFont } from '../../core/model/types';
+import { CaptionStyle, EdgeType, Position, TextOffset, YtFont } from '../../core/model/types';
 
 /**
  * CSS approximations of how YouTube's player renders SRV3 captions.
@@ -69,6 +69,29 @@ export function captionTextStyle(s: CaptionStyle, edgeUnitPx = 1): Record<string
 		color: rgba(s.textColor, s.textOpacity),
 		'background-color': rgba(s.bgColor, s.bgOpacity),
 		'text-shadow': edgeShadow(s.edge, s.edgeColor, edgeUnitPx),
+	};
+}
+
+/** Size and shift of subscript and superscript text, matched to screenshots of YouTube's desktop player */
+const OFFSET_SCALE = 0.85;
+const OFFSET_SHIFT = '0.18em';
+
+export function offsetScale(offset: TextOffset): number {
+	return offset === 'regular' ? 1 : OFFSET_SCALE;
+}
+
+/** Shift and size for a run whose offset differs from its line's */
+export function runOffsetStyle(line: TextOffset, run: TextOffset): Record<string, string> {
+	if (run === line) return {};
+
+	return {
+		'vertical-align':
+			run === 'regular'
+				? 'baseline'
+				: run === 'subscript'
+					? `-${OFFSET_SHIFT}`
+					: OFFSET_SHIFT,
+		'font-size': `${offsetScale(run) / offsetScale(line)}em`,
 	};
 }
 
