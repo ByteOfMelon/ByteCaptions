@@ -29,7 +29,7 @@ whisper-rs = { version = "0.16", features = ["raw-api"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "http2"] }
 sha2 = "0.10"
 # YouTube sign-in (src/youtube.rs)
-base64 = "0.22"
+base64 = "0.23"
 getrandom = "0.3"
 tokio = { version = "1", features = ["net", "io-util", "time", "sync", "macros"] }
 url = "2"
