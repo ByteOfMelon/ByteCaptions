@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { AppMenu } from './features/menu/app-menu';
+import { UpdatePrompt } from './features/updates/update-dialog';
 import { askSaveChanges, isDesktop } from './state/file-io';
 import { ProjectFiles } from './state/project-files';
 import { ProjectStore } from './state/project-store';
@@ -33,6 +34,10 @@ export class App {
 			void getCurrentWindow().onCloseRequested((e) => this.onClose(e));
 			void this.openLaunchFile();
 			void listen('launch-file', () => this.openLaunchFile());
+
+			// Check for updates after ensuring the app has had time to initialize
+			const updates = inject(UpdatePrompt);
+			setTimeout(() => void updates.checkInBackground(), 5000);
 		} else
 			window.addEventListener('beforeunload', (e) => {
 				if (this.store.dirty()) e.preventDefault();

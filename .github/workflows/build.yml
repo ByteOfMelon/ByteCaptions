@@ -16,6 +16,10 @@ on:
   push:
     tags: ['v*']
 
+# Tag builds create a draft GitHub Release and upload to it
+permissions:
+  contents: write
+
 # A newer run replaces an older one still going on the same branch
 concurrency:
   group: build-${{ github.ref }}
@@ -156,9 +160,20 @@ jobs:
 
       - name: Build
         # Public builds have no Google sign-in client, so YouTube upload is off (see BUILDING.md for details)
+        # Tag builds also make signed update packages and upload everything to a draft release, with the
+        # latest.json the app checks for updates. The release goes live only when it's published by hand
         uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          args: --target ${{ matrix.target }} ${{ matrix.tauri-args }}
+          args: --target ${{ matrix.target }} ${{ matrix.tauri-args }} ${{ startsWith(github.ref, 'refs/tags/v') && '--config src-tauri/tauri.release.conf.json' || '' }}
+          tagName: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
+          releaseName: ByteCaptions __VERSION__
+          releaseBody: See the assets below to download ByteCaptions __VERSION__.
+          releaseDraft: true
+          updaterJsonPreferNsis: true
 
       - uses: actions/upload-artifact@v4
         with:

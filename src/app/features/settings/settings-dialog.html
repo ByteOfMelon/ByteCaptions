@@ -13,6 +13,17 @@
 		</p>
 	</section>
 	<button bcButton class="reset" (click)="resetLayout()">Reset layout</button>
+	@if (isDesktop) {
+		<section class="layout">
+			<h3 class="text-small">Updates</h3>
+			<bc-toggle
+				[checked]="updates.autoCheck()"
+				(checkedChange)="updates.setAutoCheck($event)"
+			>
+				Check for updates when ByteCaptions starts
+			</bc-toggle>
+		</section>
+	}
 	@if (youtube.available()) {
 		<section class="layout">
 			<h3 class="text-small">YouTube</h3>

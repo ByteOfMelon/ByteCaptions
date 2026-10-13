@@ -6,6 +6,7 @@ mod media;
 mod media_server;
 mod models;
 mod speakers;
+mod update;
 mod youtube;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -31,6 +32,7 @@ pub fn run() {
 			asr::transcribe,
 			jobs::job_cancel,
 			launch::launch_file,
+			update::can_self_update,
 			youtube::youtube_available,
 			youtube::youtube_account,
 			youtube::youtube_sign_in,
@@ -42,6 +44,12 @@ pub fn run() {
 			youtube::youtube_upload,
 		])
 		.setup(|app| {
+			#[cfg(desktop)]
+			{
+				app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+				app.handle().plugin(tauri_plugin_process::init())?;
+			}
+
 			if cfg!(debug_assertions) {
 				app.handle().plugin(
 					tauri_plugin_log::Builder::default()

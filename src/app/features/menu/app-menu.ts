@@ -25,6 +25,7 @@ import { CommandRegistry } from '../editor/command-registry';
 import { EditorCommands } from '../editor/editor-commands';
 import { CommandPalette } from '../palette/command-palette';
 import { SettingsDialog, confirmResetLayout } from '../settings/settings-dialog';
+import { UpdatePrompt } from '../updates/update-dialog';
 
 const LICENSE_FILE = 'licenses/BYTECAPTIONS-LICENSE.txt';
 
@@ -55,6 +56,7 @@ export class AppMenu {
 	private readonly ui = inject(EditorUi);
 	private readonly layout = inject(PanelLayout);
 	private readonly theme = inject(ThemeService);
+	private readonly updatePrompt = inject(UpdatePrompt);
 
 	private readonly inEditor = signal(false);
 
@@ -103,6 +105,10 @@ export class AppMenu {
 					? [
 							await this.submenu('ByteCaptions', [
 								{ text: 'About ByteCaptions...', run: () => void this.about() },
+								{
+									text: 'Check for updates...',
+									run: () => void this.updatePrompt.checkNow(),
+								},
 								'separator',
 								{ text: 'Settings...', keys: 'Ctrl+,', run: () => this.settings() },
 								'separator',
@@ -255,6 +261,10 @@ export class AppMenu {
 					...(IS_MAC
 						? []
 						: ([
+								{
+									text: 'Check for updates...',
+									run: () => void this.updatePrompt.checkNow(),
+								},
 								{ text: 'About ByteCaptions...', run: () => void this.about() },
 							] as Entry[])),
 				]),

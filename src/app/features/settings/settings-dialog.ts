@@ -1,16 +1,18 @@
 import { Component, inject } from '@angular/core';
-import { confirmAction } from '../../state/file-io';
+import { confirmAction, isDesktop } from '../../state/file-io';
 import { PanelLayout } from '../../state/panel-layout';
+import { Updates } from '../../state/updates';
 import { YouTube } from '../../state/youtube';
 import { ThemePreference, ThemeService } from '../../theme/theme.service';
 import { Button } from '../../ui/button/button';
+import { Toggle } from '../../ui/controls/controls';
 import { Dialog } from '../../ui/dialog/dialog';
 import { Select } from '../../ui/select/select';
 
 /** App-wide settings (not saved with a project) */
 @Component({
 	selector: 'bc-settings-dialog',
-	imports: [Dialog, Button, Select],
+	imports: [Dialog, Button, Select, Toggle],
 	templateUrl: './settings-dialog.html',
 	styleUrl: './settings-dialog.css',
 })
@@ -18,6 +20,8 @@ export class SettingsDialog {
 	protected readonly theme = inject(ThemeService);
 	private readonly layout = inject(PanelLayout);
 	protected readonly youtube = inject(YouTube);
+	protected readonly updates = inject(Updates);
+	protected readonly isDesktop = isDesktop;
 
 	protected readonly themes: { value: ThemePreference; label: string }[] = [
 		{ value: 'system', label: 'Match system' },

@@ -44,3 +44,8 @@ speakrs = { path = "vendor/speakrs", features = ["directml"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 whisper-rs = { version = "0.16", features = ["raw-api", "metal"] }
+
+# Auto-update (src/update.rs)
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"

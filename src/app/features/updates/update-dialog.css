@@ -1,0 +1,45 @@
+.notes {
+	max-height: 240px;
+	margin: 0;
+	padding: var(--spacing-md);
+	overflow-y: auto;
+	border-radius: var(--radius-control);
+	background: var(--color-bg);
+	font-family: var(--font-ui);
+	white-space: pre-wrap;
+}
+
+.progress {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+}
+.bar {
+	height: 8px;
+	overflow: hidden;
+	border-radius: 4px;
+	background: var(--color-selected);
+}
+.bar span {
+	display: block;
+	height: 100%;
+	border-radius: 4px;
+	background: var(--color-brand);
+	transition: width 0.3s;
+}
+.bar.indeterminate span {
+	animation: slide 1.2s ease-in-out infinite;
+}
+@keyframes slide {
+	from {
+		transform: translateX(-100%);
+	}
+	to {
+		transform: translateX(340%);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.bar.indeterminate span {
+		animation: none;
+	}
+}

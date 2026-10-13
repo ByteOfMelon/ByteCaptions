@@ -64,5 +64,16 @@
 			"licenses/FFMPEG-LICENSE.txt": "licenses/FFMPEG-LICENSE.txt",
 			"licenses/SPEAKER-MODELS.txt": "licenses/SPEAKER-MODELS.txt"
 		}
+	},
+	"plugins": {
+		"updater": {
+			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVBNkQwMzY3MDI1RUMxREIKUldUYndWNENad050V2dyaEhSUE44NXVhTFlWTlZrbnFDVm5iMTQvajJmb0ovVitXM3hDYXRGaVoK",
+			"endpoints": [
+				"https://github.com/ByteOfMelon/ByteCaptions/releases/latest/download/latest.json"
+			],
+			"windows": {
+				"installMode": "passive"
+			}
+		}
 	}
 }

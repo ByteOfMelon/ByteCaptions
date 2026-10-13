@@ -1,0 +1,68 @@
+@if (updates.update(); as u) {
+	<bc-dialog
+		heading="Update available"
+		[subtitle]="'Version ' + u.version + ' • you have ' + current"
+		[width]="560"
+	>
+		@if (u.body) {
+			<pre class="notes text-small">{{ u.body }}</pre>
+		}
+
+		@if (!updates.canSelfUpdate()) {
+			<bc-notice
+				tone="info"
+				heading="Your installation can't update itself"
+				detail="It seems your installation of ByteCaptions was installed from a .deb or .rpm package. Download the new package from the releases page, or use the AppImage to get automatic updates on Linux."
+			/>
+		} @else if (updates.phase() === 'error') {
+			<bc-notice
+				tone="danger"
+				heading="The update could not be installed"
+				[detail]="updates.error() ?? undefined"
+			/>
+		} @else if (working()) {
+			<div class="progress">
+				<span class="text-small">
+					{{ updates.phase() === 'installing' ? 'Installing…' : 'Downloading…' }}
+				</span>
+				<div
+					class="bar"
+					[class.indeterminate]="updates.progress() === null"
+					role="progressbar"
+					aria-label="Update progress"
+					[attr.aria-valuenow]="updates.progress()"
+					aria-valuemin="0"
+					aria-valuemax="100"
+				>
+					<span [style.width.%]="updates.progress() ?? 30"></span>
+				</div>
+			</div>
+		} @else if (blocker(); as b) {
+			<bc-notice tone="info" heading="Can't update right now" [detail]="b" />
+		} @else {
+			<p class="text-small text-faded">
+				ByteCaptions will restart to finish updating. You'll be asked to save any unsaved
+				changes first.
+			</p>
+		}
+
+		<div dialogFooter>
+			@if (!updates.canSelfUpdate() || updates.phase() === 'error') {
+				<button bcButton (click)="ref.close()">Close</button>
+				<button bcButton variant="primary" (click)="openReleases()">
+					Open releases page
+				</button>
+			} @else {
+				<button bcButton [disabled]="working()" (click)="ref.close()">Later</button>
+				<button
+					bcButton
+					variant="primary"
+					[disabled]="working() || !!blocker()"
+					(click)="install()"
+				>
+					Update and restart
+				</button>
+			}
+		</div>
+	</bc-dialog>
+}

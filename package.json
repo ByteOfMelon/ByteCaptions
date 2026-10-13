@@ -30,6 +30,8 @@
 		"@tauri-apps/plugin-dialog": "^2.8.1",
 		"@tauri-apps/plugin-fs": "^2.6.0",
 		"@tauri-apps/plugin-opener": "^2.7.0",
+		"@tauri-apps/plugin-process": "^2.4.0",
+		"@tauri-apps/plugin-updater": "^2.13.3",
 		"immer": "^11.1.18",
 		"rxjs": "~7.8.0",
 		"tslib": "^2.3.0"
