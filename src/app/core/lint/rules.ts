@@ -2,8 +2,8 @@
  * Quality checks for the current project file. The app then shows these results as badges on cues and in the Problems tab
  */
 import { cueText, resolveStyle, textWidth } from '../model/cue';
-import { mobileChanges } from '../model/mobile';
-import { Cue, CueId, Ms, Project, StyleId, Track, TrackId } from '../model/types';
+import { mobileChanges, mobileMessage, mobilePositionChanges } from '../model/mobile';
+import { Cue, CueId, Ms, PosId, Project, StyleId, Track, TrackId } from '../model/types';
 
 export type Severity = 'error' | 'warning';
 
@@ -158,7 +158,7 @@ export function lintTrack(project: Project, track: Track): Problem[] {
 		);
 
 		if (text.trim() && own.size) {
-			add(cue, 'mobile', 'warning', `Mobile apps show ${mobileSummary(own)}`);
+			add(cue, 'mobile', 'warning', mobileMessage(own));
 		}
 
 		if (cue.speakerUnsure) {
@@ -172,39 +172,48 @@ export function lintTrack(project: Project, track: Track): Problem[] {
 	return out;
 }
 
-function mobileSummary(changes: ReadonlySet<'size' | 'background'>): string {
-	return [changes.has('size') && '100% size', changes.has('background') && 'black background']
-		.filter(Boolean)
-		.join(' and ');
-}
-
-/** A style preset that YouTube's mobile apps draw differently, with the cues that use it */
+/** A style or position preset that YouTube's mobile apps draw differently, with the cues that use it */
 export interface PresetProblem {
-	styleId: StyleId;
+	preset: 'style' | 'position';
+	id: StyleId | PosId;
+	name: string;
 	message: string;
 	cueIds: CueId[];
 }
 
 export function lintPresets(project: Project): PresetProblem[] {
-	const cuesByStyle = new Map<StyleId, CueId[]>();
+	const byStyle = new Map<StyleId, CueId[]>();
+	const byPosition = new Map<PosId, CueId[]>();
+	const push = (map: Map<string, CueId[]>, id: string, cueId: CueId) =>
+		map.set(id, [...(map.get(id) ?? []), cueId]);
 
 	for (const track of project.tracks) {
 		for (const cue of track.cues) {
 			if (!cueText(cue).trim()) continue;
 
-			const id = cue.styleId ?? track.defaultStyleId;
-			cuesByStyle.set(id, [...(cuesByStyle.get(id) ?? []), cue.id]);
+			push(byStyle, cue.styleId ?? track.defaultStyleId, cue.id);
+			push(byPosition, cue.positionId ?? track.defaultPositionId, cue.id);
 		}
 	}
 
-	return [...cuesByStyle].flatMap(([styleId, cueIds]) => {
-		const style = project.styles[styleId];
-		const changes = style ? new Set(mobileChanges(style)) : new Set<never>();
+	const styles = [...byStyle].flatMap(([id, cueIds]): PresetProblem[] => {
+		const style = project.styles[id];
+		const changes = style ? mobileChanges(style) : [];
 
-		if (!changes.size) return [];
-
-		return [{ styleId, cueIds, message: `Mobile apps show ${mobileSummary(changes)}` }];
+		return changes.length
+			? [{ preset: 'style', id, name: style.name, cueIds, message: mobileMessage(changes) }]
+			: [];
 	});
+	const positions = [...byPosition].flatMap(([id, cueIds]): PresetProblem[] => {
+		const pos = project.positions[id];
+		const changes = pos ? mobilePositionChanges(pos) : [];
+
+		return changes.length
+			? [{ preset: 'position', id, name: pos.name, cueIds, message: mobileMessage(changes) }]
+			: [];
+	});
+
+	return [...styles, ...positions];
 }
 
 export function lintProject(project: Project): Problem[] {

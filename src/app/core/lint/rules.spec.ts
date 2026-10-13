@@ -54,17 +54,42 @@ describe('lint', () => {
 		const a = createCue(0, 2000, 'Hello there');
 		const b = createCue(3000, 5000, 'General Kenobi');
 		const p = project(a, b);
-		const styleId = p.tracks[0].defaultStyleId;
-		p.styles[styleId].scale = 1.5;
-		p.styles[styleId].bgOpacity = 0;
+		const style = p.styles[p.tracks[0].defaultStyleId];
+		style.bold = true;
+		style.bgOpacity = 0;
 		expect(lintPresets(p)).toEqual([
 			{
-				styleId,
+				preset: 'style',
+				id: p.tracks[0].defaultStyleId,
+				name: style.name,
 				cueIds: [a.id, b.id],
-				message: 'Mobile apps show 100% size and black background',
+				message: 'Mobile apps use their standard background and drop bold',
 			},
 		]);
 		expect(lintProject(p).filter((x) => x.kind === 'mobile')).toEqual([]);
+	});
+
+	it('flags sizes under 100%, offsets and fonts, but not sizes over 100%', () => {
+		const p = project(createCue(0, 2000, 'Hello there'));
+		const style = p.styles[p.tracks[0].defaultStyleId];
+		style.scale = 2;
+		expect(lintPresets(p)).toEqual([]);
+		Object.assign(style, { scale: 0.75, offset: 'superscript', font: 'casual' });
+		expect(lintPresets(p)[0].message).toBe(
+			'Mobile apps show it at 100% size, drop subscript and superscript and use a different font',
+		);
+	});
+
+	it('reports a vertical position preset', () => {
+		const p = project(createCue(0, 2000, 'Hello there'));
+		const pos = p.positions[p.tracks[0].defaultPositionId];
+		pos.direction = 'verticalRtl';
+		expect(lintPresets(p)).toEqual([
+			expect.objectContaining({
+				preset: 'position',
+				message: 'Mobile apps draw vertical text horizontally',
+			}),
+		]);
 	});
 
 	it('is quiet for presets the mobile apps draw as-is', () => {
@@ -73,21 +98,21 @@ describe('lint', () => {
 
 	it('flags a run whose own style changes on mobile', () => {
 		const cue = createCue(0, 2000, 'Hello there');
-		cue.runs = [{ text: 'Hello ' }, { text: 'there', styleOverride: { scale: 2 } }];
+		cue.runs = [{ text: 'Hello ' }, { text: 'there', styleOverride: { bold: true } }];
 		const [m] = lintProject(project(cue)).filter((x) => x.kind === 'mobile');
-		expect(m.message).toBe('Mobile apps show 100% size');
+		expect(m.message).toBe('Mobile apps drop bold');
 	});
 
 	it('does not repeat on the cue what its preset already reports', () => {
 		const cue = createCue(0, 2000, 'Hello there');
 		cue.runs = [
 			{ text: 'Hello ' },
-			{ text: 'there', styleOverride: { scale: 2, bgOpacity: 0 } },
+			{ text: 'there', styleOverride: { bold: true, bgOpacity: 0 } },
 		];
 		const p = project(cue);
-		p.styles[p.tracks[0].defaultStyleId].scale = 1.5;
+		p.styles[p.tracks[0].defaultStyleId].bold = true;
 		const mobile = lintProject(p).filter((x) => x.kind === 'mobile');
-		expect(mobile.map((x) => x.message)).toEqual(['Mobile apps show black background']);
+		expect(mobile.map((x) => x.message)).toEqual(['Mobile apps use their standard background']);
 	});
 });
 

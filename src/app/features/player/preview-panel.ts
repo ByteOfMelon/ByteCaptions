@@ -25,7 +25,7 @@ import {
 import * as edits from '../../core/commands/edits';
 import { cueText, resolvePosition, resolveStyle } from '../../core/model/cue';
 import { karaokeRuns, sungAt } from '../../core/model/karaoke';
-import { mobileStyle } from '../../core/model/mobile';
+import { mobileOverride, mobileStyle } from '../../core/model/mobile';
 import { CaptionStyle, TextRun } from '../../core/model/types';
 import { formatTimecode } from '../../core/time/timecode';
 import { FileDrop } from '../../state/file-drop';
@@ -163,7 +163,11 @@ export class PreviewPanel {
 						style:
 							plain || !r.styleOverride
 								? {}
-								: runStyle(style, r.styleOverride, Math.max(1, fontPx / 18)),
+								: runStyle(
+										style,
+										mobile ? mobileOverride(r.styleOverride) : r.styleOverride,
+										Math.max(1, fontPx / 18),
+									),
 					})),
 				),
 				window: plain

@@ -39,9 +39,11 @@
 			</h3>
 			<span class="location text-mono-small">{{ item.location }}</span>
 			<div class="actions" (click)="$event.stopPropagation()">
-				<button bcButton class="fix" (click)="dialogs.presets(item.styleId)">
-					Edit preset
-				</button>
+				@if (item.preset === 'style') {
+					<button bcButton class="fix" (click)="dialogs.presets(item.id)">
+						Edit preset
+					</button>
+				}
 				<button bcButton variant="ghost" (click)="ignore(item.key)">Ignore</button>
 			</div>
 		</article>

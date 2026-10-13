@@ -94,7 +94,6 @@ export class ProblemsView {
 	/** Render one style problem warning per preset */
 	protected readonly presetItems = computed(() => {
 		const f = this.filter();
-		const styles = this.store.project().styles;
 		const ignored = this.ignored();
 		const selection = this.store.selection();
 		const onTrack = (id: CueId) => f === ALL || this.store.find(id)?.track.id === f;
@@ -103,14 +102,14 @@ export class ProblemsView {
 			.presetProblems()
 			.map((pp) => ({
 				...pp,
-				key: `preset:${pp.styleId}`,
+				key: `${pp.preset}:${pp.id}`,
 				cueIds: pp.cueIds.filter(onTrack),
 			}))
 			.filter((pp) => pp.cueIds.length && !ignored.has(pp.key))
 			.map((pp) => ({
 				...pp,
-				title: `${styles[pp.styleId].name} preset: ${pp.message[0].toLowerCase()}${pp.message.slice(1)}`,
-				location: `Style preset • ${pp.cueIds.length} ${pp.cueIds.length === 1 ? 'cue' : 'cues'}`,
+				title: `${pp.name} preset: ${pp.message[0].toLowerCase()}${pp.message.slice(1)}`,
+				location: `${pp.preset === 'style' ? 'Style' : 'Position'} preset • ${pp.cueIds.length} ${pp.cueIds.length === 1 ? 'cue' : 'cues'}`,
 				selected: pp.cueIds.every((id) => selection.has(id)),
 			}));
 	});
