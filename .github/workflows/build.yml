@@ -171,7 +171,20 @@ jobs:
           args: --target ${{ matrix.target }} ${{ matrix.tauri-args }} ${{ startsWith(github.ref, 'refs/tags/v') && '--config src-tauri/tauri.release.conf.json' || '' }}
           tagName: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
           releaseName: ByteCaptions __VERSION__
-          releaseBody: See the assets below to download ByteCaptions __VERSION__.
+          # The text above "## Downloads" is shown in the app's update dialog (src/app/state/updates.ts)
+          releaseBody: |
+            _Replace this line with the release notes before publishing._
+
+            ## Downloads
+
+            | If you're on | Download |
+            | --- | --- |
+            | Windows | [ByteCaptions___VERSION___x64-setup.exe](https://github.com/ByteOfMelon/ByteCaptions/releases/download/v__VERSION__/ByteCaptions___VERSION___x64-setup.exe) |
+            | Mac with Apple Silicon (M1 or newer) | [ByteCaptions___VERSION___aarch64.dmg](https://github.com/ByteOfMelon/ByteCaptions/releases/download/v__VERSION__/ByteCaptions___VERSION___aarch64.dmg) |
+            | Mac with Intel | [ByteCaptions___VERSION___x64.dmg](https://github.com/ByteOfMelon/ByteCaptions/releases/download/v__VERSION__/ByteCaptions___VERSION___x64.dmg) |
+            | Linux | [ByteCaptions___VERSION___amd64.AppImage](https://github.com/ByteOfMelon/ByteCaptions/releases/download/v__VERSION__/ByteCaptions___VERSION___amd64.AppImage) (updates itself), or the `.deb` / `.rpm` |
+
+            The `.msi` is an alternate Windows installer file, mainly used for managed deployments. The `.app.tar.gz`, `.sig` and `latest.json` files are used by the automatic updater, and don't need to be downloaded.
           releaseDraft: true
           updaterJsonPreferNsis: true
 

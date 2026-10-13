@@ -4,8 +4,8 @@
 		[subtitle]="'Version ' + u.version + ' • you have ' + current"
 		[width]="560"
 	>
-		@if (u.body) {
-			<pre class="notes text-small">{{ u.body }}</pre>
+		@if (updates.notes(); as notes) {
+			<pre class="notes text-small">{{ notes }}</pre>
 		}
 
 		@if (!updates.canSelfUpdate()) {

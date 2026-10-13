@@ -12,6 +12,15 @@ import { YouTube } from './youtube';
 
 const AUTO_CHECK_KEY = 'bc.updates.autoCheck';
 export const RELEASES_PAGE = 'https://github.com/ByteOfMelon/ByteCaptions/releases/latest';
+const RELEASE_API = 'https://api.github.com/repos/ByteOfMelon/ByteCaptions/releases/tags/v';
+
+/** The part of a release description meant for the update dialog */
+export function releaseNotes(body: string): string {
+	return body
+		.split(/^##\s+Downloads\b/im)[0]
+		.replace(/^_Replace this line with the release notes before publishing\._$/m, '')
+		.trim();
+}
 
 function loadAutoCheck(): boolean {
 	try {
@@ -39,6 +48,7 @@ export class Updates {
 	readonly autoCheck = signal(loadAutoCheck());
 	readonly phase = signal<UpdatePhase>('idle');
 	readonly update = signal<Update | null>(null);
+	readonly notes = signal('');
 	readonly progress = signal<number | null>(null);
 	readonly error = signal<string | null>(null);
 	/** False for Linux .deb/.rpm installs */
@@ -65,6 +75,7 @@ export class Updates {
 			this.canSelfUpdate.set(await invoke<boolean>('can_self_update'));
 			const update = await check();
 			this.update.set(update);
+			this.notes.set(update ? await this.publishedNotes(update) : '');
 			this.phase.set(update ? 'available' : 'idle');
 
 			if (!update && manual)
@@ -139,6 +150,24 @@ export class Updates {
 
 			return false;
 		}
+	}
+
+	/**
+	 * Release notes as published on GitHub. latest.json only has the description from when the
+	 * draft was built, before the notes were written, so it's the fallback
+	 */
+	private async publishedNotes(update: Update): Promise<string> {
+		try {
+			const res = await fetch(RELEASE_API + update.version, {
+				headers: { Accept: 'application/vnd.github+json' },
+			});
+
+			if (res.ok) return releaseNotes((await res.json()).body ?? '');
+		} catch {
+			// Offline or rate-limited; fall back below
+		}
+
+		return releaseNotes(update.body ?? '');
 	}
 
 	private busyInstalling(): boolean {
