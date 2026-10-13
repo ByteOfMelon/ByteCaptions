@@ -1,6 +1,6 @@
 # ByteCaptions
 
-The open-source video-editing-style subtitle editor. A better README will be made shortly.
+The open-source video-editing-style subtitle editor. A better README will be made shortly, this is only public for right now to test the auto updater. Feel free to use it though and give me feedback!
 
 ## Compatibility across devices
 
