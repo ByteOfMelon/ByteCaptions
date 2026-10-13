@@ -23,6 +23,9 @@ updates:
       # Angular majors need `ng update`, which also migrates code
       - dependency-name: '@angular/*'
         update-types: ['version-update:semver-major']
+      # Angular pins the TypeScript range it supports, so TypeScript majors come with `ng update`
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
 
   # Rust crates (src-tauri/Cargo.toml) - the vendored speakrs is a path dependency and is skipped
   - package-ecosystem: cargo
