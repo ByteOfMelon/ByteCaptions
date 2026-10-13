@@ -1,0 +1,36 @@
+# Opens pull requests when dependencies have new versions
+version: 2
+updates:
+  # Actions used in .github/workflows
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  # npm packages (package.json)
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      tauri:
+        patterns: ['@tauri-apps/*']
+      angular:
+        patterns: ['@angular/*']
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # Angular majors need `ng update`, which also migrates code
+      - dependency-name: '@angular/*'
+        update-types: ['version-update:semver-major']
+
+  # Rust crates (src-tauri/Cargo.toml) - the vendored speakrs is a path dependency and is skipped
+  - package-ecosystem: cargo
+    directory: /src-tauri
+    schedule:
+      interval: weekly
+    groups:
+      tauri:
+        patterns: ['tauri', 'tauri-*']
+      minor-and-patch:
+        update-types: [minor, patch]
