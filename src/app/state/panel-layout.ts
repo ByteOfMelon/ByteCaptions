@@ -2,8 +2,8 @@ import { Injectable, effect, signal } from '@angular/core';
 
 const KEY = 'bc.panelLayout';
 
-export const PANEL_DEFAULTS = { cues: 380, inspector: 320, timeline: 300 };
-export const PANEL_MIN = { cues: 380, inspector: 280, timeline: 200, preview: 560, workspace: 360 };
+export const PANEL_DEFAULTS = { cues: 380, inspector: 344, timeline: 300 };
+export const PANEL_MIN = { cues: 380, inspector: 344, timeline: 200, preview: 560, workspace: 360 };
 
 type Sizes = typeof PANEL_DEFAULTS;
 
