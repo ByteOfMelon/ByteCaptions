@@ -162,7 +162,7 @@ jobs:
         # Public builds have no Google sign-in client, so YouTube upload is off (see BUILDING.md for details)
         # Tag builds also make signed update packages and upload everything to a draft release, with the
         # latest.json the app checks for updates. The release goes live only when it's published by hand
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
