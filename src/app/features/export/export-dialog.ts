@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { LucideFolder } from '@lucide/angular';
 import { FORMATS, FormatId } from '../../core/formats';
-import { exportSrv3 } from '../../core/formats/srv3';
+import { exportSrv3, SRV3_WARN_WEIGHT } from '../../core/formats/srv3';
 import { Project, TrackId } from '../../core/model/types';
 import { EditorUi } from '../../state/editor-ui';
 import {
@@ -117,7 +117,7 @@ export class ExportDialog implements OnInit {
 
 		const { weight, lines, bytes } = exportSrv3(this.subset()).stats;
 
-		if (weight < 0.8) return null;
+		if (weight < SRV3_WARN_WEIGHT) return null;
 
 		return {
 			over: weight >= 1,

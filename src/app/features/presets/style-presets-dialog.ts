@@ -7,6 +7,7 @@ import {
 	defaultStyle,
 	newId,
 } from '../../core/model/defaults';
+import { mobileStyle } from '../../core/model/mobile';
 import { CaptionStyle, PosId, Position, StyleId } from '../../core/model/types';
 import { ProjectStore } from '../../state/project-store';
 import { Button } from '../../ui/button/button';
@@ -18,7 +19,7 @@ import { Tabs } from '../../ui/tabs/tabs';
 import { Tooltip } from '../../ui/tooltip/tooltip';
 import { AnchorPicker } from '../inspector/anchor-picker';
 import { StyleChange, StyleFields } from '../inspector/style-fields';
-import { captionTextStyle, captionWindowStyle, mobileStyle } from '../player/caption-render';
+import { captionTextStyle, captionWindowStyle } from '../player/caption-render';
 import { StyleChip } from '../player/style-chip';
 
 type Backdrop = 'frame' | 'bright' | 'dark';

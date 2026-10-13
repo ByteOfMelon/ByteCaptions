@@ -470,12 +470,12 @@ export class TimelineMenus {
 				icon: LucideArrowDown.icon,
 				disabled: tracks.at(-1)!.id === track.id,
 			},
-			{ id: 'export', label: 'Export this track...', icon: LucideUpload.icon },
+			{ id: 'export', label: 'Export track', icon: LucideUpload.icon },
 			...(this.transcription.available
 				? [
 						{
 							id: 'speakers',
-							label: 'Separate speakers...',
+							label: 'Separate speakers',
 							icon: LucideUsers.icon,
 							disabled:
 								track.locked || !track.cues.length || this.transcription.running(),

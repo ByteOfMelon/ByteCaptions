@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { LucideCircleX, LucideTriangleAlert } from '@lucide/angular';
 import * as edits from '../../core/commands/edits';
 import { cueText } from '../../core/model/cue';
+import { CueId } from '../../core/model/types';
 import { Problem, formatCps, readingSpeed } from '../../core/lint/rules';
 import { formatTimecode } from '../../core/time/timecode';
 import { ProjectStore } from '../../state/project-store';
@@ -12,6 +13,7 @@ import { EditorDialogs } from '../editor/editor-dialogs';
 import { Playback } from '../player/playback';
 
 const ALL = '__all__';
+const HEAVY_KEY = 'srv3Weight';
 
 function problemKey(p: Problem): string {
 	return `${p.cueId}:${p.kind}`;
@@ -74,7 +76,51 @@ export class ProblemsView {
 	protected readonly errors = computed(
 		() => this.items().filter((i) => i.problem.severity === 'error').length,
 	);
-	protected readonly warnings = computed(() => this.items().length - this.errors());
+	/** How close the SRV3 file is to the size YouTube can show */
+	protected readonly heavy = computed(() => {
+		const weight = this.store.srv3Weight();
+
+		if (!this.store.srv3Heavy() || this.ignored().has(HEAVY_KEY)) return null;
+
+		return {
+			over: weight >= 1,
+			title:
+				weight >= 1
+					? 'SRV3 file may be too large for YouTube'
+					: 'SRV3 file is close to the size limit',
+			detail: `${Math.round(weight * 100)}% of the safe size. Merging cues, using fewer styles or less karaoke makes it smaller.`,
+		};
+	});
+	/** Render one style problem warning per preset */
+	protected readonly presetItems = computed(() => {
+		const f = this.filter();
+		const styles = this.store.project().styles;
+		const ignored = this.ignored();
+		const selection = this.store.selection();
+		const onTrack = (id: CueId) => f === ALL || this.store.find(id)?.track.id === f;
+
+		return this.store
+			.presetProblems()
+			.map((pp) => ({
+				...pp,
+				key: `preset:${pp.styleId}`,
+				cueIds: pp.cueIds.filter(onTrack),
+			}))
+			.filter((pp) => pp.cueIds.length && !ignored.has(pp.key))
+			.map((pp) => ({
+				...pp,
+				title: `${styles[pp.styleId].name} preset: ${pp.message[0].toLowerCase()}${pp.message.slice(1)}`,
+				location: `Style preset • ${pp.cueIds.length} ${pp.cueIds.length === 1 ? 'cue' : 'cues'}`,
+				selected: pp.cueIds.every((id) => selection.has(id)),
+			}));
+	});
+	protected readonly warnings = computed(
+		() =>
+			this.items().length -
+			this.errors() +
+			this.presetItems().length +
+			(this.heavy() ? 1 : 0),
+	);
 
 	private title(p: Problem): string {
 		const ref = this.store.find(p.cueId)!;
@@ -97,6 +143,8 @@ export class ProblemsView {
 				return 'Too many lines';
 			case 'speaker':
 				return 'Unsure speaker';
+			case 'mobile':
+				return p.message;
 		}
 	}
 
@@ -137,6 +185,17 @@ export class ProblemsView {
 				'Split cue',
 				edits.splitCue(p.cueId, Math.round((cue.start + cue.end) / 2)),
 			);
+	}
+
+	protected readonly heavyKey = HEAVY_KEY;
+
+	/** Select every cue the preset problem covers */
+	protected openPreset(cueIds: CueId[]): void {
+		this.store.selection.set(new Set(cueIds));
+
+		const first = this.store.find(cueIds[0])?.cue;
+
+		if (first) this.playback.seek(first.start);
 	}
 
 	protected ignore(key: string): void {

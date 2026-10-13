@@ -1,7 +1,15 @@
 import { cueText } from '../model/cue';
 import { createProject } from '../model/defaults';
 import { sampleProject } from '../testing/fixtures';
-import { exportSrv3, fromYtCoord, fromYtSize, importSrv3, toYtCoord, toYtSize } from './srv3';
+import {
+	exportSrv3,
+	srv3Weight,
+	fromYtCoord,
+	fromYtSize,
+	importSrv3,
+	toYtCoord,
+	toYtSize,
+} from './srv3';
 
 describe('SRV3 coordinate and size corrections', () => {
 	it('inverts YouTube position squeeze', () => {
@@ -57,6 +65,10 @@ describe('SRV3 export', () => {
 		expect(stats.sections).toBe(9);
 		expect(stats.weight).toBeGreaterThan(0);
 		expect(stats.weight).toBeLessThan(0.01);
+	});
+
+	it('weighs the project the same as the export does, without writing it', () => {
+		expect(srv3Weight(sampleProject())).toBe(stats.weight);
 	});
 
 	it('drops zero-length lines', () => {

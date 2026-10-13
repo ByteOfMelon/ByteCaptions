@@ -18,6 +18,34 @@
 </div>
 
 <div class="list">
+	@if (heavy(); as h) {
+		<article class="problem">
+			<h3 class="title">
+				<svg lucideTriangleAlert class="warn" aria-label="Warning"></svg>
+				<span>{{ h.title }}</span>
+			</h3>
+			<span class="location text-mono-small">Whole project • SRV3 export</span>
+			<p class="detail text-small">{{ h.detail }}</p>
+			<div class="actions">
+				<button bcButton variant="ghost" (click)="ignore(heavyKey)">Ignore</button>
+			</div>
+		</article>
+	}
+	@for (item of presetItems(); track item.key) {
+		<article class="problem" [class.selected]="item.selected" (click)="openPreset(item.cueIds)">
+			<h3 class="title">
+				<svg lucideTriangleAlert class="warn" aria-label="Warning"></svg>
+				<span>{{ item.title }}</span>
+			</h3>
+			<span class="location text-mono-small">{{ item.location }}</span>
+			<div class="actions" (click)="$event.stopPropagation()">
+				<button bcButton class="fix" (click)="dialogs.presets(item.styleId)">
+					Edit preset
+				</button>
+				<button bcButton variant="ghost" (click)="ignore(item.key)">Ignore</button>
+			</div>
+		</article>
+	}
 	@for (item of items(); track item.key) {
 		<article class="problem" [class.selected]="item.selected" (click)="open(item.problem)">
 			<h3 class="title">
@@ -40,6 +68,8 @@
 			</div>
 		</article>
 	} @empty {
-		<p class="empty text-small text-faded">No problems found.</p>
+		@if (!heavy() && !presetItems().length) {
+			<p class="empty text-small text-faded">No problems found.</p>
+		}
 	}
 </div>

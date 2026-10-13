@@ -176,7 +176,11 @@ export interface Srv3Stats {
 /** May need to be tuned later as we do more real-world testing, is currently a conservative estimate */
 export const SRV3_ELEMENT_BUDGET = 20_000;
 
-export function exportSrv3(project: Project): { xml: string; stats: Srv3Stats } {
+/** Weight from which the app warns that a file is getting close to the budget */
+export const SRV3_WARN_WEIGHT = 0.8;
+
+/** Lines and the deduplicated head tables, before writing XML */
+function layout(project: Project) {
 	const pens = new Table();
 	const wps = new Table();
 	const wss = new Table();
@@ -215,6 +219,25 @@ export function exportSrv3(project: Project): { xml: string; stats: Srv3Stats } 
 		lines.push({ start: cue.start, end: cue.end, wp, ws, sections: mergeSections(sections) });
 	}
 
+	return { pens, wps, wss, lines };
+}
+
+/** Share of the safe size this project's SRV3 file uses (1 = at the budget) */
+export function srv3Weight(project: Project): number {
+	const { pens, wps, wss, lines } = layout(project);
+	const sections = lines.reduce((n, l) => n + (lineTiming(l) ? l.sections.length : 0), 0);
+
+	return elementWeight(
+		lines.length + sections + pens.rows.length + wps.rows.length + wss.rows.length,
+	);
+}
+
+function elementWeight(elements: number): number {
+	return elements / SRV3_ELEMENT_BUDGET;
+}
+
+export function exportSrv3(project: Project): { xml: string; stats: Srv3Stats } {
+	const { pens, wps, wss, lines } = layout(project);
 	const out: string[] = [];
 	out.push('<?xml version="1.0" encoding="utf-8"?>');
 	out.push('<timedtext format="3">');
@@ -247,7 +270,7 @@ export function exportSrv3(project: Project): { xml: string; stats: Srv3Stats } 
 			lines: lines.length,
 			sections: sectionCount,
 			bytes: new TextEncoder().encode(xml).length,
-			weight: elements / SRV3_ELEMENT_BUDGET,
+			weight: elementWeight(elements),
 		},
 	};
 }
@@ -265,7 +288,8 @@ function mergeSections(sections: Section[]): Section[] {
 	return out;
 }
 
-function writeLine(line: Line): string | null {
+/** A line's written start and duration */
+function lineTiming(line: Line): { t: number; d: number } | null {
 	if (line.sections.length === 0) return null;
 
 	let t = Math.round(line.start);
@@ -277,8 +301,15 @@ function writeLine(line: Line): string | null {
 		t = 1;
 	}
 
-	if (d <= 0) return null;
+	return d > 0 ? { t, d } : null;
+}
 
+function writeLine(line: Line): string | null {
+	const timing = lineTiming(line);
+
+	if (!timing) return null;
+
+	const { t, d } = timing;
 	const head = `<p t="${t}" d="${d}"`;
 	const pos = ` wp="${line.wp}" ws="${line.ws}"`;
 

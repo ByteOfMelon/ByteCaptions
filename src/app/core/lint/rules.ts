@@ -1,13 +1,22 @@
 /**
- * Live, non-blocking quality checks. Pure functions over the project; the app shows results as badges on cues and in the Problems tab.
+ * Quality checks for the current project file. The app then shows these results as badges on cues and in the Problems tab
  */
-import { cueText, textWidth } from '../model/cue';
-import { Cue, CueId, Ms, Project, Track, TrackId } from '../model/types';
+import { cueText, resolveStyle, textWidth } from '../model/cue';
+import { mobileChanges } from '../model/mobile';
+import { Cue, CueId, Ms, Project, StyleId, Track, TrackId } from '../model/types';
 
 export type Severity = 'error' | 'warning';
 
 export type ProblemKind =
-	'overlap' | 'cps' | 'tooShort' | 'tooLong' | 'lineLength' | 'tooManyLines' | 'gap' | 'speaker';
+	| 'overlap'
+	| 'cps'
+	| 'tooShort'
+	| 'tooLong'
+	| 'lineLength'
+	| 'tooManyLines'
+	| 'gap'
+	| 'speaker'
+	| 'mobile';
 
 /** Any quick fix the app can offer */
 export type ProblemFix =
@@ -140,6 +149,18 @@ export function lintTrack(project: Project, track: Track): Problem[] {
 			);
 		}
 
+		// Any formatting issues with the preset itself is reported once in lintPresets and not here
+		const fromPreset = new Set(mobileChanges(resolveStyle(project, track, cue)));
+		const own = new Set(
+			cue.runs
+				.flatMap((r) => (r.styleOverride ? mobileChanges(r.styleOverride) : []))
+				.filter((c) => !fromPreset.has(c)),
+		);
+
+		if (text.trim() && own.size) {
+			add(cue, 'mobile', 'warning', `Mobile apps show ${mobileSummary(own)}`);
+		}
+
 		if (cue.speakerUnsure) {
 			add(cue, 'speaker', 'warning', `Might not be ${track.name}'s line`, {
 				kind: 'confirmSpeaker',
@@ -149,6 +170,41 @@ export function lintTrack(project: Project, track: Track): Problem[] {
 	});
 
 	return out;
+}
+
+function mobileSummary(changes: ReadonlySet<'size' | 'background'>): string {
+	return [changes.has('size') && '100% size', changes.has('background') && 'black background']
+		.filter(Boolean)
+		.join(' and ');
+}
+
+/** A style preset that YouTube's mobile apps draw differently, with the cues that use it */
+export interface PresetProblem {
+	styleId: StyleId;
+	message: string;
+	cueIds: CueId[];
+}
+
+export function lintPresets(project: Project): PresetProblem[] {
+	const cuesByStyle = new Map<StyleId, CueId[]>();
+
+	for (const track of project.tracks) {
+		for (const cue of track.cues) {
+			if (!cueText(cue).trim()) continue;
+
+			const id = cue.styleId ?? track.defaultStyleId;
+			cuesByStyle.set(id, [...(cuesByStyle.get(id) ?? []), cue.id]);
+		}
+	}
+
+	return [...cuesByStyle].flatMap(([styleId, cueIds]) => {
+		const style = project.styles[styleId];
+		const changes = style ? new Set(mobileChanges(style)) : new Set<never>();
+
+		if (!changes.size) return [];
+
+		return [{ styleId, cueIds, message: `Mobile apps show ${mobileSummary(changes)}` }];
+	});
 }
 
 export function lintProject(project: Project): Problem[] {

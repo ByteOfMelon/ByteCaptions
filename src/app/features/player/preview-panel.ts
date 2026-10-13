@@ -25,6 +25,7 @@ import {
 import * as edits from '../../core/commands/edits';
 import { cueText, resolvePosition, resolveStyle } from '../../core/model/cue';
 import { karaokeRuns, sungAt } from '../../core/model/karaoke';
+import { mobileStyle } from '../../core/model/mobile';
 import { CaptionStyle, TextRun } from '../../core/model/types';
 import { formatTimecode } from '../../core/time/timecode';
 import { FileDrop } from '../../state/file-drop';
@@ -36,7 +37,7 @@ import { Autofocus } from '../../ui/autofocus/autofocus';
 import { Button, IconButton } from '../../ui/button/button';
 import { Select } from '../../ui/select/select';
 import { Tooltip } from '../../ui/tooltip/tooltip';
-import { captionTextStyle, captionWindowStyle, mobileStyle } from './caption-render';
+import { captionTextStyle, captionWindowStyle } from './caption-render';
 import { PLAYBACK_RATES, Playback } from './playback';
 
 type PreviewMode = 'desktop' | 'mobile' | 'plain';

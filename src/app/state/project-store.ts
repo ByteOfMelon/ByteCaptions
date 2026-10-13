@@ -1,6 +1,7 @@
 import { Injectable, computed, effect, signal, untracked } from '@angular/core';
 import { History, Recipe } from '../core/commands/history';
-import { lintProject } from '../core/lint/rules';
+import { srv3Weight, SRV3_WARN_WEIGHT } from '../core/formats/srv3';
+import { lintPresets, lintProject } from '../core/lint/rules';
 import { Cue, CueId, Ms, Project, Track, TrackId } from '../core/model/types';
 import { demoProject } from './demo-project';
 
@@ -50,6 +51,10 @@ export class ProjectStore {
 	);
 	readonly cueCount = computed(() => this.allCues().length);
 	readonly problems = computed(() => lintProject(this.project()));
+	/** Check SRV3's safe size out of the visible tracks */
+	readonly presetProblems = computed(() => lintPresets(this.project()));
+	readonly srv3Weight = computed(() => srv3Weight(this.project()));
+	readonly srv3Heavy = computed(() => this.srv3Weight() >= SRV3_WARN_WEIGHT);
 	readonly problemsByCue = computed(() => {
 		const map = new Map<CueId, ReturnType<typeof lintProject>>();
 

@@ -90,7 +90,12 @@ export class CueList {
 		return this.rows().find((r) => r.ref.cue.start <= t && t < r.ref.cue.end)?.id ?? null;
 	});
 
-	protected readonly warnings = computed(() => this.store.problems().length);
+	protected readonly warnings = computed(
+		() =>
+			this.store.problems().length +
+			this.store.presetProblems().length +
+			(this.store.srv3Heavy() ? 1 : 0),
+	);
 	protected readonly trackCount = computed(() => this.store.project().tracks.length);
 
 	constructor() {

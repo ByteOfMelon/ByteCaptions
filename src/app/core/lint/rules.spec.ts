@@ -1,5 +1,5 @@
 import { createCue, createProject } from '../model/defaults';
-import { formatCps, lintProject, readingSpeed } from './rules';
+import { formatCps, lintPresets, lintProject, readingSpeed } from './rules';
 
 function project(...cues: ReturnType<typeof createCue>[]) {
 	const p = createProject();
@@ -48,6 +48,46 @@ describe('lint', () => {
 		const kinds = lintProject(project(createCue(0, 6000, text))).map((p) => p.kind);
 		expect(kinds).toContain('lineLength');
 		expect(kinds).toContain('tooManyLines');
+	});
+
+	it('reports a preset the mobile apps draw differently once, not per cue', () => {
+		const a = createCue(0, 2000, 'Hello there');
+		const b = createCue(3000, 5000, 'General Kenobi');
+		const p = project(a, b);
+		const styleId = p.tracks[0].defaultStyleId;
+		p.styles[styleId].scale = 1.5;
+		p.styles[styleId].bgOpacity = 0;
+		expect(lintPresets(p)).toEqual([
+			{
+				styleId,
+				cueIds: [a.id, b.id],
+				message: 'Mobile apps show 100% size and black background',
+			},
+		]);
+		expect(lintProject(p).filter((x) => x.kind === 'mobile')).toEqual([]);
+	});
+
+	it('is quiet for presets the mobile apps draw as-is', () => {
+		expect(lintPresets(project(createCue(0, 2000, 'Hello there')))).toEqual([]);
+	});
+
+	it('flags a run whose own style changes on mobile', () => {
+		const cue = createCue(0, 2000, 'Hello there');
+		cue.runs = [{ text: 'Hello ' }, { text: 'there', styleOverride: { scale: 2 } }];
+		const [m] = lintProject(project(cue)).filter((x) => x.kind === 'mobile');
+		expect(m.message).toBe('Mobile apps show 100% size');
+	});
+
+	it('does not repeat on the cue what its preset already reports', () => {
+		const cue = createCue(0, 2000, 'Hello there');
+		cue.runs = [
+			{ text: 'Hello ' },
+			{ text: 'there', styleOverride: { scale: 2, bgOpacity: 0 } },
+		];
+		const p = project(cue);
+		p.styles[p.tracks[0].defaultStyleId].scale = 1.5;
+		const mobile = lintProject(p).filter((x) => x.kind === 'mobile');
+		expect(mobile.map((x) => x.message)).toEqual(['Mobile apps show black background']);
 	});
 });
 
