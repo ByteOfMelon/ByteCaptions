@@ -116,6 +116,24 @@
 				>
 					<svg lucideUnderline></svg>
 				</button>
+				<button
+					type="button"
+					aria-label="Subscript"
+					bcTooltip="Subscript"
+					[attr.aria-pressed]="bar.style.offset === 'subscript'"
+					(click)="format.toggleOffset('subscript')"
+				>
+					<svg lucideSubscript></svg>
+				</button>
+				<button
+					type="button"
+					aria-label="Superscript"
+					bcTooltip="Superscript"
+					[attr.aria-pressed]="bar.style.offset === 'superscript'"
+					(click)="format.toggleOffset('superscript')"
+				>
+					<svg lucideSuperscript></svg>
+				</button>
 				<label class="swatch" bcTooltip="Text color">
 					<span [style.background]="bar.style.textColor"></span>
 					<input

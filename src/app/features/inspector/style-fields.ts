@@ -1,5 +1,11 @@
 import { Component, booleanAttribute, input, output } from '@angular/core';
-import { LucideBold, LucideItalic, LucideUnderline } from '@lucide/angular';
+import {
+	LucideBold,
+	LucideItalic,
+	LucideSubscript,
+	LucideSuperscript,
+	LucideUnderline,
+} from '@lucide/angular';
 import { CaptionStyle, EdgeType, YtFont } from '../../core/model/types';
 import { ColorField } from '../../ui/controls/controls';
 import { NumberField } from '../../ui/field/field';
@@ -26,7 +32,17 @@ const EDGE_OPTIONS = (Object.keys(EDGE_LABEL) as EdgeType[]).map((e) => ({
  */
 @Component({
 	selector: 'bc-style-fields',
-	imports: [ColorField, NumberField, Select, Tooltip, LucideBold, LucideItalic, LucideUnderline],
+	imports: [
+		ColorField,
+		NumberField,
+		Select,
+		Tooltip,
+		LucideBold,
+		LucideItalic,
+		LucideUnderline,
+		LucideSubscript,
+		LucideSuperscript,
+	],
 	templateUrl: './style-fields.html',
 	styleUrl: './style-fields.css',
 })

@@ -20,6 +20,8 @@ import {
 	LucidePlay,
 	LucideSkipBack,
 	LucideSkipForward,
+	LucideSubscript,
+	LucideSuperscript,
 	LucideUnderline,
 } from '@lucide/angular';
 import * as edits from '../../core/commands/edits';
@@ -66,6 +68,8 @@ type PreviewMode = 'desktop' | 'mobile' | 'plain';
 		LucideSkipBack,
 		LucideSkipForward,
 		LucideUnderline,
+		LucideSubscript,
+		LucideSuperscript,
 	],
 	templateUrl: './preview-panel.html',
 	styleUrl: './preview-panel.css',

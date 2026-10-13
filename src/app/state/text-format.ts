@@ -74,4 +74,11 @@ export class TextFormat {
 
 		if (a) this.apply({ [key]: !a.style[key] });
 	}
+
+	/** Subscript or superscript on or off for the whole selection. turning one on turns the other off */
+	toggleOffset(offset: 'subscript' | 'superscript'): void {
+		const a = this.active();
+
+		if (a) this.apply({ offset: a.style.offset === offset ? 'regular' : offset });
+	}
 }

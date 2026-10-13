@@ -45,6 +45,24 @@
 		>
 			<svg lucideUnderline></svg>
 		</button>
+		<button
+			type="button"
+			aria-label="Subscript"
+			bcTooltip="Subscript"
+			[attr.aria-pressed]="s.offset === 'subscript'"
+			(click)="set('offset', s.offset === 'subscript' ? 'regular' : 'subscript')"
+		>
+			<svg lucideSubscript></svg>
+		</button>
+		<button
+			type="button"
+			aria-label="Superscript"
+			bcTooltip="Superscript"
+			[attr.aria-pressed]="s.offset === 'superscript'"
+			(click)="set('offset', s.offset === 'superscript' ? 'regular' : 'superscript')"
+		>
+			<svg lucideSuperscript></svg>
+		</button>
 	</div>
 </div>
 
