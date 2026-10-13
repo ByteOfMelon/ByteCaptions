@@ -75,6 +75,36 @@ video {
 	margin-top: var(--spacing-sm);
 }
 
+.buffering {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	display: grid;
+	place-items: center;
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	background: rgb(0 0 0 / 0.6);
+	color: var(--color-brand);
+	transform: translate(-50%, -50%);
+	pointer-events: none;
+}
+.buffering svg {
+	width: 28px;
+	height: 28px;
+	animation: spin 1s linear infinite;
+}
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.buffering svg {
+		animation: none;
+	}
+}
+
 .caption-window {
 	position: absolute;
 	width: max-content;

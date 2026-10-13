@@ -7,6 +7,11 @@
 	<div #frame class="stage">
 		@if (playback.mediaUrl(); as url) {
 			<video #video [src]="url" preload="auto"></video>
+			@if (playback.buffering() && !playback.videoError()) {
+				<div class="buffering" role="status" aria-label="Loading video">
+					<svg lucideLoaderCircle aria-hidden="true"></svg>
+				</div>
+			}
 			@if (playback.videoError(); as problem) {
 				<div class="empty missing failed" role="alert">
 					<span class="text-body-bold">This video cannot be played</span>

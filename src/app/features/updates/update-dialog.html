@@ -4,9 +4,94 @@
 		[subtitle]="'Version ' + u.version + ' • you have ' + current"
 		[width]="560"
 	>
-		@if (updates.notes(); as notes) {
-			<pre class="notes text-small">{{ notes }}</pre>
+		@if (notes().length) {
+			<div class="notes text-small">
+				@for (block of notes(); track $index) {
+					@switch (block.kind) {
+						@case ('heading') {
+							<h3 class="text-body-bold">
+								<ng-container
+									*ngTemplateOutlet="
+										inline;
+										context: { $implicit: block.content }
+									"
+								/>
+							</h3>
+						}
+						@case ('paragraph') {
+							<p>
+								<ng-container
+									*ngTemplateOutlet="
+										inline;
+										context: { $implicit: block.content }
+									"
+								/>
+							</p>
+						}
+						@case ('list') {
+							@if (block.ordered) {
+								<ol>
+									@for (item of block.items; track $index) {
+										<li>
+											<ng-container
+												*ngTemplateOutlet="
+													inline;
+													context: { $implicit: item }
+												"
+											/>
+										</li>
+									}
+								</ol>
+							} @else {
+								<ul>
+									@for (item of block.items; track $index) {
+										<li>
+											<ng-container
+												*ngTemplateOutlet="
+													inline;
+													context: { $implicit: item }
+												"
+											/>
+										</li>
+									}
+								</ul>
+							}
+						}
+					}
+				}
+			</div>
 		}
+
+		<ng-template #inline let-nodes>
+			@for (n of nodes; track $index) {
+				@switch (n.kind) {
+					@case ('text') {
+						{{ n.text }}
+					}
+					@case ('code') {
+						<code>{{ n.text }}</code>
+					}
+					@case ('bold') {
+						<strong
+							><ng-container
+								*ngTemplateOutlet="inline; context: { $implicit: n.children }"
+						/></strong>
+					}
+					@case ('italic') {
+						<em
+							><ng-container
+								*ngTemplateOutlet="inline; context: { $implicit: n.children }"
+						/></em>
+					}
+					@case ('link') {
+						<a [href]="n.url" (click)="openLink($event, n.url)"
+							><ng-container
+								*ngTemplateOutlet="inline; context: { $implicit: n.children }"
+						/></a>
+					}
+				}
+			}
+		</ng-template>
 
 		@if (!updates.canSelfUpdate()) {
 			<bc-notice

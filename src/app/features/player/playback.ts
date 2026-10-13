@@ -10,6 +10,10 @@ const MAX_SHUTTLE = 8;
 /** Reloads allowed in RECOVER_WINDOW_MS before a broken video is left alone. */
 const MAX_RECOVERIES = 3;
 const RECOVER_WINDOW_MS = 10_000;
+/** Waits shorter than this don't show the buffering indicator, so quick seeks don't flicker */
+const BUFFERING_DELAY_MS = 250;
+/** Events after which the video may have started or stopped waiting for data */
+const BUFFERING_EVENTS = ['waiting', 'seeking', 'seeked', 'playing', 'canplay', 'pause', 'emptied'];
 
 @Injectable({ providedIn: 'root' })
 export class Playback {
@@ -22,6 +26,9 @@ export class Playback {
 	private stopAt: Ms | null = null;
 	/** Explain to the user why the video can't play, shown over the preview, if necessary */
 	readonly videoError = signal<string | null>(null);
+	/** The video is waiting for data (after a seek, or mid-playback), shown over the preview */
+	readonly buffering = signal(false);
+	private bufferingTimer: ReturnType<typeof setTimeout> | null = null;
 	/** URL of the loaded video, if any. */
 	readonly mediaUrl = inject(MediaSource).url;
 	/**
@@ -62,6 +69,7 @@ export class Playback {
 	attach(video: HTMLVideoElement | null): void {
 		this.video = video;
 		this.videoError.set(null);
+		this.setBuffering(false);
 
 		if (video)
 			untracked(() => {
@@ -72,6 +80,9 @@ export class Playback {
 				video.onended = () => this.onEnded();
 				// A video that never loaded won't load on a retry either.
 				video.onerror = () => (loaded ? this.recover(video) : this.fail(video));
+
+				for (const e of BUFFERING_EVENTS)
+					video.addEventListener(e, () => this.checkBuffering(video));
 			});
 	}
 
@@ -247,9 +258,36 @@ export class Playback {
 		video.load();
 	}
 
+	/** Waiting = seeking, or playing without enough data to keep going */
+	private checkBuffering(video: HTMLVideoElement): void {
+		if (video !== this.video) return;
+
+		const waiting =
+			!video.error &&
+			(video.seeking ||
+				(this.store.playing() &&
+					this.shuttle() > 0 &&
+					video.readyState < video.HAVE_FUTURE_DATA));
+
+		if (!waiting) return this.setBuffering(false);
+
+		this.bufferingTimer ??= setTimeout(() => {
+			this.bufferingTimer = null;
+			this.buffering.set(true);
+		}, BUFFERING_DELAY_MS);
+	}
+
+	private setBuffering(on: boolean): void {
+		if (this.bufferingTimer) clearTimeout(this.bufferingTimer);
+
+		this.bufferingTimer = null;
+		this.buffering.set(on);
+	}
+
 	private fail(video: HTMLVideoElement): void {
 		if (video !== this.video) return;
 
+		this.setBuffering(false);
 		this.pause();
 		this.videoError.set(mediaErrorText(video.error));
 	}
