@@ -162,6 +162,10 @@ export class Select<T = string> {
 
 				break;
 			case 'Escape':
+				if (this.open()) e.preventDefault();
+
+				this.open.set(false);
+				break;
 			case 'Tab':
 				this.open.set(false);
 				break;

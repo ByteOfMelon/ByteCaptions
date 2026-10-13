@@ -18,11 +18,11 @@ import { Tabs } from '../../ui/tabs/tabs';
 import { Tooltip } from '../../ui/tooltip/tooltip';
 import { AnchorPicker } from '../inspector/anchor-picker';
 import { StyleChange, StyleFields } from '../inspector/style-fields';
-import { captionTextStyle, captionWindowStyle } from '../player/caption-render';
+import { captionTextStyle, captionWindowStyle, mobileStyle } from '../player/caption-render';
 import { StyleChip } from '../player/style-chip';
 
 type Backdrop = 'frame' | 'bright' | 'dark';
-type PreviewMode = 'desktop' | 'mobile' | 'tv';
+type PreviewMode = 'desktop' | 'mobile';
 
 /**
  * Edit project presets against a live caption sample
@@ -74,7 +74,6 @@ export class StylePresetsDialog implements OnInit {
 	protected readonly modes = [
 		{ value: 'desktop' as PreviewMode, label: 'Desktop web' },
 		{ value: 'mobile' as PreviewMode, label: 'Mobile app' },
-		{ value: 'tv' as PreviewMode, label: 'TV' },
 	];
 	protected readonly defaultId = DEFAULT_STYLE_ID;
 
@@ -142,7 +141,7 @@ export class StylePresetsDialog implements OnInit {
 	protected readonly position = computed(() => this.positions()[this.positionId()]);
 
 	protected readonly sampleCss = computed(() => {
-		const s = this.current();
+		const s = this.previewMode() === 'mobile' ? mobileStyle(this.current()) : this.current();
 		// The preview frame is 270px tall - YouTube sizes captions from player height
 		const fontPx = 270 * 0.0533 * s.scale;
 

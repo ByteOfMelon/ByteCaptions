@@ -72,8 +72,13 @@ export function captionTextStyle(s: CaptionStyle, edgeUnitPx = 1): Record<string
 	};
 }
 
+/** YouTube's mobile apps draw every caption on a black box, at one fixed size */
+export function mobileStyle(s: CaptionStyle): CaptionStyle {
+	return { ...s, bgColor: '#080808', bgOpacity: 0.75, scale: 1 };
+}
+
 /**
- * YouTube's player keeps caption windows inside a safe area: SRV3's 0–100% maps to 2–98% of the video (so 93% lands at 91.3%)
+ * YouTube's player keeps caption windows inside a safe area. SRV3's 0–100% maps to 2–98% of the video (so 93% lands at 91.3%)
  */
 export function ytSafeArea(percent: number): number {
 	return 2 + percent * 0.96;

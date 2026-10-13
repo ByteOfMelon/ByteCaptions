@@ -36,7 +36,7 @@ import { Autofocus } from '../../ui/autofocus/autofocus';
 import { Button, IconButton } from '../../ui/button/button';
 import { Select } from '../../ui/select/select';
 import { Tooltip } from '../../ui/tooltip/tooltip';
-import { captionTextStyle, captionWindowStyle } from './caption-render';
+import { captionTextStyle, captionWindowStyle, mobileStyle } from './caption-render';
 import { PLAYBACK_RATES, Playback } from './playback';
 
 type PreviewMode = 'desktop' | 'mobile' | 'plain';
@@ -124,8 +124,7 @@ export class PreviewPanel {
 		return this.store.activeCues().map(({ track, cue }) => {
 			let style = resolveStyle(p, track, cue);
 
-			// YouTube's mobile apps draw every caption on a black box, at one fixed size
-			if (mobile) style = { ...style, bgColor: '#080808', bgOpacity: 0.75, scale: 1 };
+			if (mobile) style = mobileStyle(style);
 
 			const pos = resolvePosition(p, track, cue);
 			const textStyle = captionTextStyle(style, Math.max(1, fontPx / 18));
