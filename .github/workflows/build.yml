@@ -160,8 +160,8 @@ jobs:
 
       - name: Build
         # Public builds have no Google sign-in client, so YouTube upload is off (see BUILDING.md for details)
-        # Tag builds also make signed update packages and upload everything to a draft release, with the
-        # latest.json the app checks for updates. The release goes live only when it's published by hand
+        # Tag builds also make signed update packages and upload everything to a draft release.
+        # The release goes live only when it's published by hand
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -186,7 +186,8 @@ jobs:
 
             The `.msi` is an alternate Windows installer file, mainly used for managed deployments. The `.app.tar.gz`, `.sig` and `latest.json` files are used by the automatic updater, and don't need to be downloaded.
           releaseDraft: true
-          updaterJsonPreferNsis: true
+          # The updater-json job writes latest.json once every platform is uploaded
+          uploadUpdaterJson: false
 
       - uses: actions/upload-artifact@v7
         with:
@@ -199,3 +200,22 @@ jobs:
             src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
             src-tauri/target/${{ matrix.target }}/release/bundle/rpm/*.rpm
           if-no-files-found: error
+
+  # latest.json, the file the app checks for updates, lists every platform's update package, so it's
+  # written once here after all of them are uploaded. Skipped if any platform failed to build
+  updater-json:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Write and upload latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release download "$TAG" --pattern '*.sig' --dir sigs
+          gh release view "$TAG" --json body --jq .body > notes.md
+          node scripts/updater-json.mjs "$TAG" sigs notes.md
+          gh release upload "$TAG" latest.json --clobber
