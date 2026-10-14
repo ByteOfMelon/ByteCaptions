@@ -1,7 +1,7 @@
 {
 	"$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
 	"productName": "ByteCaptions",
-	"version": "0.9.3",
+	"version": "0.9.4",
 	"identifier": "com.byteofmelon.bytecaptions",
 	"build": {
 		"frontendDist": "../dist/bytecaptions/browser",
