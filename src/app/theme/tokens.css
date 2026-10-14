@@ -1,6 +1,6 @@
 :root {
-	--color-brand: #809d6d;
-	--color-brand-dark: #5f7a4e;
+	--color-brand: #2eb64e;
+	--color-brand-dark: #047328;
 
 	--radius-panel: 16px;
 	--radius-control: 8px;
@@ -31,23 +31,23 @@
 	--color-selected: #2d2d3a;
 	--color-text: #fcfcfc;
 	--color-text-faded: rgb(252 252 252 / 0.5);
-	--color-info: #6b9bea;
-	--color-warning: #c89a08;
-	--color-success: #3dba5c;
-	--color-danger: #f06464;
+	--color-info: #155dfb;
+	--color-warning: #f0b100;
+	--color-success: #2eb64e;
+	--color-danger: #d72b2b;
 	--color-focus: var(--color-brand);
 	--color-outline: var(--color-selected);
 	--color-control-border: #6a6a7a;
-	--color-brand-hover: #8fab7c;
-	--color-brand-pressed: #718d5f;
+	--color-brand-hover: #42c55d;
+	--color-brand-pressed: #0da53d;
 	--color-danger-hover: #f37d7d;
 	--color-danger-pressed: #d95757;
 	--color-on-brand: #151517;
 	--color-on-danger: #151517;
-	--color-track-1: #4a6fa5;
-	--color-track-2: #7e60a6;
-	--color-track-3: #9a6a3e;
-	--color-track-4: #3b7c6f;
+	--color-track-1: #155dfb;
+	--color-track-2: #c800de;
+	--color-track-3: #d72b2b;
+	--color-track-4: #2eb64e;
 	--color-on-track: #fcfcfc;
 }
 
@@ -59,23 +59,23 @@
 	--color-selected: #dcdcff;
 	--color-text: #030303;
 	--color-text-faded: rgb(3 3 3 / 0.6);
-	--color-info: #00409f;
-	--color-warning: #7d5f00;
-	--color-success: #006b1d;
-	--color-danger: #c80808;
+	--color-info: #0952f0;
+	--color-warning: #805d03;
+	--color-success: #047328;
+	--color-danger: #c6101a;
 	--color-focus: var(--color-brand-dark);
 	--color-outline: var(--color-selected);
 	--color-control-border: #7c7c90;
-	--color-brand-hover: #8fab7c;
-	--color-brand-pressed: #718d5f;
+	--color-brand-hover: #42c55d;
+	--color-brand-pressed: #0da53d;
 	--color-danger-hover: #d42b2b;
 	--color-danger-pressed: #a90707;
 	--color-on-brand: #030303;
 	--color-on-danger: #fcfcfc;
-	--color-track-1: #4a6fa5;
-	--color-track-2: #7e60a6;
-	--color-track-3: #9a6a3e;
-	--color-track-4: #3b7c6f;
+	--color-track-1: #155dfb;
+	--color-track-2: #c800de;
+	--color-track-3: #d72b2b;
+	--color-track-4: #2eb64e;
 	--color-on-track: #fcfcfc;
 }
 

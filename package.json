@@ -13,7 +13,8 @@
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
 		"fetch:ffmpeg": "node scripts/fetch-ffmpeg.mjs",
-		"fetch:vulkan": "node scripts/fetch-vulkan-runtime.mjs"
+		"fetch:vulkan": "node scripts/fetch-vulkan-runtime.mjs",
+		"notices": "node scripts/third-party-notices.mjs"
 	},
 	"dependencies": {
 		"@angular/common": "^22.2.2",

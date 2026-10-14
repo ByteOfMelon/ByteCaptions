@@ -80,7 +80,10 @@
 		},
 		{
 			"identifier": "opener:allow-open-path",
-			"allow": [{ "path": "$RESOURCE/licenses/BYTECAPTIONS-LICENSE.txt" }]
+			"allow": [
+				{ "path": "$RESOURCE/licenses/BYTECAPTIONS-LICENSE.txt" },
+				{ "path": "$RESOURCE/licenses" }
+			]
 		},
 		{
 			"identifier": "opener:allow-open-url",

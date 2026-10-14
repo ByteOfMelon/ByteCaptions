@@ -20,6 +20,9 @@
 					"gstreamer1-plugin-libav"
 				]
 			}
+		},
+		"resources": {
+			"licenses/FFMPEG-LICENSE.txt": "licenses/FFMPEG-LICENSE.txt"
 		}
 	}
 }

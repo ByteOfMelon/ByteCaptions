@@ -3,8 +3,7 @@
 	"identifier": "com.byteofmelon.bytecaptions",
 	"bundle": {
 		"resources": {
-			"licenses/FFMPEG-MACOS.txt": "licenses/FFMPEG-MACOS.txt",
-			"licenses/SPEAKER-MODELS.txt": "licenses/SPEAKER-MODELS.txt"
+			"licenses/FFMPEG-MACOS.txt": "licenses/FFMPEG-MACOS.txt"
 		},
 		"macOS": {
 			"signingIdentity": "-",

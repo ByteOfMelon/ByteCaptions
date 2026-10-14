@@ -28,6 +28,7 @@ import { SettingsDialog, confirmResetLayout } from '../settings/settings-dialog'
 import { UpdatePrompt } from '../updates/update-dialog';
 
 const LICENSE_FILE = 'licenses/BYTECAPTIONS-LICENSE.txt';
+const LICENSES_DIR = 'licenses';
 
 /** A menu entry for the menu bar */
 type Entry =
@@ -258,6 +259,10 @@ export class AppMenu {
 					{ command: 'shortcuts' },
 					'separator',
 					{ text: 'ByteCaptions GitHub page...', run: () => openExternal(WEBSITE) },
+					{
+						text: 'Third-party licenses...',
+						run: () => void resolveResource(LICENSES_DIR).then((dir) => openPath(dir)),
+					},
 					...(IS_MAC
 						? []
 						: ([
@@ -409,7 +414,9 @@ export class AppMenu {
 				'Copyright © 2026 Michael Webb/Byte of Melon',
 				WEBSITE.replace('https://', ''),
 				'',
-				'This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under the GNU GPL, version 3 or later, and you are welcome to redistribute it under certain conditions. Click "View license" or read the LICENSE file on GitHub for more information.',
+				'This program comes with ABSOLUTELY NO WARRANTY. This is free software, licensed under the GNU GPL, version 3 or later, and you are welcome to redistribute it under certain conditions. Click "View license" or read the LICENSE file on GitHub for more information. ',
+				'',
+				'Licenses for the open source software ByteCaptions includes are under Help > Third-party licenses.',
 				'',
 				runtime.join(' • '),
 			].join('\n'),

@@ -1,7 +1,6 @@
 import { Component, ElementRef, OnDestroy, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
-	LucideCaptions,
 	LucideCheck,
 	LucideCircleAlert,
 	LucideRedo2,
@@ -68,7 +67,6 @@ const clamp = (v: number, min: number, max: number) =>
 		Inspector,
 		Timeline,
 		Splitter,
-		LucideCaptions,
 		LucideUndo2,
 		LucideRedo2,
 		LucideSearch,

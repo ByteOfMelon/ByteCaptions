@@ -1,8 +1,21 @@
-Speaker separation models
+Models
 
-ByteCaptions downloads these on first use from https://huggingface.co/avencera/speakrs-models
+ByteCaptions downloads these on first use. They are not bundled with the app.
+
+Transcription
+
+ByteCaptions downloads these from https://huggingface.co/ggerganov/whisper.cpp and
+https://huggingface.co/ggml-org/whisper-vad (ggml conversions by the whisper.cpp project, MIT).
+
+- Whisper speech recognition models, by OpenAI. MIT License.
+  https://github.com/openai/whisper
+- Silero VAD voice activity detection model, by the Silero Team. MIT License.
+  https://github.com/snakers4/silero-vad
+
+Speaker separation
+
+ByteCaptions downloads these from https://huggingface.co/avencera/speakrs-models
 (ONNX conversions by the speakrs project, https://github.com/avencera/speakrs, Apache-2.0).
-They are not bundled with the app.
 
 - segmentation-3.0: pyannote.audio speaker segmentation, by Hervé Bredin and contributors.
   MIT License. https://huggingface.co/pyannote/segmentation-3.0

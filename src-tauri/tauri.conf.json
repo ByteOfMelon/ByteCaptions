@@ -6,8 +6,8 @@
 	"build": {
 		"frontendDist": "../dist/bytecaptions/browser",
 		"devUrl": "http://localhost:4200",
-		"beforeDevCommand": "npm run fetch:ffmpeg && npm run fetch:vulkan && npm run start",
-		"beforeBuildCommand": "npm run fetch:ffmpeg && npm run fetch:vulkan && npm run build"
+		"beforeDevCommand": "npm run fetch:ffmpeg && npm run fetch:vulkan && npm run notices && npm run start",
+		"beforeBuildCommand": "npm run fetch:ffmpeg && npm run fetch:vulkan && npm run build && npm run notices"
 	},
 	"app": {
 		"windows": [
@@ -61,8 +61,10 @@
 		"externalBin": ["binaries/ffmpeg"],
 		"resources": {
 			"../LICENSE": "licenses/BYTECAPTIONS-LICENSE.txt",
-			"licenses/FFMPEG-LICENSE.txt": "licenses/FFMPEG-LICENSE.txt",
-			"licenses/SPEAKER-MODELS.txt": "licenses/SPEAKER-MODELS.txt"
+			"licenses/THIRD-PARTY-NOTICES.txt": "licenses/THIRD-PARTY-NOTICES.txt",
+			"licenses/ONNXRUNTIME-LICENSE.txt": "licenses/ONNXRUNTIME-LICENSE.txt",
+			"licenses/ONNXRUNTIME-THIRD-PARTY-NOTICES.txt": "licenses/ONNXRUNTIME-THIRD-PARTY-NOTICES.txt",
+			"licenses/MODELS.txt": "licenses/MODELS.txt"
 		}
 	},
 	"plugins": {

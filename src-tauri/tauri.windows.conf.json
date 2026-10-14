@@ -6,7 +6,6 @@
 			"licenses/FFMPEG-LICENSE.txt": "licenses/FFMPEG-LICENSE.txt",
 			"licenses/VULKAN-RUNTIME-LICENSE.txt": "licenses/VULKAN-RUNTIME-LICENSE.txt",
 			"binaries/vulkan/vulkan-1.dll": "vulkan/vulkan-1.dll",
-			"licenses/SPEAKER-MODELS.txt": "licenses/SPEAKER-MODELS.txt",
 			"licenses/DIRECTML-LICENSE.txt": "licenses/DIRECTML-LICENSE.txt",
 			"binaries/directml/DirectML.dll": "DirectML.dll"
 		}

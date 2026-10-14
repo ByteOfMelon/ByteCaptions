@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="32"
+   height="32"
+   viewBox="0 0 8.4666667 8.4666666"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   sodipodi:docname="bytecaptions.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showguides="false"
+     inkscape:zoom="17.165001"
+     inkscape:cx="19.079521"
+     inkscape:cy="18.20565"
+     inkscape:window-width="1920"
+     inkscape:window-height="1116"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="MelonLogo1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-21.357869,-98.595015)">
+    <g
+       id="g2"
+       inkscape:label="Logo"
+       transform="matrix(0.14685479,0,0,0.14685479,18.552848,84.115865)">
+      <path
+         style="fill:#d72b2b;fill-opacity:1;stroke-width:4.79455;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke fill markers"
+         d="m 71.625085,104.27064 -47.613631,12.75788 a 24.647228,24.647228 0 0 0 30.186271,17.42839 24.647228,24.647228 0 0 0 17.42736,-30.18627 z m -10.359057,11.93674 v 0.001 c 3.658655,0.0929 5.02256,1.07745 4.759916,2.281 v 0.001 5.2e-4 l -5.17e-4,5.2e-4 v 5.1e-4 l -5.17e-4,0.004 c -0.364086,1.60161 -3.181682,1.62213 -9.20874,-2.05155 l -0.01757,-0.004 c 0.0029,0 0.0043,-5e-4 0.0072,-0.001 -0.0014,-0.002 -0.0028,-0.003 -0.0057,-0.006 l 0.01757,0.004 c 1.754135,-0.192 3.22877,-0.26096 4.448307,-0.22996 z m -7.344255,2.85047 0.01137,0.0114 c 6.33349,3.11584 7.827789,5.50446 6.671427,6.67091 l -0.0031,10e-4 -5.17e-4,5.2e-4 h -5.17e-4 v 5.2e-4 h -5.16e-4 -5.17e-4 l -5.17e-4,5.1e-4 h 10e-4 c -1.166434,1.15638 -3.555087,-0.33794 -6.670911,-6.67143 l -0.01292,-0.0124 c 0.0014,0.001 0.0027,0.002 0.0036,0.002 0.0012,5e-4 0.0028,0.001 0.0041,0.002 -9.75e-4,-0.002 -0.0016,-0.004 -0.0021,-0.005 z m -10.98951,1.09089 c -7.87e-4,10e-4 -0.0015,0.003 -0.0021,0.004 l -5.17e-4,5.2e-4 v 5.2e-4 5.1e-4 5.2e-4 c 7.97e-4,-1.1e-4 0.0022,1.7e-4 0.0031,0 l 5.17e-4,-5.2e-4 h 5.16e-4 l -0.01085,0.0114 c -3.382749,6.19505 -5.83281,7.5855 -6.948929,6.38049 l -0.0021,-0.003 v -5.2e-4 h -5.17e-4 l -5.17e-4,-5.1e-4 -10e-4,-0.001 c -1.105633,-1.21463 0.488999,-3.53725 6.949447,-6.38049 z m 7.5861,0.56637 0.0047,0.0171 c 3.927043,5.86513 4.026894,8.68064 2.442229,9.11262 l -0.0031,5.1e-4 c -8.25e-4,1.9e-4 -0.0019,4e-4 -0.0026,5.2e-4 h -5.17e-4 c -1.588333,0.41829 -2.910072,-2.06922 -2.441711,-9.1121 l -0.0026,-0.0129 5.17e-4,5.1e-4 5.17e-4,5.2e-4 h 5.16e-4 l 5.17e-4,5.2e-4 h 5.17e-4 l 5.17e-4,5.1e-4 c -1.13e-4,-0.004 2.92e-4,-0.005 5.16e-4,-0.008 z m -3.782198,0.26407 c 4.5e-5,0.002 2.95e-4,0.004 5.17e-4,0.007 3.15e-4,-1.6e-4 7.67e-4,-3.6e-4 10e-4,-5.1e-4 v -5.2e-4 h 5.16e-4 v -5.2e-4 h 5.17e-4 l 5.17e-4,-5.1e-4 h 5.17e-4 l 5.16e-4,-5.2e-4 5.17e-4,-5.2e-4 -0.0036,0.015 c 0.468365,7.0429 -0.853358,9.53085 -2.441712,9.11262 -0.0011,-2e-4 -0.0016,-2.7e-4 -0.0026,-5.2e-4 l -0.0031,-0.001 c -1.584668,-0.43199 -1.48533,-3.24748 2.441711,-9.11262 z"
+         id="path1"
+         inkscape:label="melon" />
+      <path
+         style="fill:#2eb64e;stroke-width:4.79455;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke fill markers"
+         d="M 74.496745,119.99629 A 29.138526,29.138526 0 0 1 54.972872,137.34924 29.138526,29.138526 0 0 1 21.357869,122.21321 v 13.19661 c 0,3.324 2.675634,6.00015 5.999634,6.00015 h 31.507121 l 15.632121,14.83837 z"
+         id="path2"
+         inkscape:label="b2" />
+      <path
+         style="fill:#2eb64e;stroke-width:4.79455;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke fill markers"
+         d="m 27.357503,98.595015 c -3.324,0 -5.999634,2.675635 -5.999634,5.999635 v 11.59567 l 52.599374,-14.09423 c -0.944236,-2.06962 -3.028834,-3.501075 -5.460132,-3.501075 z"
+         id="rect1"
+         inkscape:label="b1" />
+    </g>
+  </g>
+</svg>
