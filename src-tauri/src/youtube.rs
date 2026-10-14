@@ -464,7 +464,7 @@ pub async fn youtube_sign_out(yt: State<'_, YouTube>) -> Result<(), YtError> {
 	Ok(())
 }
 
-/// "PT1H2M3S" → milliseconds
+/// "PT1H2M3S" -> milliseconds
 fn iso_duration_ms(s: &str) -> u64 {
 	let mut total = 0f64;
 	let mut num = String::new();

@@ -146,7 +146,7 @@ mod linux {
 		stream.write_all(out.as_bytes()).await
 	}
 
-	/// "bytes=START-END", "bytes=START-" or "bytes=-SUFFIX" → inclusive (start, end)
+	/// "bytes=START-END", "bytes=START-" or "bytes=-SUFFIX" -> inclusive (start, end)
 	fn parse_range(value: &str, size: u64) -> Option<(u64, u64)> {
 		let spec = value.strip_prefix("bytes=")?.split(',').next()?.trim();
 		let (a, b) = spec.split_once('-')?;

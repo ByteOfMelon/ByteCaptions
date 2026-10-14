@@ -227,7 +227,6 @@ mod tests {
 
         let phi = array![1.0, 1.0];
 
-        // AHC-like init: first 3 → speaker 0, last 3 → speaker 1
         let mut gamma_init = Array2::zeros((6, 2));
         for t in 0..3 {
             gamma_init[[t, 0]] = 0.999;

@@ -1,6 +1,14 @@
-# ByteCaptions
+<p align="center">
+	<img src="public/wordmark.svg" alt="ByteCaptions" width="480" />
+</p>
 
-The open-source video-editing-style subtitle editor. A better README will be made shortly, this is only public for right now to test the auto updater. Feel free to use it though and give me feedback!
+<p align="center">
+  <i>The open-source video-editing-style subtitle editor.</i>
+  <br>
+  <span>Logo by <a href="https://superhell.org" target="_blank" rel="noopener noreferrer">midnaw</a></span>
+</p>
+
+A better README will be made shortly, this is only public for right now to test the auto updater. Feel free to use it though and give me feedback!
 
 ## Compatibility across devices
 

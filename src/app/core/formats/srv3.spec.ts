@@ -109,7 +109,6 @@ describe('SRV3 import', () => {
 		expect(p.positions[sign.positionId!]).toMatchObject({ anchor: 0, align: 'left' });
 		expect(p.positions[sign.positionId!].x).toBeCloseTo(10, 0);
 
-		// Re-exporting the imported project is stable (ignoring t=0 → t=1 shift).
 		expect(exportSrv3(p).xml).toBe(xml);
 	});
 

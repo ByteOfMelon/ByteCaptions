@@ -48,15 +48,9 @@
 	outline: none;
 	box-shadow: var(--focus-ring);
 }
-.logo {
-	flex-shrink: 0;
-	width: 24px;
-	height: 24px;
-	color: var(--color-brand);
-}
-.app-name {
-	font-weight: 900;
-	white-space: nowrap;
+.wordmark {
+	display: block;
+	height: 32px;
 }
 .project {
 	overflow: hidden;

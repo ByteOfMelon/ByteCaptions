@@ -24,15 +24,9 @@
 	gap: var(--spacing-sm);
 	text-align: center;
 }
-.logo {
-	display: flex;
-	align-items: center;
-	gap: var(--spacing-md);
-}
-.logo-icon {
-	width: 40px;
-	height: 40px;
-	color: var(--color-brand);
+.wordmark img {
+	display: block;
+	height: 48px;
 }
 h1,
 h2,

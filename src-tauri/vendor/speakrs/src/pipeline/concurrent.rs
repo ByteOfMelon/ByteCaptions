@@ -446,7 +446,6 @@ impl<'a> ConcurrentEmbeddingRunner<'a> {
         );
 
         let seg = self.require_segmentations(seg_array, chunk_idx)?;
-        // all speakers inactive → no flush happened, emb_array stays None
         let emb = emb_array
             .unwrap_or_else(|| Array3::from_elem((chunk_idx, self.num_speakers, 256), f32::NAN));
 

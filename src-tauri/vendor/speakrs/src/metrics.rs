@@ -88,7 +88,7 @@ pub fn compute_der(reference: &[Segment], hypothesis: &[Segment]) -> DerResult {
         }
     }
 
-    // find optimal 1-to-1 mapping (ref_idx → hyp_idx)
+    // find optimal 1-to-1 mapping (ref_idx -? hyp_idx)
     let mapping = optimal_mapping(&cooccurrence, ref_speakers.len(), hyp_speakers.len());
 
     // compute DER components using the optimal mapping
@@ -358,7 +358,7 @@ mod tests {
     fn partial_overlap_with_confusion() {
         // ref: A speaks 0-10
         // hyp: X speaks 0-5, Y speaks 5-10
-        // optimal: map A→X or A→Y, either way 5s is confused
+        // optimal: map A->X or A->Y, either way 5s is confused
         let reference = vec![Segment::new(0.0, 10.0, "A")];
         let hypothesis = vec![Segment::new(0.0, 5.0, "X"), Segment::new(5.0, 10.0, "Y")];
         let result = compute_der(&reference, &hypothesis);

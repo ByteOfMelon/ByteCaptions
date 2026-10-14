@@ -102,6 +102,9 @@
 				},
 				{
 					"url": "https://studio.youtube.com/video/*"
+				},
+				{
+					"url": "https://superhell.org"
 				}
 			]
 		}
