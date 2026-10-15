@@ -1,5 +1,4 @@
-//! Speaker separation with pyannote community-1, via a vendored speakrs (see PATCHES.md).
-//! Its models (about 60 MB) download on first use, pinned and hash-checked
+//! Speaker separation using pyannote community-1, via a vendored speakrs package. Its models download on first use
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -122,7 +121,7 @@ pub async fn speakers_download(
 	Ok(())
 }
 
-/// One speaker's stretch. Speakers are numbered by talk time, 0 the most
+/// One speaker's stretch. Speakers are numbered by talk time, 0 is the most talkative
 #[derive(Serialize)]
 pub struct Turn {
 	start: i64,
@@ -133,7 +132,7 @@ pub struct Turn {
 #[derive(Clone, Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum SpeakerEvent {
-	/// The audio is decoded; the models are running
+	/// The audio is decoded and the models are running
 	Extracted,
 }
 
@@ -169,7 +168,6 @@ fn run(
 	let result = pipeline
 		.run_with_config(&audio, "media", &config)
 		.map_err(|e| fail(&e))?;
-	// The pipeline can't stop part-way; drop its result if the user cancelled meanwhile
 	if cancel.load(Ordering::Relaxed) {
 		return Err(CANCELLED.into());
 	}

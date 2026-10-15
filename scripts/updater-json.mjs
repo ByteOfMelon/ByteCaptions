@@ -1,8 +1,5 @@
 // Writes latest.json, the file the app's updater checks, from a release's update packages and their .sig files
-// Usage: node scripts/updater-json.mjs <tag> <dir with the .sig files> <release notes file>
-//
-// The release workflow runs this once after every platform is built (see .github/workflows/build.yml).
-// Each platform job writing its own entry instead lost entries when the jobs finished at the same time.
+// The release workflow runs this once after every platform is built (see .github/workflows/build.yml)
 
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,8 +8,7 @@ const [tag, dir, notesFile] = process.argv.slice(2);
 const version = tag.replace(/^v/, '');
 const base = `https://github.com/ByteOfMelon/ByteCaptions/releases/download/${tag}/`;
 
-// Platform keys the updater asks for, and the package each one installs. The first key per
-// package is the default for that OS (e.g. Windows installs the NSIS setup, not the .msi)
+// Platform keys the updater asks for, and the package each one installs
 const PACKAGES = [
 	[/_aarch64\.app\.tar\.gz$/, ['darwin-aarch64', 'darwin-aarch64-app']],
 	[/_x64\.app\.tar\.gz$/, ['darwin-x86_64', 'darwin-x86_64-app']],

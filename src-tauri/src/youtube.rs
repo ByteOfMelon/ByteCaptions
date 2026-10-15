@@ -1,8 +1,4 @@
-//! YouTube sign-in and caption upload
-//!
-//! Sign-in is Google's desktop flow: consent in the browser, redirected with a PKCE code to a
-//! one-off loopback server. The refresh token lives in the OS keyring; access tokens only in
-//! memory
+//! YouTube sign-in and caption uploading
 
 use std::time::{Duration, Instant};
 
@@ -23,7 +19,7 @@ const TOKEN_URL: &str = "https://oauth2.googleapis.com/token";
 const REVOKE_URL: &str = "https://oauth2.googleapis.com/revoke";
 const API: &str = "https://www.googleapis.com/youtube/v3";
 const UPLOAD_API: &str = "https://www.googleapis.com/upload/youtube/v3";
-/// Captions need this scope even to list them; it also covers listing the channel's videos
+/// Captions need this scope even to list them
 const SCOPE: &str = "https://www.googleapis.com/auth/youtube.force-ssl";
 const KEYRING_SERVICE: &str = "ByteCaptions";
 const KEYRING_USER: &str = "youtube";
@@ -284,7 +280,7 @@ async fn receive_code(listener: &TcpListener, state: &str) -> Result<String, YtE
 			})
 		};
 		let (code, error) = (param("code"), param("error"));
-		// The browser may also ask for a favicon; only the redirect itself matters
+		// The browser may also ask for a favicon, but only the redirect itself matters
 		if code.is_none() && error.is_none() {
 			let _ = stream
 				.write_all(
@@ -329,7 +325,7 @@ pub fn youtube_available() -> bool {
 	client().is_ok()
 }
 
-/// The signed-in channel, or None
+/// Returns the currently signed-in channel
 #[tauri::command]
 pub async fn youtube_account(yt: State<'_, YouTube>) -> Result<Option<Account>, YtError> {
 	client()?;
@@ -454,7 +450,6 @@ pub async fn youtube_sign_out(yt: State<'_, YouTube>) -> Result<(), YtError> {
 	let refresh = stored_refresh_token()?;
 	forget_refresh_token();
 	if let Some(t) = refresh {
-		// Best effort: the token is gone from this computer either way
 		let _ = reqwest::Client::new()
 			.post(REVOKE_URL)
 			.form(&[("token", t.as_str())])
@@ -564,7 +559,7 @@ pub async fn youtube_videos(
 	})
 }
 
-/// One video by ID, e.g. pasted into the search box
+/// Get one video by ID
 #[tauri::command]
 pub async fn youtube_video(yt: State<'_, YouTube>, id: String) -> Result<Option<Video>, YtError> {
 	Ok(videos_by_id(&yt, &[id]).await?.into_iter().next())
@@ -599,7 +594,7 @@ pub async fn youtube_captions(
 		.unwrap_or_default())
 }
 
-/// A multipart/related body: the caption's metadata, then its file
+/// A multipart/related body - the caption's metadata, then its file
 fn multipart(metadata: &Value, content: &str) -> (String, Vec<u8>) {
 	let boundary = format!("bytecaptions-{}", random_code(12));
 	let mut body = Vec::new();
@@ -615,9 +610,7 @@ fn multipart(metadata: &Value, content: &str) -> (String, Vec<u8>) {
 	(format!("multipart/related; boundary={boundary}"), body)
 }
 
-/// `replace` is an existing track in the same language: one with the same name is updated
-/// in place; otherwise the new track is added and the old one deleted after, so a failed
-/// upload never loses captions
+/// `replace` is an existing track in the same language
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub async fn youtube_upload(
@@ -672,7 +665,6 @@ pub async fn youtube_upload(
 	};
 	let _ = on_event.send(UploadEvent::Uploaded);
 
-	// Read it back, so "done" means YouTube has it
 	let tracks = youtube_captions(yt, video_id).await?;
 	let caption = tracks.into_iter().find(|c| c.id == id).ok_or_else(|| {
 		err(

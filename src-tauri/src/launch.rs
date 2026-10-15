@@ -1,4 +1,4 @@
-//! The project file the app was opened with, e.g. by double-clicking a .bcproj
+//! Initialize the project file that the app was opened with
 
 use std::sync::Mutex;
 

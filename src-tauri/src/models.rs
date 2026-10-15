@@ -1,5 +1,4 @@
-//! Whisper models (ggml), downloaded from Hugging Face on first use and checked against the
-//! SHA-256 it publishes
+//! Whisper models (ggml), downloaded from Hugging Face on first use and checked against a SHA-256 hash
 
 use std::io::Write;
 use std::path::PathBuf;
@@ -131,8 +130,7 @@ pub async fn model_download(
 	download_verified(&url, &target, &sha256, total, &cancel, &on_progress).await
 }
 
-/// Download `url` to `target`, keeping it only if its SHA-256 matches. `total` is the
-/// expected size, for when the response doesn't say
+/// Download a file and verify its SHA-256 hash
 pub async fn download_verified(
 	url: &str,
 	target: &std::path::Path,
@@ -195,7 +193,6 @@ pub async fn download_verified(
 	}
 }
 
-/// Lowercase hex, as Hugging Face gives checksums
 fn hex(bytes: &[u8]) -> String {
 	bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
