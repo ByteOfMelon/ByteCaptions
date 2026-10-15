@@ -14,7 +14,7 @@ type Migration = (raw: Record<string, unknown>) => Record<string, unknown>;
 const migrations: Record<number, Migration> = {};
 
 export function serializeProject(project: Project): string {
-	return JSON.stringify({ ...project, schemaVersion: SCHEMA_VERSION }, null, '\t');
+	return JSON.stringify({ ...project, schemaVersion: SCHEMA_VERSION });
 }
 
 export function parseProject(json: string): Project {
