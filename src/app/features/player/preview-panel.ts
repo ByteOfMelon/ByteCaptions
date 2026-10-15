@@ -29,7 +29,7 @@ import * as edits from '../../core/commands/edits';
 import { cueText, resolvePosition, resolveStyle } from '../../core/model/cue';
 import { karaokeRuns, sungAt } from '../../core/model/karaoke';
 import { mobileOverride, mobileStyle } from '../../core/model/mobile';
-import { CaptionStyle, TextRun } from '../../core/model/types';
+import { Anchor, CaptionStyle, Position, TextRun } from '../../core/model/types';
 import { formatTimecode } from '../../core/time/timecode';
 import { FileDrop } from '../../state/file-drop';
 import { VIDEO_FILTER, basename, isDesktop, openFile } from '../../state/file-io';
@@ -40,11 +40,14 @@ import { Autofocus } from '../../ui/autofocus/autofocus';
 import { Button, IconButton } from '../../ui/button/button';
 import { Select } from '../../ui/select/select';
 import { Tooltip } from '../../ui/tooltip/tooltip';
+import { positionForAnchor } from '../inspector/anchor-picker';
+import { DRAG_START_MS, DRAG_START_PX, positionFromBox } from './caption-drag';
 import {
 	captionTextStyle,
 	captionWindowStyle,
 	offsetScale,
 	runOffsetStyle,
+	ytSafeArea,
 } from './caption-render';
 import { PLAYBACK_RATES, Playback } from './playback';
 
@@ -107,6 +110,15 @@ export class PreviewPanel {
 	protected readonly showCaptions = signal(true);
 	/** Cue whose caption is being edited in place (double-click) */
 	protected readonly editing = signal<string | null>(null);
+	/** Caption being dragged to a new position, and where it would drop */
+	protected readonly moving = signal<{ id: string; pos: Position } | null>(null);
+	protected readonly safeArea = ytSafeArea;
+	/** The 3x3 picker's positions, shown while dragging a caption */
+	protected readonly snapPoints = ([0, 1, 2, 3, 4, 5, 6, 7, 8] as Anchor[]).map((anchor) => {
+		const { x = 50, y = 90 } = positionForAnchor(anchor);
+
+		return { anchor, left: ytSafeArea(x), top: ytSafeArea(y) };
+	});
 	private readonly drop = inject(FileDrop);
 	/** State of when file is being dragged over the window) */
 	protected readonly dragging = computed(() => !!this.drop.hover());
@@ -138,7 +150,8 @@ export class PreviewPanel {
 
 			if (mobile) style = mobileStyle(style);
 
-			const pos = resolvePosition(p, track, cue);
+			const moved = this.moving();
+			const pos = moved?.id === cue.id ? moved.pos : resolvePosition(p, track, cue);
 			const textStyle = captionTextStyle(style, Math.max(1, fontPx / 18));
 
 			if (plain) {
@@ -162,6 +175,7 @@ export class PreviewPanel {
 			return {
 				id: cue.id,
 				locked: track.locked,
+				moving: moved?.id === cue.id,
 				selected: this.store.selection().has(cue.id),
 				// Karaoke - words already sung take the karaoke color
 				lines: lines(
@@ -370,6 +384,81 @@ export class PreviewPanel {
 	protected select(e: MouseEvent, id: string): void {
 		e.stopPropagation();
 		this.store.select(id);
+	}
+
+	/**
+	 * Drag a caption to a new position
+	 */
+	protected startMove(e: PointerEvent, id: string, locked: boolean): void {
+		if (locked || e.button !== 0 || this.mode() === 'plain') return;
+
+		const row = this.store.activeCues().find((r) => r.cue.id === id);
+
+		if (!row) return;
+
+		// Keeps the drag from selecting text
+		e.preventDefault();
+		const base = resolvePosition(this.store.project(), row.track, row.cue);
+		const start = { x: e.clientX, y: e.clientY, t: performance.now() };
+		const box = (e.currentTarget as HTMLElement).getBoundingClientRect();
+		let started = false;
+
+		const move = (ev: PointerEvent) => {
+			const dx = ev.clientX - start.x;
+			const dy = ev.clientY - start.y;
+
+			if (!started) {
+				if (
+					Math.hypot(dx, dy) < DRAG_START_PX ||
+					performance.now() - start.t < DRAG_START_MS
+				)
+					return;
+
+				started = true;
+				this.store.select(id);
+			}
+
+			const frame = this.frame().nativeElement.getBoundingClientRect();
+			const pos = positionFromBox(
+				{
+					left: ((box.left + dx - frame.left) / frame.width) * 100,
+					top: ((box.top + dy - frame.top) / frame.height) * 100,
+					width: (box.width / frame.width) * 100,
+					height: (box.height / frame.height) * 100,
+				},
+				base,
+			);
+			this.moving.set({ id, pos });
+		};
+		const end = (drop: boolean) => {
+			window.removeEventListener('pointermove', move);
+			window.removeEventListener('pointerup', up);
+			window.removeEventListener('pointercancel', cancel);
+			window.removeEventListener('keydown', key, true);
+			const moved = this.moving();
+			this.moving.set(null);
+
+			if (
+				drop &&
+				moved &&
+				(Object.keys(base) as (keyof Position)[]).some((k) => base[k] !== moved.pos[k])
+			)
+				this.store.apply('Move caption', edits.setPosition([id], moved.pos));
+		};
+		const up = () => end(true);
+		const cancel = () => end(false);
+		const key = (ev: KeyboardEvent) => {
+			if (ev.key !== 'Escape' || !started) return;
+
+			ev.preventDefault();
+			ev.stopPropagation();
+			end(false);
+		};
+
+		window.addEventListener('pointermove', move);
+		window.addEventListener('pointerup', up);
+		window.addEventListener('pointercancel', cancel);
+		window.addEventListener('keydown', key, true);
 	}
 
 	protected edit(id: string, locked: boolean): void {

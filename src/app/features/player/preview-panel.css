@@ -113,6 +113,26 @@ video {
 	white-space: pre-wrap;
 	cursor: default;
 }
+.caption-window.moving {
+	cursor: grabbing;
+	outline: 1px dashed rgb(255 255 255 / 0.8);
+	outline-offset: 2px;
+}
+.snap-point {
+	position: absolute;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: rgb(255 255 255 / 0.6);
+	box-shadow: 0 0 0 1px rgb(0 0 0 / 0.5);
+	transform: translate(-50%, -50%);
+	pointer-events: none;
+}
+.snap-point.active {
+	width: 12px;
+	height: 12px;
+	background: var(--color-brand);
+}
 .caption-window.editing {
 	border-radius: 2px;
 	box-shadow: 0 0 0 2px var(--color-text);

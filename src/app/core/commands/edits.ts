@@ -13,6 +13,7 @@ import {
 	Marker,
 	MarkerId,
 	Ms,
+	Position,
 	Project,
 	Track,
 	TrackId,
@@ -192,6 +193,31 @@ export function setKaraoke(ids: CueId[], changes: { on?: boolean; color?: string
 				cue.karaoke = true;
 			}
 		}
+	};
+}
+
+/**
+ * Point cues at a position
+ */
+export function setPosition(ids: Iterable<CueId>, want: Position) {
+	const targets = new Set(ids);
+
+	return (p: P) => {
+		const same = (a: Position) =>
+			(Object.keys(want) as (keyof Position)[]).every((k) => a[k] === want[k]);
+		let posId = Object.keys(p.positions).find((id) => same(p.positions[id]));
+
+		if (!posId) {
+			posId = newId('pos');
+			p.positions[posId] = want;
+		}
+
+		for (const t of p.tracks)
+			for (const c of t.cues)
+				if (targets.has(c.id)) {
+					if (posId === t.defaultPositionId) delete c.positionId;
+					else c.positionId = posId;
+				}
 	};
 }
 

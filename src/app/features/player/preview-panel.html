@@ -62,7 +62,9 @@
 					<div
 						class="caption-window"
 						[class.locked]="c.locked"
+						[class.moving]="c.moving"
 						[style]="c.window"
+						(pointerdown)="startMove($event, c.id, c.locked)"
 						(click)="select($event, c.id)"
 						(dblclick)="edit(c.id, c.locked)"
 					>
@@ -78,6 +80,18 @@
 						}
 					</div>
 				}
+			}
+		}
+		@if (moving(); as m) {
+			@for (s of snapPoints; track s.anchor) {
+				<span class="snap-point" [style.left.%]="s.left" [style.top.%]="s.top"></span>
+			}
+			@if (m.pos.name !== 'Custom') {
+				<span
+					class="snap-point active"
+					[style.left.%]="safeArea(m.pos.x)"
+					[style.top.%]="safeArea(m.pos.y)"
+				></span>
 			}
 		}
 		@if (formatBar(); as bar) {

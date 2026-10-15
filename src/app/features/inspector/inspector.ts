@@ -1,7 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
-import { setKaraoke } from '../../core/commands/edits';
+import { setKaraoke, setPosition } from '../../core/commands/edits';
 import { resolvePosition, resolveStyle } from '../../core/model/cue';
-import { newId } from '../../core/model/defaults';
 import { DEFAULT_KARAOKE_COLOR, KARAOKE_COLORS } from '../../core/model/karaoke';
 import { Position, StyleId } from '../../core/model/types';
 import { ProjectStore } from '../../state/project-store';
@@ -97,24 +96,7 @@ export class Inspector {
 
 		if (!s) return;
 
-		const ids = new Set(this.store.selectedCues().map((r) => r.cue.id));
-		const want: Position = { ...s.position, ...changes };
-		this.store.apply('Change position', (p) => {
-			const same = (a: Position) =>
-				(Object.keys(want) as (keyof Position)[]).every((k) => a[k] === want[k]);
-			let posId = Object.keys(p.positions).find((id) => same(p.positions[id]));
-
-			if (!posId) {
-				posId = newId('pos');
-				p.positions[posId] = want;
-			}
-
-			for (const t of p.tracks)
-				for (const c of t.cues)
-					if (ids.has(c.id)) {
-						if (posId === t.defaultPositionId) delete c.positionId;
-						else c.positionId = posId;
-					}
-		});
+		const ids = this.store.selectedCues().map((r) => r.cue.id);
+		this.store.apply('Change position', setPosition(ids, { ...s.position, ...changes }));
 	}
 }
