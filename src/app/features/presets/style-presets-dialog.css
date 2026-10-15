@@ -151,3 +151,16 @@
 .delete:not(:disabled) {
 	color: var(--color-danger);
 }
+
+.library-status {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-xs);
+	margin-left: var(--spacing-sm);
+	color: var(--color-text-faded);
+}
+.library-status svg {
+	width: 16px;
+	height: 16px;
+	color: var(--color-success);
+}

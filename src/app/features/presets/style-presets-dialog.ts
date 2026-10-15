@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
-import { LucidePlus } from '@lucide/angular';
+import { LucideCheck, LucideLibrary, LucidePlus } from '@lucide/angular';
 import { cueText } from '../../core/model/cue';
 import {
 	DEFAULT_POSITION_ID,
@@ -9,10 +9,11 @@ import {
 } from '../../core/model/defaults';
 import { mobileStyle } from '../../core/model/mobile';
 import { CaptionStyle, PosId, Position, StyleId } from '../../core/model/types';
+import { PresetLibrary } from '../../state/preset-library';
 import { ProjectStore } from '../../state/project-store';
 import { Button } from '../../ui/button/button';
 import { count } from '../../ui/count/count';
-import { Dialog, DialogRef } from '../../ui/dialog/dialog';
+import { Dialog, DialogRef, Dialogs } from '../../ui/dialog/dialog';
 import { Field } from '../../ui/field/field';
 import { Select } from '../../ui/select/select';
 import { Tabs } from '../../ui/tabs/tabs';
@@ -21,9 +22,13 @@ import { AnchorPicker } from '../inspector/anchor-picker';
 import { StyleChange, StyleFields } from '../inspector/style-fields';
 import { captionTextStyle, captionWindowStyle, offsetScale } from '../player/caption-render';
 import { StyleChip } from '../player/style-chip';
+import { LibraryImportDialog } from './library-import-dialog';
 
 type Backdrop = 'frame' | 'bright' | 'dark';
 type PreviewMode = 'desktop' | 'mobile';
+
+/** How long the Save to library result stays in the footer */
+const STATUS_MS = 4000;
 
 /**
  * Edit project presets against a live caption sample
@@ -41,12 +46,16 @@ type PreviewMode = 'desktop' | 'mobile';
 		StyleFields,
 		AnchorPicker,
 		LucidePlus,
+		LucideLibrary,
+		LucideCheck,
 	],
 	templateUrl: './style-presets-dialog.html',
 	styleUrl: './style-presets-dialog.css',
 })
 export class StylePresetsDialog implements OnInit {
 	private readonly store = inject(ProjectStore);
+	private readonly library = inject(PresetLibrary);
+	private readonly dialogs = inject(Dialogs);
 	protected readonly ref = inject(DialogRef);
 	/** Preset to open on; defaults to the selected cue's */
 	readonly initialStyleId = input<StyleId>();
@@ -62,6 +71,9 @@ export class StylePresetsDialog implements OnInit {
 	protected readonly backdrop = signal<Backdrop>('frame');
 	protected readonly previewMode = signal<PreviewMode>('desktop');
 	protected readonly dirty = signal(false);
+	/** Result of the last Save to library, shown briefly in the footer */
+	protected readonly libraryStatus = signal<string | null>(null);
+	private statusTimer?: ReturnType<typeof setTimeout>;
 	protected readonly nameDraft = signal<string | null>(null);
 	protected readonly nameError = computed(() =>
 		this.nameDraft()?.trim() === '' ? 'Preset name can’t be empty.' : null,
@@ -212,6 +224,36 @@ export class StylePresetsDialog implements OnInit {
 		this.styles.update((all) => ({ ...all, [id]: { ...src, name: `${src.name} copy` } }));
 		this.dirty.set(true);
 		this.select(id);
+	}
+
+	/** Copy presets picked from the library into the project, and select the first */
+	protected async importFromLibrary(): Promise<void> {
+		const styles = await this.dialogs.open<LibraryImportDialog, CaptionStyle[]>(
+			LibraryImportDialog,
+			{ inputs: { existingNames: Object.values(this.styles()).map((s) => s.name) } },
+		).closed;
+
+		if (!styles?.length) return;
+
+		const added = styles.map((style) => [newId('style'), style] as const);
+		this.styles.update((all) => ({ ...all, ...Object.fromEntries(added) }));
+		this.dirty.set(true);
+		this.select(added[0][0]);
+	}
+
+	/** Copy the selected preset to the library */
+	protected async saveToLibrary(): Promise<void> {
+		const [result] = await this.library.add([this.current()]);
+
+		if (!result || this.library.error()) return;
+
+		this.libraryStatus.set(
+			result.existing
+				? `Already in your library as ${result.name}`
+				: `Saved to library as ${result.name}`,
+		);
+		clearTimeout(this.statusTimer);
+		this.statusTimer = setTimeout(() => this.libraryStatus.set(null), STATUS_MS);
 	}
 
 	/** Cues and tracks on a deleted preset fall back to the default preset when saved */

@@ -1,0 +1,78 @@
+<div class="toolbar">
+	<span class="text-small text-faded">{{ total() }}</span>
+	<button bcButton (click)="library.importFile()">Import…</button>
+	<button bcButton [disabled]="!rows().length" (click)="library.exportFile()">Export…</button>
+</div>
+
+<div class="list" role="listbox" aria-label="Style library">
+	@for (p of rows(); track p.id) {
+		<div
+			class="row"
+			role="option"
+			tabindex="0"
+			[attr.aria-selected]="p.id === selectedId()"
+			(click)="selectedId.set(p.id)"
+			(keydown.enter)="selectedId.set(p.id)"
+		>
+			<bc-style-chip large [style]="p.style" />
+			<span class="text">
+				@if (renaming() === p.id) {
+					<input
+						class="rename"
+						aria-label="Preset name"
+						bcAutofocus
+						[value]="p.style.name"
+						(click)="$event.stopPropagation()"
+						(keydown)="onRenameKey($event, p.id)"
+						(blur)="finishRename(p.id, $any($event.target).value)"
+					/>
+				} @else {
+					<span class="name">{{ p.style.name }}</span>
+				}
+				<span class="text-small text-faded summary">{{ p.summary }}</span>
+			</span>
+			<span class="actions">
+				<button
+					bcIconButton
+					variant="ghost"
+					bcTooltip="Rename"
+					[attr.aria-label]="'Rename ' + p.style.name"
+					(click)="$event.stopPropagation(); startRename(p.id)"
+				>
+					<svg lucidePencil></svg>
+				</button>
+				<button
+					bcIconButton
+					variant="ghost"
+					bcTooltip="Duplicate"
+					[attr.aria-label]="'Duplicate ' + p.style.name"
+					(click)="$event.stopPropagation(); duplicate(p.id)"
+				>
+					<svg lucideCopy></svg>
+				</button>
+				<button
+					bcIconButton
+					variant="ghost"
+					class="delete"
+					bcTooltip="Delete"
+					[attr.aria-label]="'Delete ' + p.style.name"
+					(click)="$event.stopPropagation(); remove(p.id)"
+				>
+					<svg lucideTrash2></svg>
+				</button>
+			</span>
+		</div>
+	} @empty {
+		<div class="empty">
+			<span class="text-body-bold">Your style library is empty</span>
+			<span class="text-small text-faded">
+				Save a preset to the library from the Style Presets dialog in any project, or import
+				a .bclib file.
+			</span>
+		</div>
+	}
+</div>
+
+@if (library.error(); as error) {
+	<bc-notice tone="danger" heading="Style library" [detail]="error" />
+}

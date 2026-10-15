@@ -1,53 +1,77 @@
-<bc-dialog heading="Settings">
-	<bc-select
-		class="theme"
-		label="Theme"
-		[options]="themes"
-		[value]="theme.preference()"
-		(valueChange)="theme.setPreference($any($event))"
-	/>
-	<section class="layout">
-		<h3 class="text-small">Panel layout</h3>
-		<p class="text-small text-faded">
-			Puts the cue list, inspector and timeline back to their default sizes.
-		</p>
-	</section>
-	<button bcButton class="reset" (click)="resetLayout()">Reset layout</button>
-	@if (isDesktop) {
-		<section class="layout">
-			<h3 class="text-small">Updates</h3>
-			<bc-toggle
-				[checked]="updates.autoCheck()"
-				(checkedChange)="updates.setAutoCheck($event)"
-			>
-				Check for updates when ByteCaptions starts
-			</bc-toggle>
-		</section>
-	}
-	@if (youtube.available()) {
-		<section class="layout">
-			<h3 class="text-small">YouTube</h3>
-			@if (youtube.account(); as a) {
-				<div class="account">
-					@if (a.thumbnail) {
-						<img
-							class="avatar"
-							[src]="a.thumbnail"
-							alt=""
-							referrerpolicy="no-referrer"
-						/>
-					}
-					<span class="text-body-bold">{{ a.title }}</span>
-					<button bcButton class="sign-out" (click)="signOut()">Sign out</button>
-				</div>
-			} @else if (youtube.account() === null) {
-				<p class="text-small text-faded">
-					You aren't currently signed in to YouTube. You'll be able to sign in later when
-					you first upload captions under File -> Upload to YouTube.
-				</p>
-			} @else {
-				<p class="text-small text-faded">Loading your YouTube account information...</p>
+<bc-dialog heading="Settings" [width]="800">
+	<bc-tabs class="on-panel" idPrefix="app-settings" [tabs]="tabs" [(value)]="tab" />
+
+	<div
+		class="panel"
+		role="tabpanel"
+		[id]="'app-settings-panel-' + tab()"
+		[attr.aria-labelledby]="'app-settings-tab-' + tab()"
+	>
+		@switch (tab()) {
+			@case ('general') {
+				<section class="layout">
+					<h3 class="text-heading-3">Theme</h3>
+					<bc-select
+						class="theme"
+						ariaLabel="Theme"
+						[options]="themes"
+						[value]="theme.preference()"
+						(valueChange)="theme.setPreference($any($event))"
+					/>
+				</section>
+				<section class="layout">
+					<h3 class="text-heading-3">Panel layout</h3>
+					<p class="text-small text-faded">
+						Puts the cue list, inspector and timeline back to their default sizes.
+					</p>
+					<button bcButton class="reset" (click)="resetLayout()">Reset layout</button>
+				</section>
+				@if (isDesktop) {
+					<section class="layout">
+						<h3 class="text-heading-3">Updates</h3>
+						<bc-toggle
+							[checked]="updates.autoCheck()"
+							(checkedChange)="updates.setAutoCheck($event)"
+						>
+							Check for updates when ByteCaptions starts
+						</bc-toggle>
+					</section>
+				}
+				@if (youtube.available()) {
+					<section class="layout">
+						<h3 class="text-heading-3">YouTube</h3>
+						@if (youtube.account(); as a) {
+							<div class="account">
+								@if (a.thumbnail) {
+									<img
+										class="avatar"
+										[src]="a.thumbnail"
+										alt=""
+										referrerpolicy="no-referrer"
+									/>
+								}
+								<span class="text-body-bold">{{ a.title }}</span>
+								<button bcButton class="sign-out" (click)="signOut()">
+									Sign out
+								</button>
+							</div>
+						} @else if (youtube.account() === null) {
+							<p class="text-small text-faded">
+								You aren't currently signed in to YouTube. You'll be able to sign in
+								later when you first upload captions under File -> Upload to
+								YouTube.
+							</p>
+						} @else {
+							<p class="text-small text-faded">
+								Loading your YouTube account information...
+							</p>
+						}
+					</section>
+				}
 			}
-		</section>
-	}
+			@case ('library') {
+				<bc-style-library />
+			}
+		}
+	</div>
 </bc-dialog>

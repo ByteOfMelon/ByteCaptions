@@ -1,0 +1,94 @@
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-md);
+}
+
+.toolbar {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+}
+.toolbar span {
+	flex: 1;
+}
+
+.list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+	height: 360px;
+	padding: var(--spacing-sm);
+	overflow-y: auto;
+	border-radius: var(--radius-panel);
+	background: var(--color-bg);
+}
+
+.row {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-md);
+	padding: var(--spacing-sm);
+	border-radius: var(--radius-control);
+	cursor: pointer;
+}
+.row:hover {
+	background: var(--color-card);
+}
+.row[aria-selected='true'] {
+	background: var(--color-selected);
+}
+.row:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+.text {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-width: 0;
+}
+.name,
+.summary {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.rename {
+	padding: 2px var(--spacing-xs);
+	border: var(--outline-width) solid var(--color-control-border);
+	border-radius: var(--radius-small);
+	background: var(--color-bg);
+	color: var(--color-text);
+	font: inherit;
+}
+.rename:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+
+/* Row actions show on the selected or hovered row */
+.actions {
+	display: flex;
+	gap: var(--spacing-xs);
+	visibility: hidden;
+}
+.row:hover .actions,
+.row[aria-selected='true'] .actions,
+.row:focus-within .actions {
+	visibility: visible;
+}
+.delete {
+	color: var(--color-danger);
+}
+
+.empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: var(--spacing-xs);
+	height: 100%;
+	padding: var(--spacing-xl);
+	text-align: center;
+}

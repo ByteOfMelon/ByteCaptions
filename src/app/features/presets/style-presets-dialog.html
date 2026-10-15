@@ -21,6 +21,9 @@
 			<button bcButton variant="ghost" class="new" (click)="create()">
 				<svg lucidePlus></svg>New preset
 			</button>
+			<button bcButton variant="ghost" class="new" (click)="importFromLibrary()">
+				<svg lucideLibrary></svg>Import from library…
+			</button>
 		</nav>
 
 		<section class="preview-col">
@@ -96,6 +99,14 @@
 			<button
 				bcButton
 				variant="ghost"
+				bcTooltip="Use this preset in other projects"
+				(click)="saveToLibrary()"
+			>
+				Save to library
+			</button>
+			<button
+				bcButton
+				variant="ghost"
 				class="delete"
 				[disabled]="selectedId() === defaultId"
 				[bcTooltip]="
@@ -105,6 +116,11 @@
 			>
 				Delete
 			</button>
+			<span class="library-status text-small" role="status">
+				@if (libraryStatus(); as status) {
+					<svg lucideCheck aria-hidden="true"></svg>{{ status }}
+				}
+			</span>
 		</div>
 		<button bcButton (click)="ref.close()">Cancel</button>
 		<button bcButton variant="primary" [disabled]="!!nameError()" (click)="save()">

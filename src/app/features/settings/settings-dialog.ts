@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { confirmAction, isDesktop } from '../../state/file-io';
 import { PanelLayout } from '../../state/panel-layout';
 import { Updates } from '../../state/updates';
@@ -8,20 +8,35 @@ import { Button } from '../../ui/button/button';
 import { Toggle } from '../../ui/controls/controls';
 import { Dialog } from '../../ui/dialog/dialog';
 import { Select } from '../../ui/select/select';
+import { Tabs } from '../../ui/tabs/tabs';
+import { StyleLibrary } from './style-library';
+
+export type AppSettingsTab = 'general' | 'library';
 
 /** App-wide settings (not saved with a project) */
 @Component({
 	selector: 'bc-settings-dialog',
-	imports: [Dialog, Button, Select, Toggle],
+	imports: [Dialog, Button, Select, Tabs, Toggle, StyleLibrary],
 	templateUrl: './settings-dialog.html',
 	styleUrl: './settings-dialog.css',
 })
-export class SettingsDialog {
+export class SettingsDialog implements OnInit {
 	protected readonly theme = inject(ThemeService);
 	private readonly layout = inject(PanelLayout);
 	protected readonly youtube = inject(YouTube);
 	protected readonly updates = inject(Updates);
 	protected readonly isDesktop = isDesktop;
+	readonly initialTab = input<AppSettingsTab>('general');
+
+	protected readonly tabs = [
+		{ value: 'general' as AppSettingsTab, label: 'General' },
+		{ value: 'library' as AppSettingsTab, label: 'Style Library' },
+	];
+	protected readonly tab = signal<AppSettingsTab>('general');
+
+	ngOnInit(): void {
+		this.tab.set(this.initialTab());
+	}
 
 	protected readonly themes: { value: ThemePreference; label: string }[] = [
 		{ value: 'system', label: 'Match system' },

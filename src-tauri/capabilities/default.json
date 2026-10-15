@@ -49,6 +49,9 @@
 			"identifier": "fs:allow-mkdir",
 			"allow": [
 				{
+					"path": "$APPLOCALDATA"
+				},
+				{
 					"path": "$APPLOCALDATA/recovery"
 				},
 				{

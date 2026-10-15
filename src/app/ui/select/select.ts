@@ -34,6 +34,7 @@ let nextId = 0;
 			[attr.aria-expanded]="open()"
 			[attr.aria-controls]="id + '-list'"
 			[attr.aria-labelledby]="label() ? id + '-label' : null"
+			[attr.aria-label]="label() ? null : (ariaLabel() ?? null)"
 			[attr.aria-activedescendant]="open() ? id + '-opt-' + active() : null"
 			[disabled]="disabled()"
 			#trigger
@@ -80,6 +81,8 @@ let nextId = 0;
 })
 export class Select<T = string> {
 	readonly label = input<string>();
+	/** Accessible name when there's no visible label (e.g. a heading names the section) */
+	readonly ariaLabel = input<string>();
 	readonly options = input.required<SelectOption<T>[]>();
 	readonly value = model<T>();
 	readonly disabled = input(false, { transform: booleanAttribute });

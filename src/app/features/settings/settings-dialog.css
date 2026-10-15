@@ -1,3 +1,13 @@
+bc-tabs {
+	align-self: flex-start;
+}
+
+.panel {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xl);
+}
+
 .theme {
 	width: 240px;
 }
