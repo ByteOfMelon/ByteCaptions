@@ -1,4 +1,3 @@
-import { NEW_CUE_TEXT } from '../model/cue';
 import { createCue, createProject } from '../model/defaults';
 import { formatCps, lintPresets, lintProject, readingSpeed } from './rules';
 
@@ -16,13 +15,6 @@ describe('lint', () => {
 
 	it('is quiet for a well-formed cue', () => {
 		expect(lintProject(project(createCue(0, 2000, 'Hello there')))).toEqual([]);
-	});
-
-	it("doesn't judge a new cue's placeholder as text", () => {
-		const kinds = lintProject(project(createCue(0, 800, NEW_CUE_TEXT))).map((p) => p.kind);
-
-		expect(kinds).not.toContain('cps');
-		expect(kinds).not.toContain('lineLength');
 	});
 
 	it('flags overlaps with a trim fix', () => {

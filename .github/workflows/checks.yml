@@ -1,4 +1,4 @@
-# Ensure proper formatting
+# Formatting, lint, tests
 name: Checks
 
 on:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   format:
-    name: Formatting
+    name: Formatting, tests and build
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -19,3 +19,5 @@ jobs:
       - run: npm ci
       - run: npm run format:check
       - run: npm run lint
+      - run: npm test -- --watch=false
+      - run: npm run build
