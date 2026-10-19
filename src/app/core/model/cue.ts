@@ -53,3 +53,26 @@ export function resolvePosition(project: Project, track: Track, cue: Cue): Posit
 		Object.values(project.positions)[0]
 	);
 }
+
+/** Text a new cue starts with */
+export const NEW_CUE_TEXT = 'Type your caption here';
+
+/**
+ * Where a new cue at `at` fits on a track without overlapping
+ */
+export function freeSpan(
+	cues: readonly Cue[],
+	at: number,
+	want: number,
+	minLen: number,
+	limit = Infinity,
+): { start: number; end: number } | null {
+	let start = Math.max(0, Math.round(at));
+
+	for (const c of cues) if (c.start <= start && c.end > start) start = c.end;
+
+	const next = Math.min(limit, ...cues.filter((c) => c.start >= start).map((c) => c.start));
+	const end = Math.min(start + want, next);
+
+	return end - start >= minLen ? { start, end } : null;
+}

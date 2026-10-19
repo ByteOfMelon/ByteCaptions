@@ -39,3 +39,17 @@ h2 {
 .karaoke p {
 	margin: 0;
 }
+
+.formatted {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--spacing-sm);
+}
+.formatted span {
+	flex: 1;
+	min-width: 0;
+}
+.formatted button {
+	flex-shrink: 0;
+}

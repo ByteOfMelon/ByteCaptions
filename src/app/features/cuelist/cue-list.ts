@@ -179,6 +179,12 @@ export class CueList {
 
 		if (t.edge === 'end' && ms <= cue.start) return 'End must be after start.';
 
+		// Cues can't be extended past the end of the video
+		const videoEnd = this.store.project().media?.durationMs;
+
+		if (t.edge === 'end' && videoEnd && ms > Math.max(videoEnd, cue.end))
+			return `The video ends at ${formatTimecode(videoEnd, this.store.project().fps)}.`;
+
 		return null;
 	}
 

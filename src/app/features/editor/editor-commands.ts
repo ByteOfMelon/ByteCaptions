@@ -16,6 +16,7 @@ import {
 	spreadCueWords,
 	updateTrack,
 } from '../../core/commands/edits';
+import { NEW_CUE_TEXT, freeSpan } from '../../core/model/cue';
 import { createCue, createTrack, newId } from '../../core/model/defaults';
 import { Cue, CueId, Ms, StyleId, TrackId } from '../../core/model/types';
 import { trackColors } from '../../state/project-files';
@@ -221,13 +222,27 @@ export class EditorCommands {
 		return copy;
 	}
 
-	/** Add an empty two-second cue and select it */
+	/**
+	 * Add a cue of up to two seconds and select it
+	 */
 	newCueAt(atMs: Ms = this.store.playhead(), trackId?: TrackId): void {
 		const id = this.targetTrack(trackId);
+		const track = id ? this.store.track(id) : null;
 
-		if (!id || this.store.track(id)?.locked) return;
+		if (!id || !track || track.locked) return;
 
-		const cue = createCue(Math.round(atMs), Math.round(atMs) + 2000, '');
+		const p = this.store.project();
+		const span = freeSpan(
+			track.cues,
+			atMs,
+			2000,
+			1000 / p.fps,
+			p.media?.durationMs || Infinity,
+		);
+
+		if (!span) return;
+
+		const cue = createCue(span.start, span.end, NEW_CUE_TEXT);
 		this.store.apply('New cue', addCue(id, cue));
 		this.store.select(cue.id);
 	}
@@ -260,10 +275,7 @@ export class EditorCommands {
 	}
 
 	/**
-	 * Paste at the playhead (or `atMs`), on the tracks the cues were copied from. When they
-	 * all came from one track, a track given here, or a selected cue on another track, takes
-	 * the paste instead; cues from several tracks always keep their own. A gap that's too short trims the paste to fit; pasting on top of a cue
-	 * moves it later, to the first gap that fits.
+	 * Paste at the playhead (or `atMs`), on the tracks the cues were copied from
 	 */
 	paste(atMs: Ms = this.store.playhead(), trackId?: TrackId): void {
 		if (!this.clipboard.length) return;

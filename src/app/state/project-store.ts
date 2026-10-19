@@ -1,5 +1,6 @@
 import { Injectable, computed, effect, signal, untracked } from '@angular/core';
 import { History, Recipe } from '../core/commands/history';
+import { keepInVideo } from '../core/commands/video-end';
 import { srv3Weight, SRV3_WARN_WEIGHT } from '../core/formats/srv3';
 import { lintPresets, lintProject } from '../core/lint/rules';
 import { Cue, CueId, Ms, Project, Track, TrackId } from '../core/model/types';
@@ -86,8 +87,13 @@ export class ProjectStore {
 	}
 
 	apply(label: string, recipe: Recipe<Project>): void {
+		const before = this.history.current;
+
 		try {
-			this.history.apply(label, recipe);
+			this.history.apply(label, (p) => {
+				recipe(p);
+				keepInVideo(before, p);
+			});
 		} catch (e) {
 			console.warn(e);
 

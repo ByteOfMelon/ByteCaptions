@@ -75,7 +75,6 @@ export function lintTrack(project: Project, track: Track): Problem[] {
 	track.cues.forEach((cue, i) => {
 		const next = track.cues[i + 1];
 		const dur = cue.end - cue.start;
-		const text = cueText(cue);
 
 		if (next && next.start < cue.end) {
 			add(

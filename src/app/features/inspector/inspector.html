@@ -19,6 +19,14 @@
 				(valueChange)="applyPreset($any($event))"
 			/>
 			<bc-style-fields [style]="s.style" (styleChange)="setStyle($event)" />
+			@if (s.formatted) {
+				<div class="formatted">
+					<span class="text-small text-faded">Formatted differently from the preset</span>
+					<button bcButton variant="ghost" (click)="resetToPreset()">
+						Reset to preset
+					</button>
+				</div>
+			}
 			<bc-anchor-picker [position]="s.position" (positionChange)="setPosition($event)" />
 			<div class="karaoke">
 				<bc-toggle [checked]="s.karaoke" (checkedChange)="setKaraoke({ on: $event })">

@@ -1,10 +1,12 @@
 import { Component, computed, inject } from '@angular/core';
-import { setKaraoke, setPosition } from '../../core/commands/edits';
-import { resolvePosition, resolveStyle } from '../../core/model/cue';
+import { setKaraoke, setPosition, styleCues } from '../../core/commands/edits';
+import { cueText, resolvePosition, resolveStyle } from '../../core/model/cue';
+import { rangeOverride } from '../../core/model/runs';
 import { DEFAULT_KARAOKE_COLOR, KARAOKE_COLORS } from '../../core/model/karaoke';
 import { Position, StyleId } from '../../core/model/types';
 import { ProjectStore } from '../../state/project-store';
 import { TextFormat } from '../../state/text-format';
+import { Button } from '../../ui/button/button';
 import { Toggle } from '../../ui/controls/controls';
 import { Select } from '../../ui/select/select';
 import { AnchorPicker } from './anchor-picker';
@@ -15,7 +17,7 @@ import { StyleChange, StyleFields } from './style-fields';
  */
 @Component({
 	selector: 'bc-inspector',
-	imports: [Select, StyleFields, AnchorPicker, Toggle],
+	imports: [Button, Select, StyleFields, AnchorPicker, Toggle],
 	templateUrl: './inspector.html',
 	styleUrl: './inspector.css',
 	host: { 'data-keeps-text-selection': '', tabindex: '-1' },
@@ -41,7 +43,12 @@ export class Inspector {
 				sel.length > 1 ? `${sel.length} cues` : `Cue ${first.index} • ${first.track.name}`,
 			styleId,
 			posId,
-			style: resolveStyle(p, first.track, first.cue),
+			/** The preset, with formatting shared by all of the cue's text on top */
+			style: {
+				...resolveStyle(p, first.track, first.cue),
+				...rangeOverride(first.cue.runs, 0, cueText(first.cue).length),
+			},
+			formatted: sel.some((r) => r.cue.runs.some((run) => run.styleOverride)),
 			position: resolvePosition(p, first.track, first.cue),
 			locked: sel.some((r) => r.track.locked),
 			karaoke: sel.every((r) => r.cue.karaoke),
@@ -65,6 +72,12 @@ export class Inspector {
 		});
 	}
 
+	/** Remove the selected cues' own formatting, back to their preset */
+	protected resetToPreset(): void {
+		const ids = this.store.selectedCues().map((r) => r.cue.id);
+		this.store.apply('Reset to preset', styleCues(ids, 'clear'));
+	}
+
 	protected setStyle({ key, value }: StyleChange): void {
 		if (this.text()) return this.format.apply({ [key]: value });
 
@@ -72,9 +85,9 @@ export class Inspector {
 
 		if (!s) return;
 
-		this.store.apply(`Change ${s.style.name} ${String(key)}`, (p) => {
-			(p.styles[s.styleId] as unknown as Record<string, unknown>)[key] = value;
-		});
+		// Only the selected cues change; the preset itself is edited in the Style Presets dialog
+		const ids = this.store.selectedCues().map((r) => r.cue.id);
+		this.store.apply(`Change ${String(key)}`, styleCues(ids, { [key]: value }));
 	}
 
 	protected readonly karaokeColors = KARAOKE_COLORS;

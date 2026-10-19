@@ -3,7 +3,7 @@
  */
 import { Draft } from 'immer';
 import { createCue, newId } from '../model/defaults';
-import { cueText, joinWords, sortCues, wordGap } from '../model/cue';
+import { cueText, joinWords, resolveStyle, sortCues, wordGap } from '../model/cue';
 import { retimeWords, spreadWords, splitWords } from '../model/words';
 import { normalizeRuns, replaceText, splitRuns, styleRange, trimRuns } from '../model/runs';
 import {
@@ -218,6 +218,37 @@ export function setPosition(ids: Iterable<CueId>, want: Position) {
 					if (posId === t.defaultPositionId) delete c.positionId;
 					else c.positionId = posId;
 				}
+	};
+}
+
+/**
+ * Format whole cues
+ */
+export function styleCues(ids: Iterable<CueId>, change: Partial<CaptionStyle> | 'clear') {
+	const targets = new Set(ids);
+
+	return (p: P) => {
+		for (const t of p.tracks) {
+			if (t.locked) continue;
+
+			for (const c of t.cues) {
+				if (!targets.has(c.id)) continue;
+
+				const base = resolveStyle(p, t, c);
+				const out: Record<string, unknown> = {};
+
+				if (change !== 'clear')
+					for (const [k, v] of Object.entries(change))
+						out[k] = base[k as keyof CaptionStyle] === v ? undefined : v;
+
+				c.runs = styleRange(
+					c.runs,
+					0,
+					cueText(c).length,
+					change === 'clear' ? 'clear' : (out as Partial<CaptionStyle>),
+				);
+			}
+		}
 	};
 }
 

@@ -27,6 +27,7 @@ import {
 	LucideZoomOut,
 } from '@lucide/angular';
 import { addCue, setTiming, moveCues, setWords, updateTrack } from '../../core/commands/edits';
+import { NEW_CUE_TEXT } from '../../core/model/cue';
 import { MARKER_COLORS, createCue } from '../../core/model/defaults';
 import { CueId, MarkerId, Ms, Track, TrackId } from '../../core/model/types';
 import { moveWordEdge } from '../../core/model/words';
@@ -588,6 +589,10 @@ export class Timeline {
 			else if (c.start >= end) max = Math.min(max, c.start);
 		}
 
+		const videoEnd = this.store.project().media?.durationMs;
+
+		if (videoEnd) max = Math.min(max, Math.max(videoEnd, end));
+
 		return { min, max };
 	}
 
@@ -1000,16 +1005,19 @@ export class Timeline {
 				if (!d.moved && Math.abs(x - d.downX) < 3) return;
 
 				const minLen = 1000 / this.store.project().fps;
-				const t = Math.max(
-					0,
-					Math.round(ms + this.snapDelta([ms], new Set(d.cueId ? [d.cueId] : []))),
+				const t = Math.min(
+					Math.max(
+						0,
+						Math.round(ms + this.snapDelta([ms], new Set(d.cueId ? [d.cueId] : []))),
+					),
+					this.store.project().media?.durationMs || Infinity,
 				);
 				const [start, end] = t < d.ms0 ? [t, d.ms0] : [d.ms0, t];
 				const timing = [start, Math.max(end, start + minLen)] as const;
 
 				if (!d.moved) {
 					d.moved = true;
-					const cue = createCue(timing[0], timing[1], '');
+					const cue = createCue(timing[0], timing[1], NEW_CUE_TEXT);
 					d.cueId = cue.id;
 					this.store.begin('New cue');
 					this.store.apply('New cue', addCue(d.trackId, cue));
