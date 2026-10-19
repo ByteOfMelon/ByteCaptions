@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.9.4"
+version = "0.9.5"
 description = "Subtitle editor for YouTube"
 authors = ["Michael Webb"]
 license = "GPL-3.0-or-later"
