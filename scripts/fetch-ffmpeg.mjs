@@ -19,12 +19,13 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const BUILDS = {
+	// BtbN deletes daily autobuilds after ~2 weeks but keeps each month's last one, so pin a month-end build
 	'win32-x64': {
 		triple: 'x86_64-pc-windows-msvc',
-		url: 'https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-08-13-05/ffmpeg-n8.1.3-14-g330caae0c1-win64-lgpl-8.1.zip',
-		zipSha256: '293bc44ded938a6900060b7d622dc330675fdec0f028f8b2ea6735c64be02b12',
-		member: 'ffmpeg-n8.1.3-14-g330caae0c1-win64-lgpl-8.1/bin/ffmpeg.exe',
-		exeSha256: '2818280f1325c966a81f13fcc7222070930fc8df1012bc017c755bed1c180b42',
+		url: 'https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-31-12-59/ffmpeg-n8.1.3-27-g8dca1586f4-win64-lgpl-8.1.zip',
+		zipSha256: 'd4c2a42673917b4a97104a3e9f082729a9730796b98664e37c0b7eba6c6c613d',
+		member: 'ffmpeg-n8.1.3-27-g8dca1586f4-win64-lgpl-8.1/bin/ffmpeg.exe',
+		exeSha256: '04d0c351e53dde1cc45ba437c28d20a0b382df2798999def5d4110e23d74e62c',
 		ext: '.exe',
 	},
 	// Martin Riedl's static macOS builds (GPLv3, see licenses/FFMPEG-MACOS.txt)
@@ -46,10 +47,10 @@ const BUILDS = {
 	},
 	'linux-x64': {
 		triple: 'x86_64-unknown-linux-gnu',
-		url: 'https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-08-13-05/ffmpeg-n8.1.3-14-g330caae0c1-linux64-lgpl-8.1.tar.xz',
-		zipSha256: 'efc5f0db8b76a2b2dd0bc26feb5ffce38dc252af21fd60457ec6ece62797c930',
-		member: 'ffmpeg-n8.1.3-14-g330caae0c1-linux64-lgpl-8.1/bin/ffmpeg',
-		exeSha256: 'b64e072271e8e14f0c97a953e28ce2773a484cd5a4232019105681a98cadae73',
+		url: 'https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-31-12-59/ffmpeg-n8.1.3-27-g8dca1586f4-linux64-lgpl-8.1.tar.xz',
+		zipSha256: 'a64f3171e6ad1f7d358d28890a907ee478c331d1177ec696a93418f79ac3f1f3',
+		member: 'ffmpeg-n8.1.3-27-g8dca1586f4-linux64-lgpl-8.1/bin/ffmpeg',
+		exeSha256: '09225778e63bb602f377cc9038d4556b5bd18b78d8bd5994a842ad5e262f72e3',
 		ext: '',
 	},
 };
